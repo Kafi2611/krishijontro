@@ -1,11 +1,17 @@
 "use server";
-// Server actions for logging in and logging out.
+// Server actions for logging in, registering and logging out.
 // "use server" means these functions always run on the server, even when a
 // button in the browser calls them.
 import { AuthError, CredentialsSignin } from "next-auth";
 import { getLocale } from "next-intl/server";
 import { signIn, signOut } from "@/lib/auth";
-import { loginSchema, type LoginInput } from "@/lib/validators/auth";
+import { registerUser } from "@/lib/services/user";
+import {
+  loginSchema,
+  registerSchema,
+  type LoginInput,
+  type RegisterInput,
+} from "@/lib/validators/auth";
 
 /** Sent back to the form when something is wrong. `error` is a key from "Validation". */
 export type AuthActionError = { error: string };
@@ -52,6 +58,30 @@ export async function loginAction(
     // A successful login "throws" a redirect. We must re-throw it so Next.js can redirect.
     throw error;
   }
+}
+
+/**
+ * Creates a FARMER or PROVIDER account, then logs the new user in straight away.
+ * Returns { error: "phoneTaken" } if that phone number already has an account.
+ */
+export async function registerAction(values: RegisterInput): Promise<AuthActionError | undefined> {
+  // Check the form again on the server: never trust data coming from the browser.
+  const parsed = registerSchema.safeParse(values);
+  if (!parsed.success) {
+    return { error: "somethingWrong" };
+  }
+
+  const result = await registerUser(parsed.data);
+  if (!result.ok) {
+    return { error: result.error };
+  }
+
+  const locale = await getLocale();
+  await signIn("credentials", {
+    phone: parsed.data.phone,
+    password: parsed.data.password,
+    redirectTo: `/${locale}/dashboard`,
+  });
 }
 
 /** Logs the user out and sends them to the home page. */
