@@ -1,0 +1,204 @@
+{
+  "Common": {
+    "appName": "KrishiJontro",
+    "tagline": "Book farm machines with a trained operator at a fair price",
+    "login": "Log in",
+    "logout": "Log out",
+    "register": "Register",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "language": "Language",
+    "switchTo": "বাংলা",
+    "switchToShort": "বাং",
+    "menu": "Menu",
+    "home": "Home",
+    "loading": "Please wait...",
+    "backHome": "Back to home",
+    "notFoundTitle": "Page not found",
+    "notFoundText": "The page you are looking for does not exist.",
+    "footer": "KrishiJontro · CSE 3200 Software Development Project II"
+  },
+  "Roles": {
+    "FARMER": "Farmer",
+    "COOP_LEADER": "Cooperative Leader",
+    "PROVIDER": "Machine Provider",
+    "OPERATOR": "Operator",
+    "TECHNICIAN": "Technician",
+    "OFFICER": "Agriculture Officer",
+    "GOVT": "Government Authority",
+    "ADMIN": "Admin"
+  },
+  "Home": {
+    "heroTitle": "Farm machines, right when you need them",
+    "heroText": "Tractor, harvester, pump and more — with a trained operator, at a price inside government limits.",
+    "findMachine": "Find a machine",
+    "listMachine": "List your machine",
+    "machinesTitle": "Machines you can book",
+    "howTitle": "How it works",
+    "step1Title": "Search",
+    "step1Text": "Pick the work, the date and your field on the map.",
+    "step2Title": "Book",
+    "step2Text": "See the full price before you book. No hidden cost.",
+    "step3Title": "Work done",
+    "step3Text": "The operator starts and finishes the job with your secret code (OTP).",
+    "step4Title": "Pay",
+    "step4Text": "Pay online or in cash and get a receipt."
+  },
+  "MachineTypes": {
+    "tractor": "Tractor",
+    "powerTiller": "Power Tiller",
+    "combineHarvester": "Combine Harvester",
+    "reaper": "Reaper",
+    "riceTransplanter": "Rice Transplanter",
+    "irrigationPump": "Irrigation Pump",
+    "seeder": "Seeder",
+    "sprayer": "Sprayer"
+  },
+  "Auth": {
+    "loginTitle": "Log in",
+    "loginSubtitle": "Use your mobile number and password",
+    "phone": "Mobile number",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "name": "Full name",
+    "roleLabel": "I am a",
+    "farmerOption": "Farmer",
+    "farmerOptionText": "I need machines for my land",
+    "providerOption": "Machine provider",
+    "providerOptionText": "I have machines to rent out",
+    "providerType": "Provider type",
+    "loginButton": "Log in",
+    "registerButton": "Create account",
+    "registerTitle": "Create your account",
+    "registerSubtitle": "Farmers and machine providers can register here. Staff accounts are made by the admin.",
+    "noAccount": "New to KrishiJontro?",
+    "createAccount": "Create an account",
+    "haveAccount": "Already have an account?",
+    "demoTitle": "Demo accounts",
+    "demoHint": "Shown in development mode only. Tap one to fill the form (password: demo1234).",
+    "providerNote": "An admin checks new provider accounts before your machines are shown to farmers."
+  },
+  "Validation": {
+    "required": "This field is required",
+    "phoneInvalid": "Enter an 11-digit mobile number starting with 01",
+    "passwordShort": "Password must be at least 6 characters",
+    "passwordLong": "Password is too long (72 characters at most)",
+    "nameRequired": "Please enter your name",
+    "nameTooLong": "Name is too long",
+    "passwordsDontMatch": "Passwords do not match",
+    "invalidCredentials": "Wrong mobile number or password",
+    "accountSuspended": "This account is suspended. Please contact support.",
+    "phoneTaken": "This mobile number is already registered",
+    "somethingWrong": "Something went wrong. Please try again."
+  },
+  "ProviderTypes": {
+    "INDIVIDUAL": "Individual",
+    "COOPERATIVE": "Cooperative",
+    "COMPANY": "Company"
+  },
+  "Status": {
+    "ACTIVE": "Active",
+    "SUSPENDED": "Suspended",
+    "PENDING": "Pending",
+    "APPROVED": "Approved",
+    "REJECTED": "Rejected",
+    "VERIFIED": "Verified"
+  },
+  "Nav": {
+    "dashboard": "Dashboard",
+    "notifications": "Messages",
+    "profile": "Profile"
+  },
+  "Dashboard": {
+    "welcome": "Welcome, {name}",
+    "loggedInAs": "You are logged in as {role}.",
+    "featuresTitle": "What you will do here",
+    "featuresNote": "These features are being added step by step."
+  },
+  "Features": {
+    "FARMER": [
+      "Search machines on a map and by work type",
+      "See the price before booking and book in 3 steps",
+      "Track your booking and share the start/finish code",
+      "Pay online or in cash and download the receipt",
+      "Apply for government subsidy",
+      "Review the machine and the operator"
+    ],
+    "COOP_LEADER": [
+      "Create your cooperative and add member farmers",
+      "Book one machine for many members' plots in a village",
+      "Share the delivery cost equally",
+      "See your group booking history"
+    ],
+    "PROVIDER": [
+      "Add your machines with photos",
+      "Set your rate inside government limits",
+      "Block days on the availability calendar",
+      "Accept or reject booking requests",
+      "Add operators and assign them to jobs",
+      "See earnings, payouts and service alerts"
+    ],
+    "OPERATOR": [
+      "See today's jobs with map and farmer's phone",
+      "Update status: On the way → Arrived → Start → Finish",
+      "Start and finish jobs with the farmer's OTP",
+      "Report a breakdown with a photo"
+    ],
+    "TECHNICIAN": [
+      "Get repair and service requests",
+      "Update status: Received → Inspecting → Repairing → Fixed",
+      "Log parts and cost",
+      "Mark the machine fit for work"
+    ],
+    "OFFICER": [
+      "Verify farmers' NID and land",
+      "Approve or reject subsidy applications",
+      "See bookings and complaints in your upazila"
+    ],
+    "GOVT": [
+      "Set price limits for each machine type",
+      "Create subsidy programs",
+      "See reports: bookings by district, demand vs supply, prices",
+      "See the demand heatmap"
+    ],
+    "ADMIN": [
+      "Approve providers, machines and operators",
+      "Manage users (activate or suspend)",
+      "Decide disputes and answer support tickets",
+      "Change settings and read the audit log"
+    ]
+  },
+  "Profile": {
+    "title": "My profile",
+    "name": "Name",
+    "phone": "Mobile number",
+    "role": "Role",
+    "status": "Account status",
+    "memberSince": "Member since",
+    "land": "Land",
+    "landValue": "{decimal, number} decimal",
+    "village": "Village",
+    "upazila": "Upazila",
+    "verification": "Verification",
+    "providerType": "Provider type",
+    "businessName": "Business name",
+    "approval": "Approval",
+    "trustScore": "Trust score",
+    "employer": "Works for",
+    "experience": "Experience",
+    "experienceValue": "{years, plural, one {# year} other {# years}}",
+    "skills": "Skills",
+    "designation": "Designation",
+    "notSet": "Not set"
+  },
+  "Notifications": {
+    "title": "Messages",
+    "subtitle": "Notifications and SMS sent to you",
+    "empty": "No messages yet.",
+    "sms": "SMS",
+    "inApp": "App",
+    "new": "New",
+    "markAllRead": "Mark all as read",
+    "unreadCount": "{count, plural, =0 {No new messages} one {# new message} other {# new messages}}"
+  }
+}
