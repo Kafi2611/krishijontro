@@ -31,9 +31,12 @@ Auth.js, next-intl (English / বাংলা), Zod + React Hook Form, Vitest.
    ```bash
    npm install
    ```
-3. Copy `.env.example` to `.env` and fill in the values
-   (a Neon PostgreSQL connection string and an `AUTH_SECRET`).
-4. Create the database tables and fill them with demo data:
+3. Copy `.env.example` to `.env` and fill in the values:
+   - `DATABASE_URL` — the **pooled** Neon connection string (host contains `-pooler`)
+   - `DIRECT_URL` — the same string **without** `-pooler` (used only for migrations)
+   - `AUTH_SECRET` — a long random string (the command to make one is in `.env.example`)
+4. Create the database tables and fill them with demo data
+   (the seed **empties all tables first**, so use a fresh or development database):
    ```bash
    npx prisma migrate deploy
    npm run db:seed
@@ -43,6 +46,22 @@ Auth.js, next-intl (English / বাংলা), Zod + React Hook Form, Vitest.
    npm run dev
    ```
    Open http://localhost:3000
+
+## Demo logins
+
+After `npm run db:seed`, every demo account uses the password **`demo1234`**.
+In development mode the login page also lists them (tap one to fill the form).
+
+| Role | Mobile number |
+| --- | --- |
+| Farmer | 01700000001 |
+| Cooperative leader | 01700000002 |
+| Machine provider | 01700000003 |
+| Operator | 01700000004 |
+| Technician | 01700000005 |
+| Agriculture officer | 01700000006 |
+| Government authority | 01700000007 |
+| Admin | 01700000008 |
 
 ## Useful commands
 
