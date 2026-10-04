@@ -1,0 +1,841 @@
+// KrishiJontro database schema.
+//
+// Each "model" below becomes one table in PostgreSQL, and each "enum" is a
+// fixed list of allowed values. After changing this file run:
+//   npx prisma migrate dev --name <what-changed>
+//
+// House rules:
+// - Money is stored as whole taka (Int). Example: 1517 means 1517 Tk.
+// - Land is stored in "decimal" units (Float). 1 bigha = 33 decimal, 1 acre = 100 decimal.
+// - Every person (farmer, provider, admin...) is a User. Extra role details live
+//   in a matching profile table (FarmerProfile, ProviderProfile, ...).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// The database URL is not written here. It comes from .env through prisma.config.ts.
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────── Enums ───────────────────────────────
+
+enum Role {
+  FARMER
+  COOP_LEADER
+  PROVIDER
+  OPERATOR
+  TECHNICIAN
+  OFFICER
+  GOVT
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+// Used when admin approves providers, machines and operators,
+// and when an officer approves a subsidy application.
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// An agriculture officer checks a farmer's NID and land.
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ProviderType {
+  INDIVIDUAL
+  COOPERATIVE
+  COMPANY
+}
+
+// Bangladesh areas from big to small: Division > District > Upazila > Union.
+enum LocationLevel {
+  DIVISION
+  DISTRICT
+  UPAZILA
+  UNION
+}
+
+enum MachineCategory {
+  LAND_PREPARATION
+  PLANTING
+  HARVESTING
+  IRRIGATION
+  CROP_CARE
+}
+
+// The job a farmer wants done.
+enum WorkType {
+  TILLING
+  HARVESTING
+  TRANSPLANTING
+  IRRIGATION
+  SEEDING
+  SPRAYING
+}
+
+// How a machine's rate is counted: per acre of land, per hour or per day.
+enum BillingUnit {
+  PER_ACRE
+  PER_HOUR
+  PER_DAY
+}
+
+enum MachineStatus {
+  ACTIVE
+  UNDER_MAINTENANCE
+  INACTIVE
+}
+
+// Life of a booking. Allowed moves between these live in lib/services/booking.ts.
+enum BookingStatus {
+  REQUESTED
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  OPERATOR_ASSIGNED
+  ON_THE_WAY
+  WORKING
+  BREAKDOWN
+  COMPLETED
+  PAID
+  REVIEWED
+  DISPUTED
+}
+
+enum PaymentMethod {
+  SSLCOMMERZ
+  MOCK
+  CASH
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+enum RefundStatus {
+  PENDING
+  PROCESSED
+}
+
+enum PayoutStatus {
+  PENDING
+  PAID
+}
+
+enum BreakdownStatus {
+  REPORTED
+  SEARCHING
+  REPLACED
+  NO_REPLACEMENT
+}
+
+enum MaintenanceType {
+  SERVICE
+  REPAIR
+}
+
+enum MaintenanceStatus {
+  RECEIVED
+  INSPECTING
+  REPAIRING
+  FIXED
+}
+
+// A farmer reviews the machine and the operator separately.
+enum ReviewTarget {
+  MACHINE
+  OPERATOR
+}
+
+enum DisputeStatus {
+  OPEN
+  RESOLVED
+}
+
+enum DisputeDecision {
+  REFUND
+  PENALTY
+  NO_ACTION
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+// SMS is simulated: we save it here and show it in the user's "Messages" list.
+enum NotificationChannel {
+  IN_APP
+  SMS
+}
+
+enum WaitlistStatus {
+  WAITING
+  NOTIFIED
+  BOOKED
+  CANCELLED
+}
+
+// ─────────────────────────── People and profiles ───────────────────────────
+
+// Anyone who can log in. Login is phone number + password.
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  phone        String     @unique // 11-digit Bangladesh mobile, e.g. 01700000001
+  passwordHash String // bcrypt hash, never the real password
+  role         Role
+  status       UserStatus @default(ACTIVE)
+  email        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  // One profile, depending on the role
+  farmerProfile     FarmerProfile?     @relation("FarmerUser")
+  providerProfile   ProviderProfile?
+  operatorProfile   OperatorProfile?   @relation("OperatorUser")
+  technicianProfile TechnicianProfile?
+  officerProfile    OfficerProfile?
+
+  // Things this user owns or did
+  farmersVerified        FarmerProfile[]      @relation("FarmerVerifiedBy")
+  operatorsEmployed      OperatorProfile[]    @relation("ProviderOperators")
+  cooperativesLed        Cooperative[]
+  cooperativeMemberships CooperativeMember[]
+  machines               Machine[]
+  subsidyApplications    SubsidyApplication[] @relation("SubsidyFarmer")
+  subsidyReviews         SubsidyApplication[] @relation("SubsidyReviewer")
+  farmerBookings         Booking[]            @relation("BookingFarmer")
+  operatorBookings       Booking[]            @relation("BookingOperator")
+  groupBookingsLed       GroupBooking[]
+  statusChanges          BookingStatusLog[]
+  waitlistEntries        WaitlistEntry[]
+  breakdownReports       BreakdownReport[]
+  payments               Payment[]
+  payouts                Payout[]
+  maintenanceRequested   MaintenanceRequest[] @relation("MaintenanceRequestedBy")
+  maintenanceJobs        MaintenanceRequest[] @relation("MaintenanceTechnician")
+  reviewsWritten         Review[]             @relation("ReviewWriter")
+  reviewsReceived        Review[]             @relation("ReviewOperator")
+  disputesRaised         Dispute[]            @relation("DisputeRaisedBy")
+  disputesResolved       Dispute[]            @relation("DisputeResolvedBy")
+  supportTickets         SupportTicket[]
+  ticketMessages         TicketMessage[]
+  notifications          Notification[]
+  auditLogs              AuditLog[]
+}
+
+model FarmerProfile {
+  id                 String             @id @default(cuid())
+  userId             String             @unique
+  nid                String? // National ID card number
+  landDecimal        Float              @default(0) // total land the farmer owns
+  village            String?
+  locationId         String? // the farmer's upazila
+  verificationStatus VerificationStatus @default(PENDING)
+  verifiedById       String? // the officer who checked NID + land
+  verifiedAt         DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  user       User      @relation("FarmerUser", fields: [userId], references: [id], onDelete: Cascade)
+  location   Location? @relation(fields: [locationId], references: [id])
+  verifiedBy User?     @relation("FarmerVerifiedBy", fields: [verifiedById], references: [id])
+}
+
+model ProviderProfile {
+  id             String         @id @default(cuid())
+  userId         String         @unique
+  providerType   ProviderType   @default(INDIVIDUAL)
+  businessName   String?
+  nid            String?
+  tradeLicenseNo String?
+  address        String?
+  locationId     String? // the provider's upazila
+  approvalStatus ApprovalStatus @default(PENDING)
+  approvedAt     DateTime?
+  trustScore     Int            @default(80) // 0–100, see lib/services/trust (Phase 6)
+  payoutAccount  String? // bKash / bank account for payouts
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location Location? @relation(fields: [locationId], references: [id])
+}
+
+// An operator drives a machine. Operators work for one provider.
+model OperatorProfile {
+  id              String         @id @default(cuid())
+  userId          String         @unique
+  providerId      String // the provider (User) who employs this operator
+  licenseNo       String? // driving licence number
+  experienceYears Int            @default(0)
+  approvalStatus  ApprovalStatus @default(PENDING)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  user     User @relation("OperatorUser", fields: [userId], references: [id], onDelete: Cascade)
+  provider User @relation("ProviderOperators", fields: [providerId], references: [id])
+}
+
+model TechnicianProfile {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  skills     String? // e.g. "Engine, hydraulics"
+  locationId String?
+  createdAt  DateTime @default(now())
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location Location? @relation(fields: [locationId], references: [id])
+}
+
+// An agriculture officer works in exactly one upazila.
+model OfficerProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  upazilaId   String
+  designation String?
+  createdAt   DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  upazila Location @relation(fields: [upazilaId], references: [id])
+}
+
+// ─────────────────────────── Cooperatives ───────────────────────────
+
+model Cooperative {
+  id             String   @id @default(cuid())
+  name           String
+  leaderId       String
+  locationId     String // upazila
+  village        String
+  registrationNo String?
+  createdAt      DateTime @default(now())
+
+  leader        User                @relation(fields: [leaderId], references: [id])
+  location      Location            @relation(fields: [locationId], references: [id])
+  members       CooperativeMember[]
+  groupBookings GroupBooking[]
+}
+
+model CooperativeMember {
+  id            String   @id @default(cuid())
+  cooperativeId String
+  farmerId      String
+  joinedAt      DateTime @default(now())
+
+  cooperative Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Cascade)
+  farmer      User        @relation(fields: [farmerId], references: [id])
+
+  // A farmer can join the same cooperative only once
+  @@unique([cooperativeId, farmerId])
+}
+
+// ─────────────────────────── Places ───────────────────────────
+
+// Division > District > Upazila > Union. Each row points to its parent row.
+model Location {
+  id       String        @id @default(cuid())
+  name     String
+  nameBn   String
+  level    LocationLevel
+  parentId String?
+  lat      Float? // centre point, used for maps and the demand heatmap
+  lng      Float?
+
+  parent   Location?  @relation("LocationTree", fields: [parentId], references: [id])
+  children Location[] @relation("LocationTree")
+
+  farmers       FarmerProfile[]
+  providers     ProviderProfile[]
+  technicians   TechnicianProfile[]
+  officers      OfficerProfile[]
+  cooperatives  Cooperative[]
+  machines      Machine[]
+  bookings      Booking[]
+  groupBookings GroupBooking[]
+  waitlist      WaitlistEntry[]
+
+  @@index([parentId])
+}
+
+// ─────────────────────────── Machines ───────────────────────────
+
+// A kind of machine, e.g. Tractor or Irrigation Pump.
+model MachineType {
+  id          String          @id @default(cuid())
+  name        String          @unique
+  nameBn      String
+  category    MachineCategory
+  workTypes   WorkType[] // jobs this machine can do
+  billingUnit BillingUnit
+  icon        String // name of a lucide-react icon, e.g. "Tractor"
+  isActive    Boolean         @default(true)
+  sortOrder   Int             @default(0)
+
+  machines     Machine[]
+  pricingRules PricingRule[]
+  waitlist     WaitlistEntry[]
+}
+
+// One real machine owned by a provider.
+model Machine {
+  id              String         @id @default(cuid())
+  providerId      String
+  machineTypeId   String
+  brand           String
+  model           String
+  year            Int
+  horsePower      Int?
+  registrationNo  String?        @unique
+  description     String?
+  rate            Int // provider's price in taka per billing unit (must stay inside govt min–max)
+  locationId      String // upazila where the machine is kept
+  address         String?
+  lat             Float
+  lng             Float
+  approvalStatus  ApprovalStatus @default(PENDING)
+  rejectionReason String?
+  status          MachineStatus  @default(ACTIVE)
+  engineHours     Float          @default(0) // total hours the engine has run
+  serviceDueHours Float          @default(250) // service is needed when engineHours reaches this
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  provider            User                 @relation(fields: [providerId], references: [id])
+  machineType         MachineType          @relation(fields: [machineTypeId], references: [id])
+  location            Location             @relation(fields: [locationId], references: [id])
+  images              MachineImage[]
+  availabilityBlocks  AvailabilityBlock[]
+  bookings            Booking[]
+  groupBookings       GroupBooking[]
+  breakdownReports    BreakdownReport[]
+  maintenanceRequests MaintenanceRequest[]
+  reviews             Review[]
+
+  @@index([providerId])
+  @@index([machineTypeId])
+}
+
+model MachineImage {
+  id        String   @id @default(cuid())
+  machineId String
+  url       String // e.g. /uploads/abc.jpg
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+}
+
+// Days or hours when a provider says the machine is NOT available.
+model AvailabilityBlock {
+  id        String   @id @default(cuid())
+  machineId String
+  startAt   DateTime
+  endAt     DateTime
+  reason    String?
+  createdAt DateTime @default(now())
+
+  machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  @@index([machineId, startAt])
+}
+
+// ─────────────────────────── Prices and subsidy ───────────────────────────
+
+// Government price limits for one machine type.
+model PricingRule {
+  id                 String      @id @default(cuid())
+  machineTypeId      String
+  billingUnit        BillingUnit
+  minRate            Int // lowest rate a provider may set (taka per unit)
+  maxRate            Int // highest rate a provider may set
+  seasonCapPercent   Int         @default(0) // during harvest season maxRate may rise by this %
+  harvestSeasonStart DateTime?
+  harvestSeasonEnd   DateTime?
+  deliveryRatePerKm  Int // delivery charge per km after the free km
+  freeKm             Float       @default(3)
+  minCharge          Float       @default(0) // minimum quantity billed (e.g. 0.5 acre or 2 hours)
+  activeFrom         DateTime    @default(now())
+  activeTo           DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  machineType MachineType @relation(fields: [machineTypeId], references: [id])
+
+  @@index([machineTypeId])
+}
+
+model SubsidyProgram {
+  id              String   @id @default(cuid())
+  name            String
+  nameBn          String
+  description     String?
+  discountPercent Int // e.g. 20 means 20% off the work charge
+  maxLandDecimal  Float? // only farmers with this much land or less can apply
+  budget          Int // total taka the government will spend
+  usedAmount      Int      @default(0) // taka already spent
+  startAt         DateTime
+  endAt           DateTime
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  applications SubsidyApplication[]
+}
+
+model SubsidyApplication {
+  id              String         @id @default(cuid())
+  programId       String
+  farmerId        String
+  status          ApprovalStatus @default(PENDING)
+  note            String? // farmer's message
+  reviewedById    String? // officer
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime       @default(now())
+
+  program    SubsidyProgram @relation(fields: [programId], references: [id])
+  farmer     User           @relation("SubsidyFarmer", fields: [farmerId], references: [id])
+  reviewedBy User?          @relation("SubsidyReviewer", fields: [reviewedById], references: [id])
+  bookings   Booking[]
+
+  // A farmer applies to the same program only once
+  @@unique([programId, farmerId])
+}
+
+// ─────────────────────────── Bookings ───────────────────────────
+
+model Booking {
+  id                   String        @id @default(cuid())
+  code                 String        @unique // e.g. KJ-2026-000123, shown to people
+  farmerId             String
+  machineId            String
+  operatorId           String?
+  groupBookingId       String?
+  parentBookingId      String? // set when this booking replaces a broken-down one
+  subsidyApplicationId String?
+  workType             WorkType
+  landDecimal          Float
+  billingUnit          BillingUnit // copied from the price rule when booked
+  quantity             Float // estimated acres / hours / days to bill
+  startAt              DateTime
+  endAt                DateTime
+  fieldLat             Float
+  fieldLng             Float
+  fieldAddress         String?
+  locationId           String // upazila of the field
+  distanceKm           Float
+  rateSnapshot         Int // machine rate at booking time (later rate changes don't affect it)
+  workCharge           Int
+  deliveryCharge       Int
+  subsidyAmount        Int           @default(0)
+  totalAmount          Int // what the farmer pays = work + delivery - subsidy
+  platformFee          Int
+  cancellationFee      Int           @default(0)
+  startOtp             String? // 4 digits, made when the booking is ACCEPTED
+  finishOtp            String?
+  actualQuantity       Float? // real acres / hours entered by the operator at finish
+  status               BookingStatus @default(REQUESTED)
+  note                 String?
+  startedAt            DateTime?
+  completedAt          DateTime?
+  payoutId             String? // which provider payout included this booking
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  farmer              User                @relation("BookingFarmer", fields: [farmerId], references: [id])
+  machine             Machine             @relation(fields: [machineId], references: [id])
+  operator            User?               @relation("BookingOperator", fields: [operatorId], references: [id])
+  groupBooking        GroupBooking?       @relation(fields: [groupBookingId], references: [id])
+  parentBooking       Booking?            @relation("Replacement", fields: [parentBookingId], references: [id])
+  replacementBookings Booking[]           @relation("Replacement")
+  subsidyApplication  SubsidyApplication? @relation(fields: [subsidyApplicationId], references: [id])
+  location            Location            @relation(fields: [locationId], references: [id])
+  payout              Payout?             @relation(fields: [payoutId], references: [id])
+  statusLogs          BookingStatusLog[]
+  payments            Payment[]
+  refunds             Refund[]
+  reviews             Review[]
+  disputes            Dispute[]
+  breakdownReports    BreakdownReport[]
+  supportTickets      SupportTicket[]
+
+  @@index([machineId, startAt])
+  @@index([farmerId])
+  @@index([operatorId])
+  @@index([status])
+}
+
+// One machine visiting many cooperative members' plots, one after another.
+model GroupBooking {
+  id                  String   @id @default(cuid())
+  cooperativeId       String
+  leaderId            String
+  machineId           String
+  locationId          String // upazila of the village
+  village             String
+  workType            WorkType
+  startAt             DateTime
+  totalDeliveryCharge Int // charged once, then split equally between members
+  createdAt           DateTime @default(now())
+
+  cooperative Cooperative @relation(fields: [cooperativeId], references: [id])
+  leader      User        @relation(fields: [leaderId], references: [id])
+  machine     Machine     @relation(fields: [machineId], references: [id])
+  location    Location    @relation(fields: [locationId], references: [id])
+  bookings    Booking[]
+}
+
+// History of every status change of a booking (who changed it and when).
+model BookingStatusLog {
+  id         String         @id @default(cuid())
+  bookingId  String
+  fromStatus BookingStatus? // empty for the very first log (booking created)
+  toStatus   BookingStatus
+  actorId    String?
+  note       String?
+  createdAt  DateTime       @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  actor   User?   @relation(fields: [actorId], references: [id])
+
+  @@index([bookingId])
+}
+
+// A farmer waiting for a machine when none is free.
+model WaitlistEntry {
+  id            String         @id @default(cuid())
+  farmerId      String
+  machineTypeId String
+  workType      WorkType
+  locationId    String?
+  fieldLat      Float
+  fieldLng      Float
+  landDecimal   Float
+  wantedDate    DateTime
+  status        WaitlistStatus @default(WAITING)
+  notifiedAt    DateTime?
+  createdAt     DateTime       @default(now())
+
+  farmer      User        @relation(fields: [farmerId], references: [id])
+  machineType MachineType @relation(fields: [machineTypeId], references: [id])
+  location    Location?   @relation(fields: [locationId], references: [id])
+
+  @@index([machineTypeId, status])
+}
+
+// ─────────────────────────── Problems and service ───────────────────────────
+
+model BreakdownReport {
+  id                String          @id @default(cuid())
+  bookingId         String
+  machineId         String
+  reportedById      String // usually the operator
+  description       String
+  photoUrl          String?
+  completedQuantity Float           @default(0) // work finished before the breakdown
+  status            BreakdownStatus @default(REPORTED)
+  resolvedAt        DateTime?
+  createdAt         DateTime        @default(now())
+
+  booking             Booking              @relation(fields: [bookingId], references: [id])
+  machine             Machine              @relation(fields: [machineId], references: [id])
+  reportedBy          User                 @relation(fields: [reportedById], references: [id])
+  maintenanceRequests MaintenanceRequest[]
+}
+
+model MaintenanceRequest {
+  id                String            @id @default(cuid())
+  machineId         String
+  requestedById     String // provider (or system on breakdown)
+  technicianId      String?
+  breakdownReportId String?
+  type              MaintenanceType
+  description       String
+  status            MaintenanceStatus @default(RECEIVED)
+  partsUsed         String? // e.g. "Fuel filter x1, Engine oil 5L"
+  partsCost         Int               @default(0)
+  labourCost        Int               @default(0)
+  technicianNote    String?
+  fixedAt           DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  machine         Machine          @relation(fields: [machineId], references: [id])
+  requestedBy     User             @relation("MaintenanceRequestedBy", fields: [requestedById], references: [id])
+  technician      User?            @relation("MaintenanceTechnician", fields: [technicianId], references: [id])
+  breakdownReport BreakdownReport? @relation(fields: [breakdownReportId], references: [id])
+}
+
+model Review {
+  id         String       @id @default(cuid())
+  bookingId  String
+  reviewerId String // the farmer
+  target     ReviewTarget // MACHINE or OPERATOR
+  machineId  String
+  operatorId String? // filled when target = OPERATOR
+  rating     Int // 1 to 5 stars
+  comment    String?
+  createdAt  DateTime     @default(now())
+
+  booking  Booking @relation(fields: [bookingId], references: [id])
+  reviewer User    @relation("ReviewWriter", fields: [reviewerId], references: [id])
+  machine  Machine @relation(fields: [machineId], references: [id])
+  operator User?   @relation("ReviewOperator", fields: [operatorId], references: [id])
+
+  // One machine review and one operator review per booking
+  @@unique([bookingId, target])
+}
+
+model Dispute {
+  id            String           @id @default(cuid())
+  bookingId     String
+  raisedById    String
+  reason        String
+  description   String?
+  status        DisputeStatus    @default(OPEN)
+  decision      DisputeDecision?
+  refundAmount  Int              @default(0)
+  penaltyAmount Int              @default(0)
+  adminNote     String?
+  resolvedById  String?
+  resolvedAt    DateTime?
+  createdAt     DateTime         @default(now())
+
+  booking    Booking @relation(fields: [bookingId], references: [id])
+  raisedBy   User    @relation("DisputeRaisedBy", fields: [raisedById], references: [id])
+  resolvedBy User?   @relation("DisputeResolvedBy", fields: [resolvedById], references: [id])
+}
+
+model SupportTicket {
+  id        String       @id @default(cuid())
+  userId    String
+  subject   String
+  status    TicketStatus @default(OPEN)
+  bookingId String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  user     User            @relation(fields: [userId], references: [id])
+  booking  Booking?        @relation(fields: [bookingId], references: [id])
+  messages TicketMessage[]
+}
+
+model TicketMessage {
+  id        String   @id @default(cuid())
+  ticketId  String
+  senderId  String
+  body      String
+  createdAt DateTime @default(now())
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender User          @relation(fields: [senderId], references: [id])
+}
+
+// ─────────────────────────── Money ───────────────────────────
+
+model Payment {
+  id            String        @id @default(cuid())
+  bookingId     String
+  payerId       String
+  amount        Int
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  transactionId String        @unique // our own id sent to the payment gateway
+  gatewayRef    String? // id the gateway sends back (e.g. SSLCommerz val_id)
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  booking Booking  @relation(fields: [bookingId], references: [id])
+  payer   User     @relation(fields: [payerId], references: [id])
+  refunds Refund[]
+}
+
+model Refund {
+  id          String       @id @default(cuid())
+  bookingId   String
+  paymentId   String?
+  amount      Int
+  reason      String
+  status      RefundStatus @default(PENDING)
+  processedAt DateTime?
+  createdAt   DateTime     @default(now())
+
+  booking Booking  @relation(fields: [bookingId], references: [id])
+  payment Payment? @relation(fields: [paymentId], references: [id])
+}
+
+// Money the platform sends to a provider for finished bookings.
+model Payout {
+  id         String       @id @default(cuid())
+  providerId String
+  amount     Int
+  status     PayoutStatus @default(PENDING)
+  reference  String? // bKash / bank transaction number
+  paidAt     DateTime?
+  createdAt  DateTime     @default(now())
+
+  provider User      @relation(fields: [providerId], references: [id])
+  bookings Booking[]
+}
+
+// ─────────────────────────── System ───────────────────────────
+
+// In-app notifications and simulated SMS messages.
+// Text is saved in both English and Bangla so it can be shown in either language.
+model Notification {
+  id        String              @id @default(cuid())
+  userId    String
+  channel   NotificationChannel @default(IN_APP)
+  title     String
+  titleBn   String?
+  body      String
+  bodyBn    String?
+  link      String? // page to open when clicked, e.g. /farmer/bookings/abc
+  isRead    Boolean             @default(false)
+  createdAt DateTime            @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+}
+
+// Record of important admin / government actions (who did what, and when).
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String // e.g. "MACHINE_APPROVED"
+  entityType String // e.g. "Machine"
+  entityId   String?
+  details    String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([createdAt])
+}
+
+// Platform settings that admin can change, e.g. platformFeePercent = "3".
+model Setting {
+  key         String   @id
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
