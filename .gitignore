@@ -1,0 +1,43 @@
+# Files and folders that git must NOT track.
+
+# dependencies
+/node_modules
+.pnp
+.pnp.*
+
+# Next.js build output
+/.next/
+/out/
+/build
+next-env.d.ts
+*.tsbuildinfo
+
+# Prisma generated client (re-created by `npx prisma generate`)
+/src/generated/
+
+# secrets: every .env file is private, only the example is shared
+.env*
+!.env.example
+
+# user uploaded files (machine photos etc.) in local development
+/public/uploads/
+
+# tests
+/coverage
+/playwright-report/
+/test-results/
+/blob-report/
+/playwright/.cache/
+
+# the student's private study notes (never committed)
+/study/
+
+# deploy + OS + editor files
+.vercel
+.DS_Store
+Thumbs.db
+*.pem
+npm-debug.log*
+.vscode/*
+!.vscode/extensions.json
+.idea
