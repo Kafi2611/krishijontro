@@ -19,6 +19,15 @@ class AccountSuspendedError extends CredentialsSignin {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  logger: {
+    /** Prints real server errors, but not a wrong password (that is normal, not a bug). */
+    error(error) {
+      if (error instanceof CredentialsSignin) {
+        return;
+      }
+      console.error(error);
+    },
+  },
   providers: [
     Credentials({
       credentials: {
