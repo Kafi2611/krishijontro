@@ -29,7 +29,10 @@ const ROLE_LINKS: Record<Role, NavItem[]> = {
 };
 
 /** Links every logged-in user has, shown at the bottom of the sidebar. */
-const COMMON_LINKS: NavItem[] = [{ href: "/profile", labelKey: "profile", icon: "user" }];
+const COMMON_LINKS: NavItem[] = [
+  { href: "/notifications", labelKey: "notifications", icon: "bell" },
+  { href: "/profile", labelKey: "profile", icon: "user" },
+];
 
 /**
  * Returns the full list of sidebar links for a role:
