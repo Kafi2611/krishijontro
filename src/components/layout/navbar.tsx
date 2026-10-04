@@ -8,17 +8,28 @@ import { Link } from "@/lib/navigation";
 import { getHomePathForRole } from "@/lib/roles";
 import { LanguageSwitcher } from "./language-switcher";
 import { Logo } from "./logo";
+import { MobileNav } from "./mobile-nav";
+import type { SidebarLink } from "./sidebar-nav";
 import { UserMenu } from "./user-menu";
 
-export async function Navbar() {
+type NavbarProps = {
+  // Only dashboard pages pass sidebar links: then a menu button appears on phones.
+  sidebarLinks?: SidebarLink[];
+};
+
+export async function Navbar({ sidebarLinks }: NavbarProps) {
   const t = await getTranslations("Common");
   const tRoles = await getTranslations("Roles");
   const user = await getCurrentUser();
+  const hasSidebar = sidebarLinks !== undefined;
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-1 px-3 sm:gap-2 sm:px-4">
-        <Logo />
+        {hasSidebar && user && (
+          <MobileNav items={sidebarLinks} areaLabel={tRoles(user.role)} />
+        )}
+        <Logo hideNameOnPhone={hasSidebar} />
 
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
           <LanguageSwitcher />

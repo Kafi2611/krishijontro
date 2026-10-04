@@ -1,0 +1,45 @@
+// The sidebar links for each role. Later phases add more links here,
+// for example "My machines" for providers in Phase 2.
+import type { Role } from "@/generated/prisma/enums";
+import { getHomePathForRole } from "@/lib/roles";
+import type messages from "../../messages/en.json";
+
+/** Icon names the sidebar knows (see components/layout/nav-icon.tsx). */
+export type NavIconName = "dashboard" | "bell" | "user";
+
+/** A key of the "Nav" section in messages/en.json, e.g. "profile". */
+export type NavLabelKey = keyof (typeof messages)["Nav"];
+
+export type NavItem = {
+  href: string;
+  labelKey: NavLabelKey;
+  icon: NavIconName;
+};
+
+/** Extra links that only one role has. Empty for now, filled in later phases. */
+const ROLE_LINKS: Record<Role, NavItem[]> = {
+  FARMER: [],
+  COOP_LEADER: [],
+  PROVIDER: [],
+  OPERATOR: [],
+  TECHNICIAN: [],
+  OFFICER: [],
+  GOVT: [],
+  ADMIN: [],
+};
+
+/** Links every logged-in user has, shown at the bottom of the sidebar. */
+const COMMON_LINKS: NavItem[] = [];
+
+/**
+ * Returns the full list of sidebar links for a role:
+ * the dashboard first, then the role's own links, then the common links.
+ */
+export function getNavItemsForRole(role: Role): NavItem[] {
+  const dashboardLink: NavItem = {
+    href: getHomePathForRole(role),
+    labelKey: "dashboard",
+    icon: "dashboard",
+  };
+  return [dashboardLink, ...ROLE_LINKS[role], ...COMMON_LINKS];
+}
