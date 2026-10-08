@@ -1,6 +1,7 @@
 // Provider page: one machine's details (/provider/machines/<id>) — photos, facts,
-// place on the map, approval status, and buttons to edit, stop/start renting or delete.
-import { ArrowLeft, CircleAlert, Clock, Pencil, Wrench } from "lucide-react";
+// place on the map, approval status, and buttons to edit, open the availability
+// calendar, stop/start renting or delete.
+import { ArrowLeft, CalendarDays, CircleAlert, Clock, Pencil, Wrench } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -97,6 +98,12 @@ export default async function MachinePage({ params }: MachinePageProps) {
             <Link href={`/provider/machines/${machine.id}/edit`}>
               <Pencil aria-hidden />
               {tCommon("edit")}
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href={`/provider/machines/${machine.id}/calendar`}>
+              <CalendarDays aria-hidden />
+              {t("calendar")}
             </Link>
           </Button>
           <MachineActions machineId={machine.id} status={machine.status} />

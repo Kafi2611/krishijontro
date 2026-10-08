@@ -103,7 +103,13 @@
     "rateOutOfRange": "Your rate must be inside the government limit",
     "registrationTaken": "Another machine already has this registration number",
     "machineUnderRepair": "This machine is under repair. It becomes active again when the technician marks it fixed.",
-    "machineHasHistory": "This machine has bookings or repair records, so it cannot be deleted. Use \"Stop renting\" instead."
+    "machineHasHistory": "This machine has bookings or repair records, so it cannot be deleted. Use \"Stop renting\" instead.",
+    "dateInvalid": "Choose a date",
+    "endBeforeStart": "The last day must be on or after the first day",
+    "dateInPast": "You cannot block days in the past",
+    "rangeTooLong": "You can block at most 60 days at once",
+    "blockHasBooking": "There is a booking on these days, so they cannot be blocked",
+    "alreadyBlocked": "Some of these days are already blocked"
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",
@@ -357,5 +363,31 @@
     "description": "Description",
     "location": "Location on the map",
     "notSet": "—"
+  },
+  "Calendar": {
+    "title": "Availability calendar",
+    "subtitle": "Block the days when this machine is not available.",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "blockThisDay": "Block {day}",
+    "legend": {
+      "free": "Free",
+      "blocked": "Blocked by you",
+      "booked": "Booked",
+      "past": "Past",
+      "today": "Today"
+    },
+    "blockTitle": "Block days",
+    "blockHint": "Tap a free day on the calendar, or choose the dates here.",
+    "from": "From",
+    "to": "To (included)",
+    "reason": "Reason (optional)",
+    "reasonPlaceholder": "e.g. own land work, family program",
+    "blockButton": "Block these days",
+    "blocked": "Days blocked. Farmers cannot book them.",
+    "upcomingTitle": "Blocked days",
+    "noBlocks": "No blocked days. The machine is free on all days without a booking.",
+    "remove": "Remove",
+    "removed": "Block removed. The days are free again."
   }
 }
