@@ -89,7 +89,12 @@
     "numberInvalid": "Enter a valid number",
     "workTypesRequired": "Pick at least one kind of work",
     "typeNameTaken": "A machine type with this name already exists",
-    "notFound": "Not found. It may have been removed."
+    "notFound": "Not found. It may have been removed.",
+    "notAllowed": "You are not allowed to do this",
+    "imageTooBig": "This photo is too big (5 MB at most)",
+    "imageWrongType": "Only JPG, PNG or WebP photos can be added",
+    "uploadFailed": "The photo could not be uploaded. Please try again.",
+    "tooManyPhotos": "You can add at most 5 photos"
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",
@@ -245,5 +250,13 @@
     "active": "Active",
     "hidden": "Hidden",
     "machineCount": "{count, plural, =0 {No machines yet} one {# machine} other {# machines}}"
+  },
+  "Uploader": {
+    "addPhotos": "Add photos",
+    "uploading": "Uploading...",
+    "remove": "Remove photo",
+    "photoAlt": "Photo {number}",
+    "count": "{count, number} of {max, number} photos",
+    "hint": "JPG, PNG or WebP, up to 5 MB each"
   }
 }

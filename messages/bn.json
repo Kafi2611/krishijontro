@@ -89,7 +89,12 @@
     "numberInvalid": "সঠিক সংখ্যা লিখুন",
     "workTypesRequired": "অন্তত একটি কাজ বেছে নিন",
     "typeNameTaken": "এই নামে আগেই একটি যন্ত্রের ধরন আছে",
-    "notFound": "পাওয়া যায়নি। হয়তো সরিয়ে ফেলা হয়েছে।"
+    "notFound": "পাওয়া যায়নি। হয়তো সরিয়ে ফেলা হয়েছে।",
+    "notAllowed": "এই কাজের অনুমতি আপনার নেই",
+    "imageTooBig": "ছবিটি অনেক বড় (সর্বোচ্চ ৫ এমবি)",
+    "imageWrongType": "শুধু JPG, PNG বা WebP ছবি দেওয়া যাবে",
+    "uploadFailed": "ছবিটি আপলোড হয়নি। আবার চেষ্টা করুন।",
+    "tooManyPhotos": "সর্বোচ্চ ৫টি ছবি দেওয়া যাবে"
   },
   "ProviderTypes": {
     "INDIVIDUAL": "ব্যক্তিগত",
@@ -245,5 +250,13 @@
     "active": "সক্রিয়",
     "hidden": "লুকানো",
     "machineCount": "{count, plural, =0 {এখনো কোনো যন্ত্র নেই} other {#টি যন্ত্র}}"
+  },
+  "Uploader": {
+    "addPhotos": "ছবি যোগ করুন",
+    "uploading": "আপলোড হচ্ছে...",
+    "remove": "ছবি সরান",
+    "photoAlt": "ছবি {number}",
+    "count": "{max, number}টির মধ্যে {count, number}টি ছবি",
+    "hint": "JPG, PNG বা WebP, প্রতিটি সর্বোচ্চ ৫ এমবি"
   }
 }
