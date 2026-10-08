@@ -24,16 +24,8 @@ import {
   FieldSet,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { UpazilaSelect } from "@/components/upazila-select";
 import type { BillingUnit } from "@/generated/prisma/enums";
 import { createMachineAction, updateMachineAction } from "@/lib/actions/machine";
 import { numberFromInput } from "@/lib/form-values";
@@ -61,17 +53,6 @@ type MachineFormProps = {
   rateRanges: Record<string, RateRange>; // today's government limit for each machine type id
   upazilas: UpazilaOption[];
 };
-
-/** Groups the upazila list by district, for the drop-down: { "Rajshahi": [Paba, Godagari...] }. */
-function groupByDistrict(upazilas: UpazilaOption[]) {
-  const groups = new Map<string, UpazilaOption[]>();
-  for (const upazila of upazilas) {
-    const list = groups.get(upazila.districtName) ?? [];
-    list.push(upazila);
-    groups.set(upazila.districtName, list);
-  }
-  return Array.from(groups.values());
-}
 
 export function MachineForm({
   machineId,
@@ -253,30 +234,19 @@ export function MachineForm({
           <div className="grid gap-5 sm:grid-cols-2">
             <Field data-invalid={!!errors.locationId}>
               <FieldLabel htmlFor="locationId">{t("upazila")}</FieldLabel>
-              {/* shadcn Select is not a plain <select>, so we connect it with a Controller */}
+              {/* UpazilaSelect is not a plain <input>, so we connect it with a Controller */}
               <Controller
                 control={form.control}
                 name="locationId"
                 render={({ field }) => (
-                  <Select value={field.value ?? ""} onValueChange={handleUpazilaChange}>
-                    <SelectTrigger id="locationId" className="w-full" aria-invalid={!!errors.locationId}>
-                      <SelectValue placeholder={t("chooseUpazila")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {groupByDistrict(upazilas).map((district) => (
-                        <SelectGroup key={district[0].districtName}>
-                          <SelectLabel>
-                            {pickByLocale(district[0].districtName, district[0].districtNameBn, locale)}
-                          </SelectLabel>
-                          {district.map((upazila) => (
-                            <SelectItem key={upazila.id} value={upazila.id}>
-                              {pickByLocale(upazila.name, upazila.nameBn, locale)}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <UpazilaSelect
+                    id="locationId"
+                    value={field.value ?? ""}
+                    onChange={handleUpazilaChange}
+                    upazilas={upazilas}
+                    placeholder={t("chooseUpazila")}
+                    invalid={!!errors.locationId}
+                  />
                 )}
               />
               {errorText(errors.locationId?.message)}

@@ -109,7 +109,8 @@
     "dateInPast": "You cannot block days in the past",
     "rangeTooLong": "You can block at most 60 days at once",
     "blockHasBooking": "There is a booking on these days, so they cannot be blocked",
-    "alreadyBlocked": "Some of these days are already blocked"
+    "alreadyBlocked": "Some of these days are already blocked",
+    "nidInvalid": "Enter a National ID number with 10, 13 or 17 digits"
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",
@@ -131,7 +132,9 @@
     "notifications": "Messages",
     "profile": "Profile",
     "machineTypes": "Machine types",
-    "machines": "My machines"
+    "machines": "My machines",
+    "operators": "Operators",
+    "business": "Business details"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -389,5 +392,41 @@
     "noBlocks": "No blocked days. The machine is free on all days without a booking.",
     "remove": "Remove",
     "removed": "Block removed. The days are free again."
+  },
+  "Business": {
+    "title": "Business details",
+    "subtitle": "The admin checks these details before your machines are shown to farmers.",
+    "approval": "Approval:",
+    "providerType": "Provider type",
+    "businessName": "Business name",
+    "businessNamePlaceholder": "e.g. Jamal Krishi Seba",
+    "nid": "National ID (NID) number",
+    "nidHint": "10, 13 or 17 digits.",
+    "tradeLicenseNo": "Trade licence number",
+    "optional": "optional",
+    "upazila": "Upazila",
+    "chooseUpazila": "Choose upazila",
+    "address": "Address",
+    "addressPlaceholder": "e.g. Naohata Bazar, Paba",
+    "payoutAccount": "Payout account",
+    "payoutHint": "Where we send your earnings, e.g. \"bKash 01700000003\"."
+  },
+  "Operators": {
+    "title": "Operators",
+    "subtitle": "The trained drivers who take your machines to farmers' fields.",
+    "add": "Add operator",
+    "back": "Back to operators",
+    "empty": "You have no operators yet.",
+    "emptyHint": "Add the drivers who work with your machines. The admin approves each one.",
+    "licenseShort": "Licence",
+    "newTitle": "Add an operator",
+    "newSubtitle": "This makes a login account for the operator. The admin approves it before you can send the operator to jobs.",
+    "firstPassword": "First password",
+    "passwordHint": "Tell this password to the operator yourself. It is never sent by SMS.",
+    "licenseNo": "Driving licence number",
+    "optional": "optional",
+    "experienceYears": "Years of experience",
+    "addButton": "Add operator",
+    "added": "Operator added. The admin will check the account."
   }
 }
