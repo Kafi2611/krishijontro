@@ -22,7 +22,8 @@ It is built for the course **CSE 3200 – Software Development Project II**.
 ## Tech stack
 
 Next.js (App Router) + TypeScript, Tailwind CSS + shadcn/ui, PostgreSQL (Neon) + Prisma,
-Auth.js, next-intl (English / বাংলা), Zod + React Hook Form, Vitest.
+Auth.js, next-intl (English / বাংলা), Zod + React Hook Form, Leaflet + OpenStreetMap
+(maps, no API key), Vitest.
 
 ## Run it on your computer
 
@@ -46,6 +47,9 @@ Auth.js, next-intl (English / বাংলা), Zod + React Hook Form, Vitest.
    npm run dev
    ```
    Open http://localhost:3000
+
+Machine photos uploaded while the app runs locally are saved in `public/uploads/`
+(this folder is not committed to Git).
 
 ## Demo logins
 
