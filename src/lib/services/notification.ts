@@ -29,6 +29,23 @@ export async function createNotification(
   await tx.notification.create({ data: notification });
 }
 
+/**
+ * Sends the same notification to every active admin,
+ * e.g. "A new machine is waiting for approval".
+ */
+export async function notifyAllAdmins(
+  notification: Omit<NewNotification, "userId">,
+  tx: Prisma.TransactionClient = db,
+): Promise<void> {
+  const admins = await tx.user.findMany({
+    where: { role: "ADMIN", status: "ACTIVE" },
+    select: { id: true },
+  });
+  await tx.notification.createMany({
+    data: admins.map((admin) => ({ ...notification, userId: admin.id })),
+  });
+}
+
 /** How many notifications this user has not read yet (the number on the bell). */
 export async function countUnreadNotifications(userId: string): Promise<number> {
   return db.notification.count({ where: { userId, isRead: false } });

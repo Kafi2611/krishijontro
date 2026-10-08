@@ -1,9 +1,10 @@
-// Unit tests for src/lib/services/geo.ts (distance and land unit conversion).
+// Unit tests for src/lib/services/geo.ts (distance, land units and the Bangladesh map box).
 import { describe, expect, it } from "vitest";
 import {
   decimalToAcre,
   decimalToBigha,
   distanceInKm,
+  isInsideBangladesh,
   toDecimal,
 } from "@/lib/services/geo";
 
@@ -42,5 +43,17 @@ describe("land unit conversion", () => {
   it("converts decimal into acre and bigha", () => {
     expect(decimalToAcre(66)).toBe(0.66);
     expect(decimalToBigha(66)).toBe(2);
+  });
+});
+
+describe("isInsideBangladesh", () => {
+  it("accepts places in Bangladesh", () => {
+    expect(isInsideBangladesh({ lat: 24.3745, lng: 88.6042 })).toBe(true); // Rajshahi
+    expect(isInsideBangladesh({ lat: 22.3569, lng: 91.7832 })).toBe(true); // Chattogram
+  });
+
+  it("rejects places far outside Bangladesh", () => {
+    expect(isInsideBangladesh({ lat: 28.6139, lng: 77.209 })).toBe(false); // Delhi
+    expect(isInsideBangladesh({ lat: 0, lng: 0 })).toBe(false); // a forgotten (empty) point
   });
 });

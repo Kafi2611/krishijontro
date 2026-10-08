@@ -6,6 +6,7 @@
  * 2. Land units: farmers in Bangladesh talk in "decimal" (shotangsho), "bigha"
  *    and "acre". We always store land in DECIMAL inside the database.
  *    1 acre = 100 decimal, 1 bigha = 33 decimal.
+ * 3. Bangladesh box: a quick check that a map point is really in Bangladesh.
  *
  * These are pure functions (no database, no network), so they are easy to test.
  */
@@ -24,6 +25,33 @@ export type LatLng = {
   lat: number;
   lng: number;
 };
+
+/**
+ * A box around Bangladesh on the map (a little bigger than the country).
+ * A machine or field outside this box must be a mistake (e.g. a wrong tap on the map).
+ */
+export const BANGLADESH_BOUNDS = {
+  minLat: 20.5,
+  maxLat: 26.7,
+  minLng: 88.0,
+  maxLng: 92.7,
+};
+
+/** Roughly the middle of Bangladesh: where a map starts before anything is chosen. */
+export const BANGLADESH_CENTER: LatLng = { lat: 23.8, lng: 90.3 };
+
+/**
+ * True if the point is inside the Bangladesh box above.
+ * Example: isInsideBangladesh({ lat: 24.37, lng: 88.6 }) -> true (Rajshahi)
+ */
+export function isInsideBangladesh(point: LatLng): boolean {
+  return (
+    point.lat >= BANGLADESH_BOUNDS.minLat &&
+    point.lat <= BANGLADESH_BOUNDS.maxLat &&
+    point.lng >= BANGLADESH_BOUNDS.minLng &&
+    point.lng <= BANGLADESH_BOUNDS.maxLng
+  );
+}
 
 /** The land units a farmer can type in. */
 export type LandUnit = "DECIMAL" | "BIGHA" | "ACRE";

@@ -4,7 +4,7 @@ import { getHomePathForRole } from "@/lib/roles";
 import type messages from "../../messages/en.json";
 
 /** Icon names the sidebar knows (see components/layout/nav-icon.tsx). */
-export type NavIconName = "dashboard" | "bell" | "user" | "machineTypes";
+export type NavIconName = "dashboard" | "bell" | "user" | "machineTypes" | "machines";
 
 /** A key of the "Nav" section in messages/en.json, e.g. "profile". */
 export type NavLabelKey = keyof (typeof messages)["Nav"];
@@ -19,7 +19,7 @@ export type NavItem = {
 const ROLE_LINKS: Record<Role, NavItem[]> = {
   FARMER: [],
   COOP_LEADER: [],
-  PROVIDER: [],
+  PROVIDER: [{ href: "/provider/machines", labelKey: "machines", icon: "machines" }],
   OPERATOR: [],
   TECHNICIAN: [],
   OFFICER: [],
