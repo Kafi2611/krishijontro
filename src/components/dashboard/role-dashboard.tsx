@@ -1,12 +1,18 @@
-// The (still empty) dashboard every role sees in Phase 1: a welcome line and a list
-// of what this role will be able to do. Later phases replace the list with real widgets.
+// The dashboard frame every role sees: a welcome line, the role's own widgets
+// (passed in as children, e.g. the admin's "waiting for approval" boxes) and a list
+// of what this role will be able to do. Later phases add more real widgets.
 import { CircleDashed } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Role } from "@/generated/prisma/enums";
 import { requireUser } from "@/lib/auth";
 
-export async function RoleDashboard({ role }: { role: Role }) {
+type RoleDashboardProps = {
+  role: Role;
+  children?: React.ReactNode; // widgets shown between the welcome line and the feature list
+};
+
+export async function RoleDashboard({ role, children }: RoleDashboardProps) {
   const user = await requireUser();
   const t = await getTranslations("Dashboard");
   const tRoles = await getTranslations("Roles");
@@ -21,6 +27,8 @@ export async function RoleDashboard({ role }: { role: Role }) {
         <h1 className="text-2xl font-bold">{t("welcome", { name: user.name })}</h1>
         <p className="text-muted-foreground">{t("loggedInAs", { role: tRoles(role) })}</p>
       </div>
+
+      {children}
 
       <Card>
         <CardHeader>

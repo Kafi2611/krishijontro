@@ -110,7 +110,9 @@
     "rangeTooLong": "একবারে সর্বোচ্চ ৬০ দিন বন্ধ করা যায়",
     "blockHasBooking": "এই দিনগুলোতে বুকিং আছে, তাই বন্ধ করা যাবে না",
     "alreadyBlocked": "এর মধ্যে কিছু দিন আগেই বন্ধ করা আছে",
-    "nidInvalid": "১০, ১৩ বা ১৭ সংখ্যার জাতীয় পরিচয়পত্র নম্বর দিন"
+    "nidInvalid": "১০, ১৩ বা ১৭ সংখ্যার জাতীয় পরিচয়পত্র নম্বর দিন",
+    "reasonRequired": "কারণটি লিখুন (অন্তত ৩ অক্ষর)",
+    "alreadyDecided": "এটির সিদ্ধান্ত আগেই নেওয়া হয়েছে (হয়তো অন্য কোনো অ্যাডমিন নিয়েছেন)।"
   },
   "ProviderTypes": {
     "INDIVIDUAL": "ব্যক্তিগত",
@@ -134,7 +136,8 @@
     "machineTypes": "যন্ত্রের ধরন",
     "machines": "আমার যন্ত্র",
     "operators": "চালক",
-    "business": "ব্যবসার তথ্য"
+    "business": "ব্যবসার তথ্য",
+    "approvals": "অনুমোদন"
   },
   "Dashboard": {
     "welcome": "স্বাগতম, {name}",
@@ -428,5 +431,55 @@
     "experienceYears": "অভিজ্ঞতা (বছর)",
     "addButton": "চালক যোগ করুন",
     "added": "চালক যোগ হয়েছে। অ্যাডমিন অ্যাকাউন্টটি যাচাই করবেন।"
+  },
+  "Approvals": {
+    "title": "অনুমোদন",
+    "subtitle": "কৃষকরা ব্যবহার করার আগে নতুন যন্ত্র মালিক, যন্ত্র ও চালক যাচাই করুন।",
+    "tabs": {
+      "providers": "যন্ত্র মালিক",
+      "machines": "যন্ত্র",
+      "operators": "চালক"
+    },
+    "nothingWaiting": "এখানে অপেক্ষায় কিছু নেই।",
+    "approve": "অনুমোদন দিন",
+    "reject": "বাতিল করুন",
+    "confirmReject": "এই কারণে বাতিল করুন",
+    "cancel": "থাক",
+    "reasonLabel": "কেন? (মালিক এটি দেখতে পাবেন)",
+    "reasonPlaceholder": "যেমন: এনআইডি নম্বর মেলেনি, ছবি পরিষ্কার নয়",
+    "approved": "অনুমোদন দেওয়া হয়েছে। মালিককে জানানো হয়েছে।",
+    "rejected": "বাতিল করা হয়েছে। মালিককে কারণ জানানো হয়েছে।",
+    "providerType": "ধরন",
+    "nid": "এনআইডি",
+    "tradeLicense": "ট্রেড লাইসেন্স",
+    "address": "ঠিকানা",
+    "payoutAccount": "টাকা পাওয়ার অ্যাকাউন্ট",
+    "machines": "যোগ করা যন্ত্র",
+    "registered": "নিবন্ধন",
+    "missing": "দেওয়া হয়নি",
+    "noPhotos": "কোনো ছবি দেওয়া হয়নি।",
+    "owner": "মালিক",
+    "rate": "ভাড়া",
+    "year": "তৈরির সাল",
+    "horsePower": "হর্স পাওয়ার",
+    "registrationNo": "রেজিস্ট্রেশন নম্বর",
+    "place": "জায়গা",
+    "openMap": "ম্যাপে দেখুন",
+    "added": "যোগ করা হয়েছে",
+    "worksFor": "যার অধীনে কাজ করেন",
+    "licenseNo": "ড্রাইভিং লাইসেন্স",
+    "experience": "অভিজ্ঞতা"
+  },
+  "AdminDashboard": {
+    "waitingTitle": "আপনার অনুমোদনের অপেক্ষায়",
+    "providersWaiting": "যন্ত্র মালিক",
+    "machinesWaiting": "যন্ত্র",
+    "operatorsWaiting": "চালক"
+  },
+  "ProviderDashboard": {
+    "machines": "আমার যন্ত্র",
+    "approved": "অনুমোদিত",
+    "waiting": "অনুমোদনের অপেক্ষায়",
+    "operators": "চালক"
   }
 }

@@ -31,6 +31,11 @@ export async function listProviderOperators(providerId: string) {
   });
 }
 
+/** How many operators a provider has. For the provider dashboard. */
+export async function countProviderOperators(providerId: string): Promise<number> {
+  return db.operatorProfile.count({ where: { providerId } });
+}
+
 /**
  * Creates an operator account for a provider.
  * Returns ok, or "phoneTaken" if that mobile number already has an account.

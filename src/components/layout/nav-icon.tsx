@@ -2,6 +2,7 @@
 // We pass names instead of icon components because the sidebar list is made on
 // the server and sent to the browser, and only plain data can be sent that way.
 import {
+  BadgeCheck,
   Bell,
   LayoutDashboard,
   Shapes,
@@ -21,6 +22,7 @@ const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   machines: Tractor,
   operators: Users,
   business: Store,
+  approvals: BadgeCheck,
 };
 
 export function NavIcon({ name, className }: { name: NavIconName; className?: string }) {

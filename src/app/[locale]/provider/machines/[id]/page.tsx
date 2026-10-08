@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { DetailRow } from "@/components/detail-row";
 import { MapPicker } from "@/components/map/map-picker";
 import { MachineTypeIcon } from "@/components/machine-type-icon";
 import { MachineActions } from "@/components/provider/machine-actions";
@@ -24,16 +25,6 @@ type MachinePageProps = {
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("MachineDetails");
   return { title: t("title") };
-}
-
-/** One "label: value" line in the details card. */
-function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex justify-between gap-4 border-b py-2.5 last:border-b-0">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="text-right font-medium">{children}</dd>
-    </div>
-  );
 }
 
 /** A coloured box with an icon and a message (used for pending / rejected / repair notes). */

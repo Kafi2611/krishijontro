@@ -110,7 +110,9 @@
     "rangeTooLong": "You can block at most 60 days at once",
     "blockHasBooking": "There is a booking on these days, so they cannot be blocked",
     "alreadyBlocked": "Some of these days are already blocked",
-    "nidInvalid": "Enter a National ID number with 10, 13 or 17 digits"
+    "nidInvalid": "Enter a National ID number with 10, 13 or 17 digits",
+    "reasonRequired": "Please write the reason (at least 3 letters)",
+    "alreadyDecided": "This was already decided (maybe by another admin)."
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",
@@ -134,7 +136,8 @@
     "machineTypes": "Machine types",
     "machines": "My machines",
     "operators": "Operators",
-    "business": "Business details"
+    "business": "Business details",
+    "approvals": "Approvals"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -428,5 +431,55 @@
     "experienceYears": "Years of experience",
     "addButton": "Add operator",
     "added": "Operator added. The admin will check the account."
+  },
+  "Approvals": {
+    "title": "Approvals",
+    "subtitle": "Check new providers, machines and operators before farmers can use them.",
+    "tabs": {
+      "providers": "Providers",
+      "machines": "Machines",
+      "operators": "Operators"
+    },
+    "nothingWaiting": "Nothing is waiting here.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "confirmReject": "Reject with this reason",
+    "cancel": "Cancel",
+    "reasonLabel": "Why? (the owner will see this)",
+    "reasonPlaceholder": "e.g. NID number does not match, photos are unclear",
+    "approved": "Approved. The owner has been told.",
+    "rejected": "Rejected. The owner has been told the reason.",
+    "providerType": "Type",
+    "nid": "NID",
+    "tradeLicense": "Trade licence",
+    "address": "Address",
+    "payoutAccount": "Payout account",
+    "machines": "Machines added",
+    "registered": "Registered",
+    "missing": "Not given",
+    "noPhotos": "No photos were added.",
+    "owner": "Owner",
+    "rate": "Rate",
+    "year": "Year made",
+    "horsePower": "Horse power",
+    "registrationNo": "Registration no.",
+    "place": "Place",
+    "openMap": "Open map",
+    "added": "Added",
+    "worksFor": "Works for",
+    "licenseNo": "Driving licence",
+    "experience": "Experience"
+  },
+  "AdminDashboard": {
+    "waitingTitle": "Waiting for your approval",
+    "providersWaiting": "Providers",
+    "machinesWaiting": "Machines",
+    "operatorsWaiting": "Operators"
+  },
+  "ProviderDashboard": {
+    "machines": "My machines",
+    "approved": "Approved",
+    "waiting": "Waiting for approval",
+    "operators": "Operators"
   }
 }
