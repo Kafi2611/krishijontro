@@ -11,8 +11,10 @@ import {
   Wheat,
   type LucideIcon,
 } from "lucide-react";
+import type { MachineIconName } from "@/lib/validators/machine-type";
 
-const MACHINE_ICONS: Record<string, LucideIcon> = {
+// One icon for every name in MACHINE_ICON_NAMES (TypeScript checks none is missing).
+const MACHINE_ICONS: Record<MachineIconName, LucideIcon> = {
   Tractor,
   Shovel, // power tiller (tilling)
   Wheat, // combine harvester
@@ -30,6 +32,6 @@ type MachineTypeIconProps = {
 
 export function MachineTypeIcon({ icon, className }: MachineTypeIconProps) {
   // Unknown name -> show a tractor, so the page never breaks.
-  const Icon = MACHINE_ICONS[icon] ?? Tractor;
+  const Icon = MACHINE_ICONS[icon as MachineIconName] ?? Tractor;
   return <Icon className={className} aria-hidden />;
 }

@@ -1,11 +1,10 @@
-// The sidebar links for each role. Later phases add more links here,
-// for example "My machines" for providers in Phase 2.
+// The sidebar links for each role. Each phase adds the links of its new pages here.
 import type { Role } from "@/generated/prisma/enums";
 import { getHomePathForRole } from "@/lib/roles";
 import type messages from "../../messages/en.json";
 
 /** Icon names the sidebar knows (see components/layout/nav-icon.tsx). */
-export type NavIconName = "dashboard" | "bell" | "user";
+export type NavIconName = "dashboard" | "bell" | "user" | "machineTypes";
 
 /** A key of the "Nav" section in messages/en.json, e.g. "profile". */
 export type NavLabelKey = keyof (typeof messages)["Nav"];
@@ -16,7 +15,7 @@ export type NavItem = {
   icon: NavIconName;
 };
 
-/** Extra links that only one role has. Empty for now, filled in later phases. */
+/** Extra links that only one role has. Roles without links yet get them in later phases. */
 const ROLE_LINKS: Record<Role, NavItem[]> = {
   FARMER: [],
   COOP_LEADER: [],
@@ -25,7 +24,7 @@ const ROLE_LINKS: Record<Role, NavItem[]> = {
   TECHNICIAN: [],
   OFFICER: [],
   GOVT: [],
-  ADMIN: [],
+  ADMIN: [{ href: "/admin/machine-types", labelKey: "machineTypes", icon: "machineTypes" }],
 };
 
 /** Links every logged-in user has, shown at the bottom of the sidebar. */

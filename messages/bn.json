@@ -16,7 +16,12 @@
     "backHome": "হোমে ফিরে যান",
     "notFoundTitle": "পাতাটি পাওয়া যায়নি",
     "notFoundText": "আপনি যে পাতাটি খুঁজছেন সেটি নেই।",
-    "footer": "কৃষিযন্ত্র · CSE 3200 সফটওয়্যার ডেভেলপমেন্ট প্রজেক্ট II"
+    "footer": "কৃষিযন্ত্র · CSE 3200 সফটওয়্যার ডেভেলপমেন্ট প্রজেক্ট II",
+    "save": "সংরক্ষণ করুন",
+    "saved": "সংরক্ষণ হয়েছে",
+    "cancel": "বাতিল",
+    "edit": "সম্পাদনা",
+    "back": "ফিরে যান"
   },
   "Roles": {
     "FARMER": "কৃষক",
@@ -43,16 +48,6 @@
     "step3Text": "চালক আপনার গোপন কোড (OTP) দিয়ে কাজ শুরু ও শেষ করেন।",
     "step4Title": "টাকা দিন",
     "step4Text": "অনলাইনে বা নগদে টাকা দিন, রসিদ নিন।"
-  },
-  "MachineTypes": {
-    "tractor": "ট্রাক্টর",
-    "powerTiller": "পাওয়ার টিলার",
-    "combineHarvester": "কম্বাইন হারভেস্টার",
-    "reaper": "রিপার",
-    "riceTransplanter": "রাইস ট্রান্সপ্লান্টার",
-    "irrigationPump": "সেচ পাম্প",
-    "seeder": "বীজ বপন যন্ত্র",
-    "sprayer": "স্প্রে মেশিন"
   },
   "Auth": {
     "loginTitle": "লগইন করুন",
@@ -89,7 +84,12 @@
     "invalidCredentials": "মোবাইল নম্বর বা পাসওয়ার্ড ভুল",
     "accountSuspended": "এই অ্যাকাউন্টটি স্থগিত আছে। সহায়তার জন্য যোগাযোগ করুন।",
     "phoneTaken": "এই মোবাইল নম্বর দিয়ে আগেই নিবন্ধন করা হয়েছে",
-    "somethingWrong": "কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।"
+    "somethingWrong": "কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।",
+    "tooLong": "লেখাটি অনেক বড়",
+    "numberInvalid": "সঠিক সংখ্যা লিখুন",
+    "workTypesRequired": "অন্তত একটি কাজ বেছে নিন",
+    "typeNameTaken": "এই নামে আগেই একটি যন্ত্রের ধরন আছে",
+    "notFound": "পাওয়া যায়নি। হয়তো সরিয়ে ফেলা হয়েছে।"
   },
   "ProviderTypes": {
     "INDIVIDUAL": "ব্যক্তিগত",
@@ -102,12 +102,15 @@
     "PENDING": "অপেক্ষমাণ",
     "APPROVED": "অনুমোদিত",
     "REJECTED": "বাতিল",
-    "VERIFIED": "যাচাইকৃত"
+    "VERIFIED": "যাচাইকৃত",
+    "UNDER_MAINTENANCE": "মেরামতে আছে",
+    "INACTIVE": "ভাড়া বন্ধ"
   },
   "Nav": {
     "dashboard": "ড্যাশবোর্ড",
     "notifications": "বার্তা",
-    "profile": "প্রোফাইল"
+    "profile": "প্রোফাইল",
+    "machineTypes": "যন্ত্রের ধরন"
   },
   "Dashboard": {
     "welcome": "স্বাগতম, {name}",
@@ -200,5 +203,47 @@
     "new": "নতুন",
     "markAllRead": "সব পড়া হয়েছে",
     "unreadCount": "{count, plural, =0 {নতুন বার্তা নেই} other {#টি নতুন বার্তা}}"
+  },
+  "MachineCategories": {
+    "LAND_PREPARATION": "জমি তৈরি",
+    "PLANTING": "রোপণ ও বপন",
+    "HARVESTING": "ফসল কাটা",
+    "IRRIGATION": "সেচ",
+    "CROP_CARE": "ফসলের যত্ন"
+  },
+  "WorkTypes": {
+    "TILLING": "জমি চাষ",
+    "HARVESTING": "ফসল কাটা",
+    "TRANSPLANTING": "চারা রোপণ",
+    "IRRIGATION": "সেচ",
+    "SEEDING": "বীজ বপন",
+    "SPRAYING": "স্প্রে"
+  },
+  "BillingUnits": {
+    "PER_ACRE": "প্রতি একর",
+    "PER_HOUR": "প্রতি ঘণ্টা",
+    "PER_DAY": "প্রতি দিন"
+  },
+  "Money": {
+    "taka": "{amount, number} টাকা",
+    "rate": "{amount, number} টাকা / {unit, select, PER_ACRE {একর} PER_HOUR {ঘণ্টা} other {দিন}}"
+  },
+  "MachineTypesAdmin": {
+    "title": "যন্ত্রের ধরন",
+    "subtitle": "যেসব ধরনের যন্ত্র মালিকরা যোগ করতে ও কৃষকরা বুক করতে পারেন।",
+    "add": "নতুন ধরন যোগ করুন",
+    "newTitle": "নতুন যন্ত্রের ধরন",
+    "editTitle": "যন্ত্রের ধরন সম্পাদনা",
+    "back": "যন্ত্রের ধরনের তালিকায় ফিরুন",
+    "nameEn": "ইংরেজিতে নাম",
+    "nameBn": "বাংলায় নাম",
+    "category": "শ্রেণি",
+    "workTypes": "যে কাজ করতে পারে",
+    "billingUnit": "ভাড়া কীভাবে হিসাব হবে",
+    "icon": "আইকন",
+    "isActive": "এই ধরনটি মালিক ও কৃষকদের দেখান",
+    "active": "সক্রিয়",
+    "hidden": "লুকানো",
+    "machineCount": "{count, plural, =0 {এখনো কোনো যন্ত্র নেই} other {#টি যন্ত্র}}"
   }
 }

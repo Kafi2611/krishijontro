@@ -1,23 +1,14 @@
-// The home page (/en or /bn): what KrishiJontro is, the machines you can book,
+// The home page (/en or /bn): what KrishiJontro is, the machines you can book
+// (read from the database, so a type the admin adds shows up here too),
 // and the 4 steps of a booking.
 import { ArrowRight, Banknote, CalendarCheck, KeyRound, Search } from "lucide-react";
-import { useFormatter, useTranslations } from "next-intl";
+import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { MachineTypeIcon } from "@/components/machine-type-icon";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
-
-// The 8 machine types shown on the home page. Key = word in messages "MachineTypes".
-const MACHINE_TYPES = [
-  { key: "tractor", icon: "Tractor" },
-  { key: "powerTiller", icon: "Shovel" },
-  { key: "combineHarvester", icon: "Wheat" },
-  { key: "reaper", icon: "Scissors" },
-  { key: "riceTransplanter", icon: "Sprout" },
-  { key: "irrigationPump", icon: "Droplets" },
-  { key: "seeder", icon: "Leaf" },
-  { key: "sprayer", icon: "SprayCan" },
-] as const;
+import { listActiveMachineTypes } from "@/lib/services/machine-type";
 
 // The 4 steps of a booking, each with an icon.
 const STEPS = [
@@ -27,10 +18,11 @@ const STEPS = [
   { titleKey: "step4Title", textKey: "step4Text", Icon: Banknote },
 ] as const;
 
-export default function HomePage() {
-  const t = useTranslations("Home");
-  const tMachines = useTranslations("MachineTypes");
-  const format = useFormatter(); // writes numbers in Bangla digits on /bn pages
+export default async function HomePage() {
+  const t = await getTranslations("Home");
+  const format = await getFormatter(); // writes numbers in Bangla digits on /bn pages
+  const locale = await getLocale();
+  const machineTypes = await listActiveMachineTypes();
 
   return (
     <>
@@ -61,13 +53,15 @@ export default function HomePage() {
       <section className="mx-auto max-w-5xl px-4 py-10">
         <h2 className="mb-6 text-center text-2xl font-bold">{t("machinesTitle")}</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {MACHINE_TYPES.map((machine) => (
-            <Card key={machine.key} className="py-5">
+          {machineTypes.map((machineType) => (
+            <Card key={machineType.id} className="py-5">
               <CardContent className="flex flex-col items-center gap-3 text-center">
                 <span className="flex size-14 items-center justify-center rounded-full bg-accent text-primary">
-                  <MachineTypeIcon icon={machine.icon} className="size-7" />
+                  <MachineTypeIcon icon={machineType.icon} className="size-7" />
                 </span>
-                <span className="font-medium">{tMachines(machine.key)}</span>
+                <span className="font-medium">
+                  {pickByLocale(machineType.name, machineType.nameBn, locale)}
+                </span>
               </CardContent>
             </Card>
           ))}

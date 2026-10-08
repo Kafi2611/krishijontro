@@ -16,7 +16,12 @@
     "backHome": "Back to home",
     "notFoundTitle": "Page not found",
     "notFoundText": "The page you are looking for does not exist.",
-    "footer": "KrishiJontro · CSE 3200 Software Development Project II"
+    "footer": "KrishiJontro · CSE 3200 Software Development Project II",
+    "save": "Save",
+    "saved": "Saved",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "back": "Back"
   },
   "Roles": {
     "FARMER": "Farmer",
@@ -43,16 +48,6 @@
     "step3Text": "The operator starts and finishes the job with your secret code (OTP).",
     "step4Title": "Pay",
     "step4Text": "Pay online or in cash and get a receipt."
-  },
-  "MachineTypes": {
-    "tractor": "Tractor",
-    "powerTiller": "Power Tiller",
-    "combineHarvester": "Combine Harvester",
-    "reaper": "Reaper",
-    "riceTransplanter": "Rice Transplanter",
-    "irrigationPump": "Irrigation Pump",
-    "seeder": "Seeder",
-    "sprayer": "Sprayer"
   },
   "Auth": {
     "loginTitle": "Log in",
@@ -89,7 +84,12 @@
     "invalidCredentials": "Wrong mobile number or password",
     "accountSuspended": "This account is suspended. Please contact support.",
     "phoneTaken": "This mobile number is already registered",
-    "somethingWrong": "Something went wrong. Please try again."
+    "somethingWrong": "Something went wrong. Please try again.",
+    "tooLong": "This is too long",
+    "numberInvalid": "Enter a valid number",
+    "workTypesRequired": "Pick at least one kind of work",
+    "typeNameTaken": "A machine type with this name already exists",
+    "notFound": "Not found. It may have been removed."
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",
@@ -102,12 +102,15 @@
     "PENDING": "Pending",
     "APPROVED": "Approved",
     "REJECTED": "Rejected",
-    "VERIFIED": "Verified"
+    "VERIFIED": "Verified",
+    "UNDER_MAINTENANCE": "Under repair",
+    "INACTIVE": "Not renting"
   },
   "Nav": {
     "dashboard": "Dashboard",
     "notifications": "Messages",
-    "profile": "Profile"
+    "profile": "Profile",
+    "machineTypes": "Machine types"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -200,5 +203,47 @@
     "new": "New",
     "markAllRead": "Mark all as read",
     "unreadCount": "{count, plural, =0 {No new messages} one {# new message} other {# new messages}}"
+  },
+  "MachineCategories": {
+    "LAND_PREPARATION": "Land preparation",
+    "PLANTING": "Planting",
+    "HARVESTING": "Harvesting",
+    "IRRIGATION": "Irrigation",
+    "CROP_CARE": "Crop care"
+  },
+  "WorkTypes": {
+    "TILLING": "Tilling",
+    "HARVESTING": "Harvesting",
+    "TRANSPLANTING": "Transplanting",
+    "IRRIGATION": "Irrigation",
+    "SEEDING": "Seeding",
+    "SPRAYING": "Spraying"
+  },
+  "BillingUnits": {
+    "PER_ACRE": "Per acre",
+    "PER_HOUR": "Per hour",
+    "PER_DAY": "Per day"
+  },
+  "Money": {
+    "taka": "{amount, number} Tk",
+    "rate": "{amount, number} Tk / {unit, select, PER_ACRE {acre} PER_HOUR {hour} other {day}}"
+  },
+  "MachineTypesAdmin": {
+    "title": "Machine types",
+    "subtitle": "The kinds of machines providers can add and farmers can book.",
+    "add": "Add machine type",
+    "newTitle": "New machine type",
+    "editTitle": "Edit machine type",
+    "back": "Back to machine types",
+    "nameEn": "Name in English",
+    "nameBn": "Name in Bangla",
+    "category": "Category",
+    "workTypes": "Work it can do",
+    "billingUnit": "How rent is counted",
+    "icon": "Icon",
+    "isActive": "Show this type to providers and farmers",
+    "active": "Active",
+    "hidden": "Hidden",
+    "machineCount": "{count, plural, =0 {No machines yet} one {# machine} other {# machines}}"
   }
 }
