@@ -3,9 +3,31 @@
  *
  * Notifications are saved in the Notification table. SMS is simulated:
  * an "SMS" is just a Notification with channel = SMS, shown in the same list.
- * (Phase 4 adds the function that CREATES notifications when bookings change.)
+ * Every message is saved in English AND Bangla, so it can be shown in either language.
  */
+import type { NotificationChannel, Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+
+export type NewNotification = {
+  userId: string; // who receives it
+  title: string;
+  titleBn: string;
+  body: string;
+  bodyBn: string;
+  link?: string; // page to open, e.g. "/provider/machines/abc"
+  channel?: NotificationChannel; // "IN_APP" (default) or "SMS" (simulated)
+};
+
+/**
+ * Sends (saves) one notification to a user.
+ * Pass `tx` to save it inside the same database transaction as another change.
+ */
+export async function createNotification(
+  notification: NewNotification,
+  tx: Prisma.TransactionClient = db,
+): Promise<void> {
+  await tx.notification.create({ data: notification });
+}
 
 /** How many notifications this user has not read yet (the number on the bell). */
 export async function countUnreadNotifications(userId: string): Promise<number> {
