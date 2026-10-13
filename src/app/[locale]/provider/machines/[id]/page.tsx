@@ -3,10 +3,10 @@
 // government limit, and buttons to edit, open the calendar, stop/start renting or delete.
 import { ArrowLeft, CalendarDays, CircleAlert, Clock, Pencil, Wrench } from "lucide-react";
 import type { Metadata } from "next";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { DetailRow } from "@/components/detail-row";
+import { MachinePhotos } from "@/components/machine-photos";
 import { MapPicker } from "@/components/map/map-picker";
 import { MachineTypeIcon } from "@/components/machine-type-icon";
 import { MachineActions } from "@/components/provider/machine-actions";
@@ -17,6 +17,7 @@ import { requireRole } from "@/lib/auth";
 import { localizeDigits, pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 import { getProviderMachine } from "@/lib/services/machine";
+import { isServiceDue } from "@/lib/services/machine-rules";
 import { checkRateAgainstLimit } from "@/lib/services/pricing-rule";
 
 type MachinePageProps = {
@@ -61,7 +62,7 @@ export default async function MachinePage({ params }: MachinePageProps) {
 
   const upazila = machine.location;
   const district = upazila.parent;
-  const serviceIsDue = machine.engineHours >= machine.serviceDueHours;
+  const serviceIsDue = isServiceDue(machine);
 
   return (
     <div className="space-y-6">
@@ -142,31 +143,12 @@ export default async function MachinePage({ params }: MachinePageProps) {
             <CardTitle>{t("photos")}</CardTitle>
           </CardHeader>
           <CardContent>
-            {machine.images.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 rounded-lg bg-accent p-8 text-center">
-                <MachineTypeIcon icon={machine.machineType.icon} className="size-14 text-primary" />
-                <p className="text-sm text-muted-foreground">{t("noPhotos")}</p>
-              </div>
-            ) : (
-              <ul className="grid grid-cols-2 gap-2">
-                {machine.images.map((image, index) => (
-                  // The first photo is shown big (across both columns)
-                  <li
-                    key={image.id}
-                    className={`relative overflow-hidden rounded-lg bg-muted ${index === 0 ? "col-span-2 aspect-[4/3]" : "aspect-square"}`}
-                  >
-                    <Image
-                      src={image.url}
-                      alt={`${machine.brand} ${machine.model}`}
-                      fill
-                      sizes="(max-width: 1024px) 100vw, 50vw"
-                      className="object-cover"
-                      priority={index === 0}
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
+            <MachinePhotos
+              images={machine.images}
+              name={`${machine.brand} ${machine.model}`}
+              icon={machine.machineType.icon}
+              emptyText={t("noPhotos")}
+            />
           </CardContent>
         </Card>
 
