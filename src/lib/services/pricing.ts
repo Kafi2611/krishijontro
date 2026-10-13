@@ -115,7 +115,7 @@ export type BookingPriceInput = {
 };
 
 /** The full price of a job, every amount in whole taka. */
-export type PriceBreakdown = {
+export type BookingPrice = {
   billedQuantity: number; // the quantity we really bill = max(quantity, minCharge)
   workCharge: number;
   chargedKm: number; // km that cost money = max(0, distanceKm − freeKm)
@@ -134,7 +134,7 @@ export type PriceBreakdown = {
  * 8 km with 3 free km at 50 Tk/km, 20% subsidy, 3% platform fee
  * -> work 1584, delivery 250, subsidy 317, farmer pays 1517, fee 55, provider gets 1779.
  */
-export function calculateBookingPrice(input: BookingPriceInput): PriceBreakdown {
+export function calculateBookingPrice(input: BookingPriceInput): BookingPrice {
   // A tiny job is still billed as the minimum (e.g. 0.2 acre is billed as 0.5 acre).
   const billedQuantity = Math.max(input.quantity, input.minCharge);
   const workCharge = Math.round(billedQuantity * input.rate);

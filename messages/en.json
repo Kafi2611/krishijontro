@@ -47,7 +47,8 @@
     "step3Title": "Work done",
     "step3Text": "The operator starts and finishes the job with your secret code (OTP).",
     "step4Title": "Pay",
-    "step4Text": "Pay online or in cash and get a receipt."
+    "step4Text": "Pay online or in cash and get a receipt.",
+    "checkPrice": "Check the price first"
   },
   "Auth": {
     "loginTitle": "Log in",
@@ -533,5 +534,45 @@
     "machinesOutside": "{count, plural, one {# machine is} other {# machines are}} now outside the limit. The owners have been told.",
     "historyTitle": "Earlier limits",
     "noHistory": "No earlier limits yet."
+  },
+  "LandUnits": {
+    "DECIMAL": "Decimal",
+    "BIGHA": "Bigha",
+    "ACRE": "Acre"
+  },
+  "Price": {
+    "work": "Work",
+    "workDetail": "{quantity, number} {unit, select, PER_ACRE {acre} PER_HOUR {hours} other {days}} × {rate, number} Tk",
+    "minimumNote": "Small job: the minimum of {quantity, number} {unit, select, PER_ACRE {acre} PER_HOUR {hours} other {days}} is billed",
+    "delivery": "Delivery",
+    "deliveryDetail": "{distance, number} km − {freeKm, number} free km = {km, number} km × {rate, number} Tk",
+    "deliveryFree": "{distance, number} km — inside the free {freeKm, number} km",
+    "subsidy": "Government subsidy ({percent, number}%)",
+    "subsidyDetail": "Paid by the government, not by you",
+    "total": "You pay",
+    "amount": "{amount, number} Tk",
+    "minusAmount": "− {amount, number} Tk",
+    "estimateNote": "This is an estimate. The final bill uses the real area or hours measured when the work ends."
+  },
+  "PriceCalculator": {
+    "title": "Price calculator",
+    "subtitle": "See what a job will cost before you book. Every price follows the government limits.",
+    "machine": "Machine",
+    "landSize": "Land size",
+    "landInDecimal": "= {decimal, number} decimal ({acre, number} acre)",
+    "hours": "Hours of work",
+    "days": "Days of work",
+    "numberNeeded": "Enter a number above 0",
+    "rate": "Machine rate (Tk per {unit, select, PER_ACRE {acre} PER_HOUR {hour} other {day}})",
+    "rateHint": "Government limit: {min, number} – {max, number} Tk. Each provider sets their own rate inside it.",
+    "rateOutside": "Choose a rate inside the government limit.",
+    "distance": "Distance from the machine to your field (km)",
+    "distanceHint": "The first {freeKm, number} km are free, then {rate, number} Tk per km.",
+    "subsidy": "I have an approved government subsidy ({percent, number}% off the work)",
+    "subsidyHint": "For small farmers verified by the agriculture officer.",
+    "resultTitle": "Your estimate",
+    "fillAll": "Fill in the boxes to see the price.",
+    "findMachine": "Find a machine",
+    "noMachines": "No machine prices are available yet. Please check again later."
   }
 }

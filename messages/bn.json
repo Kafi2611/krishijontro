@@ -47,7 +47,8 @@
     "step3Title": "কাজ সম্পন্ন",
     "step3Text": "চালক আপনার গোপন কোড (OTP) দিয়ে কাজ শুরু ও শেষ করেন।",
     "step4Title": "টাকা দিন",
-    "step4Text": "অনলাইনে বা নগদে টাকা দিন, রসিদ নিন।"
+    "step4Text": "অনলাইনে বা নগদে টাকা দিন, রসিদ নিন।",
+    "checkPrice": "আগে দাম দেখে নিন"
   },
   "Auth": {
     "loginTitle": "লগইন করুন",
@@ -533,5 +534,45 @@
     "machinesOutside": "{count, plural, other {#টি যন্ত্র}} এখন সীমার বাইরে। মালিকদের জানানো হয়েছে।",
     "historyTitle": "আগের সীমা",
     "noHistory": "এখনো কোনো আগের সীমা নেই।"
+  },
+  "LandUnits": {
+    "DECIMAL": "শতাংশ",
+    "BIGHA": "বিঘা",
+    "ACRE": "একর"
+  },
+  "Price": {
+    "work": "কাজ",
+    "workDetail": "{quantity, number} {unit, select, PER_ACRE {একর} PER_HOUR {ঘণ্টা} other {দিন}} × {rate, number} টাকা",
+    "minimumNote": "ছোট কাজ: সর্বনিম্ন {quantity, number} {unit, select, PER_ACRE {একর} PER_HOUR {ঘণ্টা} other {দিন}} এর বিল হবে",
+    "delivery": "পরিবহন",
+    "deliveryDetail": "{distance, number} কিমি − {freeKm, number} কিমি বিনামূল্যে = {km, number} কিমি × {rate, number} টাকা",
+    "deliveryFree": "{distance, number} কিমি — বিনামূল্যের {freeKm, number} কিমির মধ্যে",
+    "subsidy": "সরকারি ভর্তুকি ({percent, number}%)",
+    "subsidyDetail": "এই টাকা সরকার দেবে, আপনাকে দিতে হবে না",
+    "total": "আপনি দেবেন",
+    "amount": "{amount, number} টাকা",
+    "minusAmount": "− {amount, number} টাকা",
+    "estimateNote": "এটি আনুমানিক দাম। কাজ শেষে আসল জমি বা ঘণ্টা মেপে চূড়ান্ত বিল হবে।"
+  },
+  "PriceCalculator": {
+    "title": "দামের হিসাব",
+    "subtitle": "বুক করার আগেই দেখুন কাজে কত খরচ হবে। সব দাম সরকারি সীমা মেনে চলে।",
+    "machine": "যন্ত্র",
+    "landSize": "জমির পরিমাণ",
+    "landInDecimal": "= {decimal, number} শতাংশ ({acre, number} একর)",
+    "hours": "কত ঘণ্টা কাজ",
+    "days": "কত দিন কাজ",
+    "numberNeeded": "০ এর বেশি একটি সংখ্যা লিখুন",
+    "rate": "যন্ত্রের ভাড়া (প্রতি {unit, select, PER_ACRE {একর} PER_HOUR {ঘণ্টা} other {দিন}} টাকা)",
+    "rateHint": "সরকারি সীমা: {min, number} – {max, number} টাকা। প্রত্যেক মালিক এর মধ্যে নিজের ভাড়া ঠিক করেন।",
+    "rateOutside": "সরকারি সীমার মধ্যে একটি ভাড়া বেছে নিন।",
+    "distance": "যন্ত্র থেকে আপনার জমির দূরত্ব (কিমি)",
+    "distanceHint": "প্রথম {freeKm, number} কিমি বিনামূল্যে, তারপর প্রতি কিমি {rate, number} টাকা।",
+    "subsidy": "আমার সরকারি ভর্তুকি অনুমোদিত আছে (কাজের উপর {percent, number}% ছাড়)",
+    "subsidyHint": "কৃষি কর্মকর্তা যাচাই করা ক্ষুদ্র কৃষকদের জন্য।",
+    "resultTitle": "আপনার আনুমানিক দাম",
+    "fillAll": "দাম দেখতে ঘরগুলো পূরণ করুন।",
+    "findMachine": "যন্ত্র খুঁজুন",
+    "noMachines": "এখনো কোনো যন্ত্রের দাম পাওয়া যাচ্ছে না। পরে আবার দেখুন।"
   }
 }

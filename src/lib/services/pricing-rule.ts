@@ -10,15 +10,31 @@
  *   message. Farmers do not find such a machine in search until the provider fixes the rate.
  * Every change is written to the audit log.
  */
+import type { BillingUnit, WorkType } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { toBanglaDigits } from "@/lib/i18n";
 import { writeAuditLog } from "@/lib/services/audit";
 import { endOfDhakaDay, startOfDhakaDay } from "@/lib/services/calendar";
-import { getMachineType } from "@/lib/services/machine-type";
+import { getMachineType, listActiveMachineTypes } from "@/lib/services/machine-type";
 import { createNotification } from "@/lib/services/notification";
 import { getAllowedRateRange, isRateAllowed, type RateRange } from "@/lib/services/pricing";
 import type { PricingRuleInput } from "@/lib/validators/pricing-rule";
 import type { ValidationKey } from "@/lib/validators/types";
+
+/** A machine type farmers can book, with today's price rule: all that is needed to estimate a price. */
+export type PricedMachineType = {
+  id: string;
+  name: string;
+  nameBn: string;
+  icon: string;
+  workTypes: WorkType[];
+  billingUnit: BillingUnit;
+  minRate: number; // today's allowed range (the max is higher in the harvest season)
+  maxRate: number;
+  freeKm: number;
+  deliveryRatePerKm: number;
+  minCharge: number;
+};
 
 export type PricingRuleSaveResult =
   | { ok: true; machinesOutside: number }
@@ -80,6 +96,40 @@ export async function getRateRangesByMachineType(
     ranges[machineTypeId] = getAllowedRateRange(rule, date);
   }
   return ranges;
+}
+
+/**
+ * The machine types farmers can book (active, with a price rule today), in display order.
+ * Used by the price calculator and the machine search.
+ */
+export async function listPricedMachineTypes(date: Date = new Date()): Promise<PricedMachineType[]> {
+  const [machineTypes, ruleByType] = await Promise.all([
+    listActiveMachineTypes(),
+    getActivePricingRulesByType(date),
+  ]);
+
+  const priced: PricedMachineType[] = [];
+  for (const machineType of machineTypes) {
+    const rule = ruleByType.get(machineType.id);
+    if (!rule) {
+      continue; // no price limit yet: nobody can rent this type
+    }
+    const range = getAllowedRateRange(rule, date);
+    priced.push({
+      id: machineType.id,
+      name: machineType.name,
+      nameBn: machineType.nameBn,
+      icon: machineType.icon,
+      workTypes: machineType.workTypes,
+      billingUnit: machineType.billingUnit,
+      minRate: range.minRate,
+      maxRate: range.maxRate,
+      freeKm: rule.freeKm,
+      deliveryRatePerKm: rule.deliveryRatePerKm,
+      minCharge: rule.minCharge,
+    });
+  }
+  return priced;
 }
 
 /** Every machine type (hidden ones too) with the rule in force today, or null. For the govt page. */

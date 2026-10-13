@@ -1,7 +1,7 @@
-// The home page (/en or /bn): what KrishiJontro is, the machines you can book
-// (read from the database, so a type the admin adds shows up here too),
-// and the 4 steps of a booking.
-import { ArrowRight, Banknote, CalendarCheck, KeyRound, Search } from "lucide-react";
+// The home page (/en or /bn): what KrishiJontro is, a link to the price calculator,
+// the machines you can book (read from the database, so a type the admin adds shows
+// up here too), and the 4 steps of a booking.
+import { ArrowRight, Banknote, Calculator, CalendarCheck, KeyRound, Search } from "lucide-react";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { MachineTypeIcon } from "@/components/machine-type-icon";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,12 @@ export default async function HomePage() {
               <Link href="/register">{t("listMachine")}</Link>
             </Button>
           </div>
+          <Button asChild variant="link" className="mt-4">
+            <Link href="/price-calculator">
+              <Calculator aria-hidden />
+              {t("checkPrice")}
+            </Link>
+          </Button>
         </div>
       </section>
 
