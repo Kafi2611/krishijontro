@@ -20,6 +20,7 @@ import {
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../src/lib/demo-accounts";
 import { hashPassword } from "../src/lib/password";
 import { distanceInKm } from "../src/lib/services/geo";
+import { calculateBookingPrice, getBillingQuantity } from "../src/lib/services/pricing";
 
 const db = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
@@ -50,38 +51,6 @@ function randomOtp(): string {
 /** Booking code like KJ-2026-000007. */
 function bookingCode(serial: number): string {
   return `KJ-2026-${String(serial).padStart(6, "0")}`;
-}
-
-/**
- * Price of a booking, following the project's pricing rules.
- * (Phase 3 moves this into src/lib/services/pricing.ts with unit tests.)
- */
-function calculateSeedPrice(input: {
-  quantity: number;
-  rate: number;
-  distanceKm: number;
-  minCharge: number;
-  freeKm: number;
-  deliveryRatePerKm: number;
-  subsidyPercent: number;
-}) {
-  const billedQuantity = Math.max(input.quantity, input.minCharge);
-  const workCharge = Math.round(billedQuantity * input.rate);
-  const deliveryCharge = Math.round(
-    Math.max(0, input.distanceKm - input.freeKm) * input.deliveryRatePerKm,
-  );
-  const subsidyAmount = Math.round((workCharge * input.subsidyPercent) / 100);
-  const totalAmount = workCharge + deliveryCharge - subsidyAmount;
-  const platformFee = Math.round(((workCharge + deliveryCharge) * PLATFORM_FEE_PERCENT) / 100);
-  return { workCharge, deliveryCharge, subsidyAmount, totalAmount, platformFee };
-}
-
-/** The billing quantity: acres for PER_ACRE, hours for PER_HOUR, days for PER_DAY. */
-function quantityFor(unit: BillingUnit, landDecimal: number, hoursOrDays: number): number {
-  if (unit === "PER_ACRE") {
-    return landDecimal / 100;
-  }
-  return hoursOrDays;
 }
 
 /** Rough job length in hours, to set endAt. */
@@ -661,8 +630,9 @@ async function createSeedBooking(
   const fieldLng = machine.lng;
   const distanceKm = distanceInKm({ lat: machine.lat, lng: machine.lng }, { lat: fieldLat, lng: fieldLng });
 
-  const quantity = quantityFor(rule.billingUnit, seed.landDecimal, seed.hoursOrDays ?? 1);
-  const price = calculateSeedPrice({
+  // The same price formula the app uses (src/lib/services/pricing.ts).
+  const quantity = getBillingQuantity(rule.billingUnit, seed.landDecimal, seed.hoursOrDays ?? 1);
+  const { workCharge, deliveryCharge, subsidyAmount, totalAmount, platformFee } = calculateBookingPrice({
     quantity,
     rate: machine.rate,
     distanceKm,
@@ -670,7 +640,9 @@ async function createSeedBooking(
     freeKm: rule.freeKm,
     deliveryRatePerKm: rule.deliveryRatePerKm,
     subsidyPercent: seed.subsidyApplicationId ? 20 : 0,
+    platformFeePercent: PLATFORM_FEE_PERCENT,
   });
+  const price = { workCharge, deliveryCharge, subsidyAmount, totalAmount, platformFee };
 
   const startAt =
     seed.startInHours !== undefined

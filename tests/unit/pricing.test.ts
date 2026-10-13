@@ -1,9 +1,13 @@
-// Unit tests for the government rate limits in src/lib/services/pricing.ts.
+// Unit tests for src/lib/services/pricing.ts: the government rate limits (part 1)
+// and the price of a booking (part 2).
 import { describe, expect, it } from "vitest";
 import {
+  calculateBookingPrice,
   getAllowedRateRange,
+  getBillingQuantity,
   isInHarvestSeason,
   isRateAllowed,
+  type BookingPriceInput,
   type RateLimitRule,
 } from "@/lib/services/pricing";
 
@@ -74,5 +78,105 @@ describe("isRateAllowed", () => {
   it("rejects rates below the min or above the max", () => {
     expect(isRateAllowed(1999, range)).toBe(false);
     expect(isRateAllowed(3001, range)).toBe(false);
+  });
+});
+
+describe("getBillingQuantity", () => {
+  it("turns land into acres for machines rented per acre", () => {
+    expect(getBillingQuantity("PER_ACRE", 66, 0)).toBe(0.66);
+    expect(getBillingQuantity("PER_ACRE", 150, 0)).toBe(1.5);
+  });
+
+  it("uses the hours or days the farmer asked for otherwise", () => {
+    expect(getBillingQuantity("PER_HOUR", 66, 5)).toBe(5);
+    expect(getBillingQuantity("PER_DAY", 66, 2)).toBe(2);
+  });
+});
+
+describe("calculateBookingPrice", () => {
+  // The worked example from the project brief.
+  const projectExample: BookingPriceInput = {
+    quantity: getBillingQuantity("PER_ACRE", 66, 0), // 66 decimal = 0.66 acre
+    rate: 2400,
+    minCharge: 0.5,
+    distanceKm: 8,
+    freeKm: 3,
+    deliveryRatePerKm: 50,
+    subsidyPercent: 20,
+    platformFeePercent: 3,
+  };
+
+  it("matches the project example exactly", () => {
+    const price = calculateBookingPrice(projectExample);
+    expect(price.workCharge).toBe(1584); // 0.66 × 2400
+    expect(price.deliveryCharge).toBe(250); // (8 − 3) × 50
+    expect(price.subsidyAmount).toBe(317); // 1584 × 20% = 316.8 -> 317
+    expect(price.totalAmount).toBe(1517); // 1584 + 250 − 317
+    expect(price.platformFee).toBe(55); // (1584 + 250) × 3% = 55.02 -> 55
+    expect(price.providerAmount).toBe(1779); // 1584 + 250 − 55
+  });
+
+  it("gives no subsidy when the farmer has none", () => {
+    const price = calculateBookingPrice({ ...projectExample, subsidyPercent: 0 });
+    expect(price.subsidyAmount).toBe(0);
+    expect(price.totalAmount).toBe(1834); // 1584 + 250
+    // The provider's share does not depend on the subsidy (the government pays that part).
+    expect(price.providerAmount).toBe(1779);
+  });
+
+  it("bills at least the minimum quantity", () => {
+    // 20 decimal = 0.2 acre, but the minimum is 0.5 acre -> 0.5 × 2400 = 1200
+    const price = calculateBookingPrice({ ...projectExample, quantity: 0.2 });
+    expect(price.billedQuantity).toBe(0.5);
+    expect(price.workCharge).toBe(1200);
+  });
+
+  it("charges no delivery inside the free km", () => {
+    const near = calculateBookingPrice({ ...projectExample, distanceKm: 2 });
+    expect(near.chargedKm).toBe(0);
+    expect(near.deliveryCharge).toBe(0);
+
+    const exactlyFree = calculateBookingPrice({ ...projectExample, distanceKm: 3 });
+    expect(exactlyFree.deliveryCharge).toBe(0);
+  });
+
+  it("charges part of a km and keeps the km tidy", () => {
+    // 8.3 − 3 = 5.3 km (not 5.300000000000001) × 50 = 265
+    const price = calculateBookingPrice({ ...projectExample, distanceKm: 8.3 });
+    expect(price.chargedKm).toBe(5.3);
+    expect(price.deliveryCharge).toBe(265);
+  });
+
+  it("works for a pump rented per hour", () => {
+    // 5 hours × 200 Tk, 4 km away with 3 free km at 30 Tk/km, no subsidy
+    const price = calculateBookingPrice({
+      quantity: 5,
+      rate: 200,
+      minCharge: 2,
+      distanceKm: 4,
+      freeKm: 3,
+      deliveryRatePerKm: 30,
+      subsidyPercent: 0,
+      platformFeePercent: 3,
+    });
+    expect(price.workCharge).toBe(1000);
+    expect(price.deliveryCharge).toBe(30);
+    expect(price.totalAmount).toBe(1030);
+    expect(price.platformFee).toBe(31); // 1030 × 3% = 30.9 -> 31
+    expect(price.providerAmount).toBe(999);
+  });
+
+  it("always gives whole taka", () => {
+    const price = calculateBookingPrice({ ...projectExample, quantity: 0.37, distanceKm: 6.7 });
+    for (const amount of [
+      price.workCharge,
+      price.deliveryCharge,
+      price.subsidyAmount,
+      price.totalAmount,
+      price.platformFee,
+      price.providerAmount,
+    ]) {
+      expect(Number.isInteger(amount)).toBe(true);
+    }
   });
 });

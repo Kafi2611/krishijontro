@@ -8,11 +8,22 @@
  *   Example: tractor 2000–3000 Tk per acre with a 10% season cap
  *            -> outside the season: 2000–3000, inside the season: 2000–3300.
  *
- * Phase 3 adds the full booking price (work + delivery − subsidy) to this file.
+ * Part 2 (Phase 3): the price of a booking.
+ *   workCharge     = max(quantity, minCharge) × rate        (quantity in acres, hours or days)
+ *   deliveryCharge = max(0, distanceKm − freeKm) × deliveryRatePerKm
+ *   subsidyAmount  = workCharge × subsidy %                 (0 if the farmer has no subsidy)
+ *   totalAmount    = workCharge + deliveryCharge − subsidyAmount   <- the farmer pays this
+ *   platformFee    = (workCharge + deliveryCharge) × platform fee %
+ *   providerAmount = workCharge + deliveryCharge − platformFee     <- the provider gets this
+ *   Every amount is rounded to whole taka.
  *
  * Everything here is a pure function (no database), so it is easy to test
- * and can also run in the browser to warn the provider early.
+ * and can also run in the browser (the price calculator and the forms use it).
  */
+import type { BillingUnit } from "@/generated/prisma/enums";
+import { decimalToAcre } from "@/lib/services/geo";
+
+// ─────────────────────────── Part 1: rate limits ───────────────────────────
 
 /** The parts of a PricingRule that decide the allowed rate. */
 export type RateLimitRule = {
@@ -62,4 +73,85 @@ export function getAllowedRateRange(rule: RateLimitRule, date: Date = new Date()
  */
 export function isRateAllowed(rate: number, range: { minRate: number; maxRate: number }): boolean {
   return rate >= range.minRate && rate <= range.maxRate;
+}
+
+// ─────────────────────────── Part 2: the price of a booking ───────────────────────────
+
+/**
+ * How much work is billed, in the machine's billing unit:
+ * acres for PER_ACRE (from the land size), otherwise the hours or days the farmer asked for.
+ * Example: getBillingQuantity("PER_ACRE", 66, 0) -> 0.66 (acre)
+ *          getBillingQuantity("PER_HOUR", 66, 5) -> 5 (hours)
+ */
+export function getBillingQuantity(
+  billingUnit: BillingUnit,
+  landDecimal: number,
+  hoursOrDays: number,
+): number {
+  if (billingUnit === "PER_ACRE") {
+    return decimalToAcre(landDecimal);
+  }
+  return hoursOrDays;
+}
+
+/** Everything needed to work out the price of one job. */
+export type BookingPriceInput = {
+  quantity: number; // acres, hours or days of work (see getBillingQuantity)
+  rate: number; // the machine's rate in taka per acre / hour / day
+  minCharge: number; // the smallest quantity we bill, from the price rule (e.g. 0.5 acre)
+  distanceKm: number; // from the machine to the farmer's field
+  freeKm: number; // the first km of delivery cost nothing
+  deliveryRatePerKm: number; // taka for each km after the free km
+  subsidyPercent: number; // e.g. 20; use 0 when the farmer has no approved subsidy
+  platformFeePercent: number; // e.g. 3; taken from the provider's share, not added for the farmer
+};
+
+/** The full price of a job, every amount in whole taka. */
+export type PriceBreakdown = {
+  billedQuantity: number; // the quantity we really bill = max(quantity, minCharge)
+  workCharge: number;
+  chargedKm: number; // km that cost money = max(0, distanceKm − freeKm)
+  deliveryCharge: number;
+  subsidyAmount: number; // paid by the government, not by the farmer
+  totalAmount: number; // what the farmer pays
+  platformFee: number; // what KrishiJontro keeps
+  providerAmount: number; // what the machine provider gets
+};
+
+/**
+ * Works out the price of a booking (the formula is at the top of this file).
+ * Used for the estimate before booking, and again at the end with the real quantity.
+ *
+ * Example (the project's test case): 66 decimal = 0.66 acre, rate 2400 Tk/acre,
+ * 8 km with 3 free km at 50 Tk/km, 20% subsidy, 3% platform fee
+ * -> work 1584, delivery 250, subsidy 317, farmer pays 1517, fee 55, provider gets 1779.
+ */
+export function calculateBookingPrice(input: BookingPriceInput): PriceBreakdown {
+  // A tiny job is still billed as the minimum (e.g. 0.2 acre is billed as 0.5 acre).
+  const billedQuantity = Math.max(input.quantity, input.minCharge);
+  const workCharge = Math.round(billedQuantity * input.rate);
+
+  // Only the km after the free km cost money. A field 2 km away pays no delivery.
+  // Rounded to 1 decimal like the distance itself (8.3 − 3 gives 5.300000000000001 in JavaScript).
+  const chargedKm = Math.round(Math.max(0, input.distanceKm - input.freeKm) * 10) / 10;
+  const deliveryCharge = Math.round(chargedKm * input.deliveryRatePerKm);
+
+  // The subsidy is a discount on the WORK charge only (not on delivery).
+  const subsidyAmount = Math.round((workCharge * input.subsidyPercent) / 100);
+  const totalAmount = workCharge + deliveryCharge - subsidyAmount;
+
+  // The platform fee comes out of the provider's share; the farmer does not pay extra for it.
+  const platformFee = Math.round(((workCharge + deliveryCharge) * input.platformFeePercent) / 100);
+  const providerAmount = workCharge + deliveryCharge - platformFee;
+
+  return {
+    billedQuantity,
+    workCharge,
+    chargedKm,
+    deliveryCharge,
+    subsidyAmount,
+    totalAmount,
+    platformFee,
+    providerAmount,
+  };
 }
