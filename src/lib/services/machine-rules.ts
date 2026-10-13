@@ -47,7 +47,7 @@ export function canToggleActive(status: MachineStatus): boolean {
 /**
  * True if farmers may see and book this machine:
  * the admin approved both the machine and its provider, and it is ACTIVE.
- * (Phase 3 search uses this rule; Phase 4 also checks free time and service hours.)
+ * (The farmer search also checks service hours, the rate limit and free days.)
  */
 export function isMachineListed(machine: {
   approvalStatus: ApprovalStatus;
@@ -59,4 +59,14 @@ export function isMachineListed(machine: {
     machine.providerApprovalStatus === "APPROVED" &&
     machine.status === "ACTIVE"
   );
+}
+
+/**
+ * True if the machine must be serviced before its next job:
+ * the engine has run as many hours as the "next service" mark, or more.
+ * Such a machine is not shown in the farmer search until the technician services it.
+ * Example: engineHours 2010, serviceDueHours 2000 -> true
+ */
+export function isServiceDue(machine: { engineHours: number; serviceDueHours: number }): boolean {
+  return machine.engineHours >= machine.serviceDueHours;
 }

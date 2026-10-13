@@ -7,15 +7,7 @@ import "leaflet/dist/leaflet.css";
 import { useEffect } from "react";
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import type { LatLng } from "@/lib/services/geo";
-
-// Our own green pin, drawn with SVG. (Leaflet's default pin image does not load
-// correctly with Next.js, so we draw one instead.)
-const PIN_ICON = L.divIcon({
-  className: "", // no default white box behind the pin
-  html: `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="#15803d" stroke="#ffffff" stroke-width="1.5"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.6" fill="#ffffff"/></svg>`,
-  iconSize: [36, 36],
-  iconAnchor: [18, 34], // the pin's tip touches the chosen point
-});
+import { PLACE_PIN_ICON } from "./map-icons";
 
 /** Rounds a coordinate to 6 decimal places (about 10 cm), enough for a field. */
 function roundCoordinate(value: number): number {
@@ -72,7 +64,7 @@ export default function LeafletMap({ value, center, onChange, zoom = 13 }: Leafl
       {value && (
         <Marker
           position={[value.lat, value.lng]}
-          icon={PIN_ICON}
+          icon={PLACE_PIN_ICON}
           draggable={canEdit}
           eventHandlers={{
             // After the pin is dragged, report its new place.

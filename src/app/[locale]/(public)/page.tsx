@@ -37,7 +37,7 @@ export default async function HomePage() {
           </p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <Button asChild size="lg">
-              <Link href="/farmer">
+              <Link href="/farmer/search">
                 {t("findMachine")}
                 <ArrowRight aria-hidden />
               </Link>

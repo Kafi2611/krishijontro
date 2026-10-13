@@ -1,8 +1,9 @@
 // A card that shows one machine: photo (or the type's icon), name, type, rate,
 // upazila and status labels. The whole card is a link to the machine's page.
-// Used in the provider's machine list now, and in the farmer search in Phase 3.
+// Used in the provider's machine list and in the farmer search (with a number that
+// matches the pin on the map, and extra facts like distance and price).
 import Image from "next/image";
-import { useLocale, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { MachineTypeIcon } from "@/components/machine-type-icon";
 import { StatusBadge } from "@/components/status-badge";
 import { Card } from "@/components/ui/card";
@@ -26,10 +27,13 @@ type MachineCardProps = {
   machine: MachineCardData;
   href: string; // where a tap on the card goes
   showStatus?: boolean; // the provider sees approval + status labels; farmers do not
+  marker?: number; // a number in the photo corner, the same as the machine's pin on the map
+  extra?: React.ReactNode; // more lines at the bottom (the search shows distance and price)
 };
 
-export function MachineCard({ machine, href, showStatus = false }: MachineCardProps) {
+export function MachineCard({ machine, href, showStatus = false, marker, extra }: MachineCardProps) {
   const tMoney = useTranslations("Money");
+  const format = useFormatter(); // Bangla digits on Bangla pages
   const locale = useLocale();
 
   return (
@@ -49,6 +53,12 @@ export function MachineCard({ machine, href, showStatus = false }: MachineCardPr
             <div className="flex h-full items-center justify-center text-primary">
               <MachineTypeIcon icon={machine.machineType.icon} className="size-16" />
             </div>
+          )}
+          {marker !== undefined && (
+            // Same orange circle as the machine's pin on the map
+            <span className="absolute top-2 left-2 flex size-8 items-center justify-center rounded-full border-2 border-white bg-orange-700 font-bold text-white shadow">
+              {format.number(marker)}
+            </span>
           )}
         </div>
 
@@ -72,6 +82,7 @@ export function MachineCard({ machine, href, showStatus = false }: MachineCardPr
               <StatusBadge status={machine.status} />
             </div>
           )}
+          {extra && <div className="mt-auto pt-1">{extra}</div>}
         </div>
       </Card>
     </Link>

@@ -4,6 +4,7 @@ import {
   addDays,
   addMonths,
   blockRangeFromDays,
+  buildDayStrip,
   buildMonthGrid,
   countDays,
   endOfDhakaDay,
@@ -103,5 +104,23 @@ describe("buildMonthGrid", () => {
   it("marks the days of the previous month as outside the month", () => {
     expect(find("2026-09-27").inMonth).toBe(false);
     expect(find("2026-10-01").inMonth).toBe(true);
+  });
+});
+
+describe("buildDayStrip", () => {
+  const at = (day: string, time: string) => new Date(`${day}T${time}:00+06:00`);
+
+  it("marks each day free, booked or blocked, starting from the first day", () => {
+    const strip = buildDayStrip("2026-10-13", 4, {
+      // a 3-hour job on the 14th, and the owner blocked the 16th
+      booked: [{ startAt: at("2026-10-14", "09:00"), endAt: at("2026-10-14", "12:00") }],
+      blocked: [{ startAt: at("2026-10-16", "00:00"), endAt: at("2026-10-17", "00:00") }],
+    });
+    expect(strip).toEqual([
+      { day: "2026-10-13", state: "free" },
+      { day: "2026-10-14", state: "booked" },
+      { day: "2026-10-15", state: "free" },
+      { day: "2026-10-16", state: "blocked" },
+    ]);
   });
 });

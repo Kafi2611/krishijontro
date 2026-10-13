@@ -54,7 +54,8 @@ export function isInsideBangladesh(point: LatLng): boolean {
 }
 
 /** The land units a farmer can type in. */
-export type LandUnit = "DECIMAL" | "BIGHA" | "ACRE";
+export const LAND_UNITS = ["DECIMAL", "BIGHA", "ACRE"] as const;
+export type LandUnit = (typeof LAND_UNITS)[number];
 
 /**
  * Converts degrees to radians, because Math.sin / Math.cos work in radians.

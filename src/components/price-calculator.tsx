@@ -16,11 +16,9 @@ import { Input } from "@/components/ui/input";
 import { numberFromInput } from "@/lib/form-values";
 import { pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
-import { decimalToAcre, toDecimal, type LandUnit } from "@/lib/services/geo";
+import { decimalToAcre, LAND_UNITS, toDecimal, type LandUnit } from "@/lib/services/geo";
 import { calculateBookingPrice, getBillingQuantity, isRateAllowed } from "@/lib/services/pricing";
 import type { PricedMachineType } from "@/lib/services/pricing-rule";
-
-const LAND_UNITS: LandUnit[] = ["DECIMAL", "BIGHA", "ACRE"];
 
 type PriceCalculatorProps = {
   machineTypes: PricedMachineType[];

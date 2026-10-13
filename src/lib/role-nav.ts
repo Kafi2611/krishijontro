@@ -13,7 +13,8 @@ export type NavIconName =
   | "operators"
   | "business"
   | "approvals"
-  | "pricing";
+  | "pricing"
+  | "search";
 
 /** A key of the "Nav" section in messages/en.json, e.g. "profile". */
 export type NavLabelKey = keyof (typeof messages)["Nav"];
@@ -26,7 +27,7 @@ export type NavItem = {
 
 /** Extra links that only one role has. Roles without links yet get them in later phases. */
 const ROLE_LINKS: Record<Role, NavItem[]> = {
-  FARMER: [],
+  FARMER: [{ href: "/farmer/search", labelKey: "search", icon: "search" }],
   COOP_LEADER: [],
   PROVIDER: [
     { href: "/provider/machines", labelKey: "machines", icon: "machines" },

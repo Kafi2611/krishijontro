@@ -171,3 +171,27 @@ export function buildMonthGrid(
   }
   return weeks;
 }
+
+/** One day of the farmer's "free days" row: free, booked or blocked. */
+export type StripDay = {
+  day: string; // "2026-10-14"
+  state: DayState;
+};
+
+/**
+ * The `count` days starting at `fromDay` (normally today), each marked
+ * booked / blocked / free. The farmer's machine page shows them as a row of boxes.
+ * Example: buildDayStrip("2026-10-13", 3, ...) -> 13, 14 and 15 October
+ */
+export function buildDayStrip(
+  fromDay: string,
+  count: number,
+  busy: { booked: TimeRange[]; blocked: TimeRange[] },
+): StripDay[] {
+  const days: StripDay[] = [];
+  for (let index = 0; index < count; index++) {
+    const day = addDays(fromDay, index);
+    days.push({ day, state: dayState(day, fromDay, busy.booked, busy.blocked) });
+  }
+  return days;
+}

@@ -1,7 +1,7 @@
 // Unit tests for src/lib/services/machine-rules.ts and the machine form rules
 // in src/lib/validators/machine.ts.
 import { describe, expect, it } from "vitest";
-import { canToggleActive, isMachineListed, needsNewApproval } from "@/lib/services/machine-rules";
+import { canToggleActive, isMachineListed, isServiceDue, needsNewApproval } from "@/lib/services/machine-rules";
 import { machineSchema, type MachineInput } from "@/lib/validators/machine";
 
 const tractor = {
@@ -10,6 +10,17 @@ const tractor = {
   model: "575 DI",
   registrationNo: "RAJ-TR-1001",
 };
+
+describe("isServiceDue", () => {
+  it("is due when the engine hours reach the service mark", () => {
+    expect(isServiceDue({ engineHours: 2010, serviceDueHours: 2000 })).toBe(true);
+    expect(isServiceDue({ engineHours: 2000, serviceDueHours: 2000 })).toBe(true);
+  });
+
+  it("is not due before the service mark", () => {
+    expect(isServiceDue({ engineHours: 1480, serviceDueHours: 1500 })).toBe(false);
+  });
+});
 
 describe("needsNewApproval", () => {
   it("keeps the approval when only rate, photos or place change", () => {

@@ -116,7 +116,9 @@
     "alreadyDecided": "This was already decided (maybe by another admin).",
     "maxBelowMin": "The highest rate must be the same as or more than the lowest rate",
     "seasonDatesBoth": "Give both season dates, or leave both empty",
-    "percentInvalid": "Enter a percent from 0 to 50"
+    "percentInvalid": "Enter a percent from 0 to 50",
+    "dayInPast": "Choose today or a later day",
+    "dayTooFar": "Choose a day within the next 60 days"
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",
@@ -142,7 +144,8 @@
     "operators": "Operators",
     "business": "Business details",
     "approvals": "Approvals",
-    "pricing": "Price limits"
+    "pricing": "Price limits",
+    "search": "Find machines"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -574,5 +577,93 @@
     "fillAll": "Fill in the boxes to see the price.",
     "findMachine": "Find a machine",
     "noMachines": "No machine prices are available yet. Please check again later."
+  },
+  "FarmerDashboard": {
+    "findTitle": "Need a machine?",
+    "findText": "Search machines near your field and see the full price before you book.",
+    "findButton": "Find a machine",
+    "calculator": "Price calculator"
+  },
+  "Search": {
+    "title": "Find a machine",
+    "subtitle": "Tell us the work, the day and where your field is.",
+    "noMachineTypes": "No machines can be booked yet. Please check again later.",
+    "work": "Work",
+    "machine": "Machine",
+    "anyMachine": "Any machine",
+    "landSize": "Land size",
+    "hours": "Hours of work",
+    "days": "Days of work",
+    "day": "Day of work",
+    "field": "Your field",
+    "jumpTo": "Go to upazila",
+    "chooseUpazila": "Choose upazila",
+    "distance": "Search within",
+    "km": "{km, number} km",
+    "searchButton": "Search",
+    "badParams": "Some search details in the page address were wrong. Please check the form and search again.",
+    "suggestionTitle": "Suggested for this job: {name}",
+    "showOnly": "Show only {name}",
+    "showAll": "Show all machines",
+    "subsidyIncluded": "Your {percent, number}% government subsidy is already taken off these prices.",
+    "results": "{count, plural, =0 {No free machine found} one {# machine found} other {# machines found}}",
+    "sortLabel": "Sort",
+    "sort": {
+      "nearest": "Nearest",
+      "cheapest": "Cheapest"
+    },
+    "emptyHint": "Try a bigger distance, another day, or any machine.",
+    "busyNote": "{count, plural, one {# more machine is} other {# more machines are}} busy on this day.",
+    "estimateNote": "Prices are estimates for your land and distance. The final bill uses the real area or hours measured when the work ends.",
+    "away": "{km, number} km away",
+    "rating": "{average, number} ({count, number})",
+    "noRating": "New",
+    "youPay": "You pay about",
+    "total": "{amount, number} Tk"
+  },
+  "SearchMap": {
+    "yourField": "Your field",
+    "facts": "{km, number} km · about {amount, number} Tk",
+    "seeDetails": "See details"
+  },
+  "Suggestion": {
+    "bigHarvest": "For more than 100 decimal, a combine harvester cuts, threshes and cleans the crop in one go.",
+    "smallHarvest": "For 100 decimal or less, a reaper costs less and fits small plots.",
+    "smallTilling": "For less than 50 decimal, a power tiller is enough and costs less.",
+    "bigTilling": "For 50 decimal or more, a tractor finishes the land much faster.",
+    "irrigation": "An irrigation pump waters your field; you pay by the hour.",
+    "transplanting": "A rice transplanter plants seedlings in straight rows, quickly.",
+    "seeding": "A seeder sows seeds evenly in lines and saves seed.",
+    "spraying": "A power sprayer covers the whole crop quickly; you pay by the day."
+  },
+  "Reviews": {
+    "starsLabel": "{rating, number} out of 5 stars"
+  },
+  "MachineView": {
+    "title": "Machine",
+    "back": "Back to search",
+    "ratingValue": "{average, number} ({count, plural, one {# review} other {# reviews}})",
+    "noReviews": "No reviews yet.",
+    "trustScore": "Trust score {score, number}/100",
+    "notTakingJobs": "This machine cannot take new jobs right now (it needs service, or its price is being updated). Please choose another machine.",
+    "priceTitle": "Your price for this job",
+    "jobSummary": "For {unit, select, PER_ACRE {{land, number} decimal of land} PER_HOUR {{hours, number} hours of work} other {{hours, number} days of work}}, {km, number} km from your field",
+    "noPrice": "The government has no price limit for this machine today, so no price can be shown.",
+    "changeJob": "Change land size or field",
+    "photos": "Photos",
+    "noPhotos": "No photos yet.",
+    "details": "Details",
+    "rate": "Rate",
+    "year": "Year made",
+    "horsePower": "Horse power",
+    "place": "Place",
+    "provider": "Provider",
+    "notSet": "—",
+    "freeDaysTitle": "Free days (next 2 weeks)",
+    "dayFree": "Free",
+    "dayBusy": "Busy",
+    "mapTitle": "The machine and your field",
+    "description": "Description",
+    "reviewsTitle": "Latest reviews"
   }
 }
