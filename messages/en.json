@@ -112,7 +112,10 @@
     "alreadyBlocked": "Some of these days are already blocked",
     "nidInvalid": "Enter a National ID number with 10, 13 or 17 digits",
     "reasonRequired": "Please write the reason (at least 3 letters)",
-    "alreadyDecided": "This was already decided (maybe by another admin)."
+    "alreadyDecided": "This was already decided (maybe by another admin).",
+    "maxBelowMin": "The highest rate must be the same as or more than the lowest rate",
+    "seasonDatesBoth": "Give both season dates, or leave both empty",
+    "percentInvalid": "Enter a percent from 0 to 50"
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",
@@ -137,7 +140,8 @@
     "machines": "My machines",
     "operators": "Operators",
     "business": "Business details",
-    "approvals": "Approvals"
+    "approvals": "Approvals",
+    "pricing": "Price limits"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -368,7 +372,10 @@
     "bookings": "Bookings so far",
     "description": "Description",
     "location": "Location on the map",
-    "notSet": "—"
+    "notSet": "—",
+    "rateOutsideNote": "Your rate is outside today's government limit. Farmers cannot find this machine until you edit the rate.",
+    "rateOutsideRange": "Allowed now: {min, number} – {max, number} Tk.",
+    "noLimitNote": "The government has not set a price limit for this machine type, so farmers cannot find it yet."
   },
   "Calendar": {
     "title": "Availability calendar",
@@ -481,5 +488,50 @@
     "approved": "Approved",
     "waiting": "Waiting for approval",
     "operators": "Operators"
+  },
+  "GovtDashboard": {
+    "typesWithLimit": "Machine types with a price limit (of {total, number})",
+    "machinesOutside": "Machines charging outside the limit"
+  },
+  "GovtPricing": {
+    "title": "Price limits",
+    "subtitle": "The lowest and highest rate providers may charge for each machine type.",
+    "hiddenType": "Hidden type",
+    "noRule": "No limit set yet. Providers cannot add this machine type until you set one.",
+    "change": "Change limit",
+    "setLimit": "Set limit",
+    "rateLimit": "Rate limit",
+    "rateRange": "{min, number} – {max, number} Tk / {unit, select, PER_ACRE {acre} PER_HOUR {hour} other {day}}",
+    "harvestSeason": "Harvest season",
+    "seasonMax": "Up to {max, number} Tk in season (+{percent, number}%)",
+    "noSeason": "None",
+    "delivery": "Delivery",
+    "deliveryValue": "{rate, number} Tk / km after {freeKm, number} free km",
+    "minimum": "Minimum charge",
+    "quantity": "{amount, number} {unit, select, PER_ACRE {acre} PER_HOUR {hours} other {days}}",
+    "since": "In force since",
+    "back": "Back to price limits",
+    "editTitle": "Price limit: {name}",
+    "editSubtitle": "Providers must keep their rate inside this limit. Saving starts a new limit from now.",
+    "sectionRate": "Rate limit",
+    "minRate": "Lowest rate (Tk per {unit, select, PER_ACRE {acre} PER_HOUR {hour} other {day}})",
+    "maxRate": "Highest rate (Tk per {unit, select, PER_ACRE {acre} PER_HOUR {hour} other {day}})",
+    "sectionSeason": "Harvest season",
+    "seasonHint": "On these days providers may charge more than the highest rate, by the extra % below. Leave both dates empty if this machine has no harvest season.",
+    "seasonStart": "Season starts",
+    "seasonEnd": "Season ends (included)",
+    "seasonCap": "Extra % allowed in season",
+    "sectionDelivery": "Delivery",
+    "deliveryRatePerKm": "Delivery charge (Tk per km)",
+    "freeKm": "Free km",
+    "deliveryHint": "Farmers pay delivery only for the km after the free km.",
+    "minCharge": "Minimum charge ({unit, select, PER_ACRE {acre} PER_HOUR {hours} other {days}})",
+    "minChargeHint": "A small job is billed at least this much. Use 0 for no minimum.",
+    "saveButton": "Save new limit",
+    "saveNote": "The old limit is kept in the history below. Bookings already made keep their price.",
+    "saved": "New price limit saved",
+    "machinesOutside": "{count, plural, one {# machine is} other {# machines are}} now outside the limit. The owners have been told.",
+    "historyTitle": "Earlier limits",
+    "noHistory": "No earlier limits yet."
   }
 }

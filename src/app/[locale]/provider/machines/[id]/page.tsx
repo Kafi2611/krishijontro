@@ -1,6 +1,6 @@
 // Provider page: one machine's details (/provider/machines/<id>) — photos, facts,
-// place on the map, approval status, and buttons to edit, open the availability
-// calendar, stop/start renting or delete.
+// place on the map, approval status, a warning if the rate is outside today's
+// government limit, and buttons to edit, open the calendar, stop/start renting or delete.
 import { ArrowLeft, CalendarDays, CircleAlert, Clock, Pencil, Wrench } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -17,6 +17,7 @@ import { requireRole } from "@/lib/auth";
 import { localizeDigits, pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 import { getProviderMachine } from "@/lib/services/machine";
+import { checkRateAgainstLimit } from "@/lib/services/pricing-rule";
 
 type MachinePageProps = {
   params: Promise<{ id: string }>;
@@ -49,6 +50,8 @@ export default async function MachinePage({ params }: MachinePageProps) {
   if (!machine) {
     notFound(); // no such machine, or it belongs to another provider
   }
+  // The government may have changed the limit after this rate was saved.
+  const rateCheck = await checkRateAgainstLimit(machine.machineTypeId, machine.rate);
 
   const t = await getTranslations("MachineDetails");
   const tMoney = await getTranslations("Money");
@@ -112,6 +115,18 @@ export default async function MachinePage({ params }: MachinePageProps) {
           <p className="font-semibold">{t("rejectedNote")}</p>
           {machine.rejectionReason && <p>{t("rejectedReason", { reason: machine.rejectionReason })}</p>}
           <p>{t("rejectedFix")}</p>
+        </NoteBox>
+      )}
+      {!rateCheck.isInside && (
+        <NoteBox tone="red" icon={<CircleAlert className="size-5" aria-hidden />}>
+          {rateCheck.range ? (
+            <>
+              <p className="font-semibold">{t("rateOutsideNote")}</p>
+              <p>{t("rateOutsideRange", { min: rateCheck.range.minRate, max: rateCheck.range.maxRate })}</p>
+            </>
+          ) : (
+            <p>{t("noLimitNote")}</p>
+          )}
         </NoteBox>
       )}
       {machine.status === "UNDER_MAINTENANCE" && (

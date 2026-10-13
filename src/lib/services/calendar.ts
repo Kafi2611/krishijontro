@@ -32,6 +32,14 @@ export function startOfDhakaDay(day: string): Date {
 }
 
 /**
+ * The last second of a Bangladesh day (23:59:59 in Dhaka). Used when "until" includes that day.
+ * Example: endOfDhakaDay("2026-12-31") -> 2026-12-31T17:59:59.000Z
+ */
+export function endOfDhakaDay(day: string): Date {
+  return new Date(`${day}T23:59:59+06:00`);
+}
+
+/**
  * The Bangladesh day (as "YYYY-MM-DD") of a moment.
  * Example: toDhakaDay(new Date("2026-10-07T19:00:00Z")) -> "2026-10-08" (it is 1 AM in Dhaka)
  */

@@ -53,16 +53,24 @@ export function isInHarvestSeason(rule: RateLimitRule, date: Date): boolean {
 }
 
 /**
- * Returns the allowed rate range on a given day.
- * In the harvest season the maximum goes up by seasonCapPercent,
+ * The highest rate allowed during the harvest season: maxRate raised by seasonCapPercent,
  * rounded DOWN to whole taka (so we never allow more than the cap).
+ * Example: maxRate 3000, cap 10% -> 3300.
+ */
+export function getSeasonMaxRate(rule: { maxRate: number; seasonCapPercent: number }): number {
+  return Math.floor((rule.maxRate * (100 + rule.seasonCapPercent)) / 100);
+}
+
+/**
+ * Returns the allowed rate range on a given day.
+ * In the harvest season the maximum goes up (see getSeasonMaxRate).
  * Example: maxRate 3000, cap 10%, in season -> maxRate 3300.
  */
 export function getAllowedRateRange(rule: RateLimitRule, date: Date = new Date()): RateRange {
   const inHarvestSeason = isInHarvestSeason(rule, date);
   let maxRate = rule.maxRate;
   if (inHarvestSeason) {
-    maxRate = Math.floor((rule.maxRate * (100 + rule.seasonCapPercent)) / 100);
+    maxRate = getSeasonMaxRate(rule);
   }
   return { minRate: rule.minRate, maxRate, inHarvestSeason };
 }

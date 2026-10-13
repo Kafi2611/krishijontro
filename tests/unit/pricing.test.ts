@@ -5,6 +5,7 @@ import {
   calculateBookingPrice,
   getAllowedRateRange,
   getBillingQuantity,
+  getSeasonMaxRate,
   isInHarvestSeason,
   isRateAllowed,
   type BookingPriceInput,
@@ -63,6 +64,14 @@ describe("getAllowedRateRange", () => {
     const rule = { ...harvesterRule, maxRate: 2999 };
     const range = getAllowedRateRange(rule, new Date("2026-11-20T10:00:00+06:00"));
     expect(range.maxRate).toBe(3448);
+  });
+});
+
+describe("getSeasonMaxRate", () => {
+  it("raises the max by the season cap and rounds down", () => {
+    expect(getSeasonMaxRate({ maxRate: 3000, seasonCapPercent: 10 })).toBe(3300);
+    expect(getSeasonMaxRate({ maxRate: 2999, seasonCapPercent: 15 })).toBe(3448); // 3448.85
+    expect(getSeasonMaxRate({ maxRate: 3000, seasonCapPercent: 0 })).toBe(3000);
   });
 });
 

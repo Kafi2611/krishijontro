@@ -5,6 +5,7 @@ import {
   BadgeCheck,
   Bell,
   LayoutDashboard,
+  Scale,
   Shapes,
   Store,
   Tractor,
@@ -23,6 +24,7 @@ const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   operators: Users,
   business: Store,
   approvals: BadgeCheck,
+  pricing: Scale,
 };
 
 export function NavIcon({ name, className }: { name: NavIconName; className?: string }) {

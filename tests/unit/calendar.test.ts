@@ -6,6 +6,7 @@ import {
   blockRangeFromDays,
   buildMonthGrid,
   countDays,
+  endOfDhakaDay,
   monthGridRange,
   rangesOverlap,
   startOfDhakaDay,
@@ -15,6 +16,11 @@ import {
 describe("Bangladesh days", () => {
   it("starts a Bangladesh day at 18:00 UTC of the day before", () => {
     expect(startOfDhakaDay("2026-10-08").toISOString()).toBe("2026-10-07T18:00:00.000Z");
+  });
+
+  it("ends a Bangladesh day at 23:59:59 Dhaka time, still on the same day", () => {
+    expect(endOfDhakaDay("2026-12-31").toISOString()).toBe("2026-12-31T17:59:59.000Z");
+    expect(toDhakaDay(endOfDhakaDay("2026-12-31"))).toBe("2026-12-31");
   });
 
   it("finds the Bangladesh day of a moment", () => {
