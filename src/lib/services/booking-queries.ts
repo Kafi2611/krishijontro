@@ -154,6 +154,15 @@ export async function getProviderBooking(bookingId: string, providerId: string) 
   return { booking, timeline: timelineOf(booking) };
 }
 
+/** How many bookings wait for the provider: new requests, and accepted ones without an operator. For the dashboard. */
+export async function countProviderBookingsToHandle(providerId: string) {
+  const [requests, needOperator] = await Promise.all([
+    db.booking.count({ where: { machine: { providerId }, status: "REQUESTED" } }),
+    db.booking.count({ where: { machine: { providerId }, status: "ACCEPTED" } }),
+  ]);
+  return { requests, needOperator };
+}
+
 /** One operator the provider can choose for a job. busy = already on another job at that time. */
 export type OperatorChoice = { id: string; name: string; phone: string; busy: boolean };
 

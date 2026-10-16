@@ -518,7 +518,9 @@
     "machines": "My machines",
     "approved": "Approved",
     "waiting": "Waiting for approval",
-    "operators": "Operators"
+    "operators": "Operators",
+    "requests": "New requests",
+    "needOperator": "Need an operator"
   },
   "GovtDashboard": {
     "typesWithLimit": "Machine types with a price limit (of {total, number})",
@@ -609,7 +611,9 @@
     "findTitle": "Need a machine?",
     "findText": "Search machines near your field and see the full price before you book.",
     "findButton": "Find a machine",
-    "calculator": "Price calculator"
+    "calculator": "Price calculator",
+    "currentTitle": "Your current bookings",
+    "seeAll": "See all bookings"
   },
   "Search": {
     "title": "Find a machine",
@@ -843,5 +847,10 @@
     "workStarted": "Work started.",
     "workFinished": "Work finished. The final bill was sent to the farmer.",
     "openMap": "Open the field in a map"
+  },
+  "OperatorDashboard": {
+    "todayTitle": "Jobs to do now",
+    "seeAll": "See all my jobs",
+    "nothingNow": "Nothing to do right now."
   }
 }

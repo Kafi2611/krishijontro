@@ -1,15 +1,25 @@
 // The Farmer dashboard: the first page a FARMER user sees after login.
-// It shows a big "Find a machine" box (with a link to the price calculator)
-// and the list of upcoming farmer features.
+// It shows a big "Find a machine" box (with a link to the price calculator), the farmer's
+// current bookings (the 3 soonest, with a link to all of them) and the list of farmer features.
 import { Calculator, Search } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { BookingCard } from "@/components/booking/booking-card";
 import { RoleDashboard } from "@/components/dashboard/role-dashboard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { requireRole } from "@/lib/auth";
+import { pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
+import { listFarmerBookings } from "@/lib/services/booking-queries";
+
+/** How many current bookings the dashboard shows. */
+const BOOKINGS_ON_DASHBOARD = 3;
 
 export default async function FarmerDashboardPage() {
+  const farmer = await requireRole("FARMER");
+  const { current } = await listFarmerBookings(farmer.id);
   const t = await getTranslations("FarmerDashboard");
+  const locale = await getLocale();
 
   return (
     <RoleDashboard role="FARMER">
@@ -38,6 +48,35 @@ export default async function FarmerDashboardPage() {
           </div>
         </CardContent>
       </Card>
+
+      {current.length > 0 && (
+        <section className="space-y-3" aria-labelledby="current-bookings-title">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 id="current-bookings-title" className="text-xl font-bold">
+              {t("currentTitle")}
+            </h2>
+            <Button asChild variant="link" className="h-auto p-0">
+              <Link href="/farmer/bookings">{t("seeAll")}</Link>
+            </Button>
+          </div>
+          <ul className="grid gap-3 md:grid-cols-2">
+            {current.slice(0, BOOKINGS_ON_DASHBOARD).map((booking) => (
+              <li key={booking.id}>
+                <BookingCard
+                  href={`/farmer/bookings/${booking.id}`}
+                  code={booking.code}
+                  machineName={`${booking.machine.brand} ${booking.machine.model}`}
+                  icon={booking.machine.machineType.icon}
+                  startAt={booking.startAt}
+                  status={booking.status}
+                  detail={pickByLocale(booking.machine.machineType.name, booking.machine.machineType.nameBn, locale)}
+                  amount={booking.totalAmount}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </RoleDashboard>
   );
 }

@@ -1,6 +1,6 @@
 // The operator's jobs as titled sections of cards ("To do now", "Coming up", "Done").
 // Each card opens the job screen. Used by "My jobs" and the operator dashboard.
-// If every section is empty, one "no jobs yet" box is shown instead.
+// If every section is empty, one box with emptyText (or "no jobs yet") is shown instead.
 import { useTranslations } from "next-intl";
 import { BookingCard } from "@/components/booking/booking-card";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,9 +20,10 @@ type JobForList = {
 type OperatorJobListProps = {
   sections: { key: string; title: string; jobs: JobForList[] }[];
   emptyIcon: React.ReactNode;
+  emptyText?: string; // the dashboard says "nothing to do now" instead of "no jobs yet"
 };
 
-export function OperatorJobList({ sections, emptyIcon }: OperatorJobListProps) {
+export function OperatorJobList({ sections, emptyIcon, emptyText }: OperatorJobListProps) {
   const t = useTranslations("OperatorJobs");
   const hasAny = sections.some((section) => section.jobs.length > 0);
 
@@ -31,7 +32,7 @@ export function OperatorJobList({ sections, emptyIcon }: OperatorJobListProps) {
       <Card>
         <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
           {emptyIcon}
-          <p className="max-w-md text-muted-foreground">{t("empty")}</p>
+          <p className="max-w-md text-muted-foreground">{emptyText ?? t("empty")}</p>
         </CardContent>
       </Card>
     );

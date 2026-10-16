@@ -1,28 +1,48 @@
 // The Provider dashboard: the first page a PROVIDER user sees after login.
-// It shows the account's approval note, machine and operator counts (each box
-// opens its page), and the list of upcoming provider features.
-import { CircleCheck, Clock, Tractor, Users } from "lucide-react";
+// It shows the account's approval note, the bookings waiting for the provider (new requests,
+// and accepted ones that need an operator), machine and operator counts (each box opens its
+// page), and the list of provider features.
+import { CircleCheck, Clock, Inbox, Tractor, UserRound, Users } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { RoleDashboard } from "@/components/dashboard/role-dashboard";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { ProviderApprovalNote } from "@/components/provider/provider-approval-note";
 import { requireRole } from "@/lib/auth";
+import { countProviderBookingsToHandle } from "@/lib/services/booking-queries";
 import { countProviderMachines } from "@/lib/services/machine";
 import { countProviderOperators } from "@/lib/services/operator";
 import { getProviderProfile } from "@/lib/services/provider";
 
 export default async function ProviderDashboardPage() {
   const provider = await requireRole("PROVIDER");
-  const [profile, machines, operatorCount] = await Promise.all([
+  const [profile, machines, operatorCount, toHandle] = await Promise.all([
     getProviderProfile(provider.id),
     countProviderMachines(provider.id),
     countProviderOperators(provider.id),
+    countProviderBookingsToHandle(provider.id),
   ]);
   const t = await getTranslations("ProviderDashboard");
 
   return (
     <RoleDashboard role="PROVIDER">
       {profile && <ProviderApprovalNote approvalStatus={profile.approvalStatus} />}
+      {/* Bookings waiting for the provider: amber when there is something to do */}
+      <div className="grid grid-cols-2 gap-3">
+        <StatCard
+          label={t("requests")}
+          value={toHandle.requests}
+          icon={<Inbox className="size-5" aria-hidden />}
+          href="/provider/bookings"
+          highlight={toHandle.requests > 0}
+        />
+        <StatCard
+          label={t("needOperator")}
+          value={toHandle.needOperator}
+          icon={<UserRound className="size-5" aria-hidden />}
+          href="/provider/bookings"
+          highlight={toHandle.needOperator > 0}
+        />
+      </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
           label={t("machines")}

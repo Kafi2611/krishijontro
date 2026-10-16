@@ -518,7 +518,9 @@
     "machines": "আমার যন্ত্র",
     "approved": "অনুমোদিত",
     "waiting": "অনুমোদনের অপেক্ষায়",
-    "operators": "চালক"
+    "operators": "চালক",
+    "requests": "নতুন অনুরোধ",
+    "needOperator": "চালক দরকার"
   },
   "GovtDashboard": {
     "typesWithLimit": "দামের সীমা আছে এমন যন্ত্রের ধরন ({total, number}টির মধ্যে)",
@@ -609,7 +611,9 @@
     "findTitle": "যন্ত্র দরকার?",
     "findText": "আপনার জমির কাছের যন্ত্র খুঁজুন, বুক করার আগেই পুরো দাম দেখুন।",
     "findButton": "যন্ত্র খুঁজুন",
-    "calculator": "দামের হিসাব"
+    "calculator": "দামের হিসাব",
+    "currentTitle": "আপনার চলমান বুকিং",
+    "seeAll": "সব বুকিং দেখুন"
   },
   "Search": {
     "title": "যন্ত্র খুঁজুন",
@@ -843,5 +847,10 @@
     "workStarted": "কাজ শুরু হয়েছে।",
     "workFinished": "কাজ শেষ। চূড়ান্ত বিল কৃষককে পাঠানো হয়েছে।",
     "openMap": "মানচিত্রে জমিটি খুলুন"
+  },
+  "OperatorDashboard": {
+    "todayTitle": "এখন করার কাজ",
+    "seeAll": "আমার সব কাজ দেখুন",
+    "nothingNow": "এখন করার মতো কোনো কাজ নেই।"
   }
 }
