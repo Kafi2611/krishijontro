@@ -128,7 +128,10 @@
     "startTimePassed": "The start time has already passed, so this request can only be rejected.",
     "chooseOperator": "Choose an operator",
     "operatorNotAllowed": "Choose one of your approved operators",
-    "operatorBusy": "This operator has another job at that time"
+    "operatorBusy": "This operator has another job at that time",
+    "otpInvalid": "Enter the 4-digit code",
+    "otpWrong": "Wrong code. Ask the farmer to read the code on their phone again.",
+    "notArrivedYet": "Press \"I have arrived\" first."
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",
@@ -168,7 +171,8 @@
     "pricing": "Price limits",
     "search": "Find machines",
     "myBookings": "My bookings",
-    "bookings": "Bookings"
+    "bookings": "Bookings",
+    "myJobs": "My jobs"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -810,5 +814,34 @@
     "assigned": "Operator sent. They got the job by SMS.",
     "noOperators": "You have no approved operator yet. Add one; the admin must approve them first.",
     "addOperator": "Add an operator"
+  },
+  "OperatorJobs": {
+    "title": "My jobs",
+    "subtitle": "The jobs your provider sent you.",
+    "now": "To do now",
+    "coming": "Coming up",
+    "done": "Done",
+    "empty": "No jobs yet. When your provider sends you a job, you also get an SMS.",
+    "noneHere": "Nothing here right now.",
+    "back": "My jobs",
+    "nextTitle": "What to do now",
+    "startTripText": "When you leave with the machine, press the button. The farmer is told you are coming.",
+    "startTripButton": "I am on the way",
+    "arriveText": "Press this when you reach the field.",
+    "arriveButton": "I have arrived",
+    "startText": "Ask the farmer for the 4-digit START code (it is on their phone) and type it here.",
+    "startCode": "Start code",
+    "startButton": "Start the work",
+    "finishText": "Enter the real work done, then ask the farmer for the 4-digit FINISH code.",
+    "actualLand": "Land worked (decimal)",
+    "actualHours": "Hours worked",
+    "actualDays": "Days worked",
+    "finishCode": "Finish code",
+    "finishButton": "Finish the work",
+    "tripStarted": "The farmer was told you are on the way.",
+    "arrived": "The farmer was told you have arrived.",
+    "workStarted": "Work started.",
+    "workFinished": "Work finished. The final bill was sent to the farmer.",
+    "openMap": "Open the field in a map"
   }
 }

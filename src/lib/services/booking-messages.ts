@@ -116,3 +116,63 @@ export function operatorAssignedMessage(booking: BookingMessageInfo, operator: {
     link: farmerLink(booking),
   };
 }
+
+/** To the farmer, when the operator sets off with the machine. */
+export function onTheWayMessage(booking: BookingMessageInfo, operatorName: string) {
+  const code = booking.code;
+  return {
+    title: "Operator on the way",
+    titleBn: "চালক রওনা দিয়েছেন",
+    body: `${operatorName} is on the way with the machine for ${code}.`,
+    bodyBn: `${operatorName} ${toBanglaDigits(code)} এর জন্য যন্ত্র নিয়ে রওনা দিয়েছেন।`,
+    link: farmerLink(booking),
+  };
+}
+
+/** To the farmer, when the operator reaches the field. */
+export function arrivedMessage(booking: BookingMessageInfo, operatorName: string) {
+  const code = booking.code;
+  return {
+    title: "Operator has arrived",
+    titleBn: "চালক পৌঁছেছেন",
+    body: `${operatorName} has reached your field (${code}). Give the start code when the work begins.`,
+    bodyBn: `${operatorName} আপনার জমিতে পৌঁছেছেন (${toBanglaDigits(code)})। কাজ শুরু হলে শুরুর কোড দিন।`,
+    link: farmerLink(booking),
+  };
+}
+
+/** To the farmer, when the work starts. */
+export function workStartedMessage(booking: BookingMessageInfo) {
+  const code = booking.code;
+  return {
+    title: "Work started",
+    titleBn: "কাজ শুরু হয়েছে",
+    body: `Work on ${code} has started. Give the finish code only when the work is done.`,
+    bodyBn: `${toBanglaDigits(code)} এর কাজ শুরু হয়েছে। কাজ শেষ হলে তবেই শেষের কোড দিন।`,
+    link: farmerLink(booking),
+  };
+}
+
+/** To the farmer, when the work is finished: the final bill. */
+export function workFinishedMessage(booking: BookingMessageInfo, totalAmount: number) {
+  const code = booking.code;
+  return {
+    title: "Work finished",
+    titleBn: "কাজ শেষ হয়েছে",
+    body: `Work on ${code} is finished. Your final bill is ${totalAmount} Tk.`,
+    bodyBn: `${toBanglaDigits(code)} এর কাজ শেষ হয়েছে। আপনার চূড়ান্ত বিল ${toBanglaDigits(totalAmount)} টাকা।`,
+    link: farmerLink(booking),
+  };
+}
+
+/** To the provider, when their operator finishes a job: the provider's share. */
+export function jobFinishedMessage(booking: BookingMessageInfo, providerAmount: number) {
+  const code = booking.code;
+  return {
+    title: "Job finished",
+    titleBn: "কাজ শেষ হয়েছে",
+    body: `${code} (${booking.machineName}) is finished. Your share: ${providerAmount} Tk, after the platform fee.`,
+    bodyBn: `${toBanglaDigits(code)} (${booking.machineName}) শেষ হয়েছে। আপনার পাওনা: ${toBanglaDigits(providerAmount)} টাকা (প্ল্যাটফর্ম ফি বাদে)।`,
+    link: providerLink(booking),
+  };
+}

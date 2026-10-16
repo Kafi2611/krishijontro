@@ -8,16 +8,24 @@ import {
   acceptBooking,
   assignOperator,
   createBooking,
+  finishWork,
+  markArrived,
   rejectBooking,
+  startTrip,
+  startWork,
   type CreateBookingResult,
 } from "@/lib/services/booking";
 import {
   assignOperatorSchema,
   bookingSchema,
+  finishWorkSchema,
   rejectBookingSchema,
+  startWorkSchema,
   type AssignOperatorInput,
   type BookingInput,
+  type FinishWorkInput,
   type RejectBookingInput,
+  type StartWorkInput,
 } from "@/lib/validators/booking";
 import type { ActionResult } from "@/lib/validators/types";
 
@@ -71,4 +79,38 @@ export async function assignOperatorAction(bookingId: string, values: AssignOper
     return { ok: false, error: "chooseOperator" };
   }
   return refreshPagesIfDone(await assignOperator(bookingId, provider.id, parsed.data.operatorId));
+}
+
+// ─────────────────────────── Operator ───────────────────────────
+
+/** "I am on the way". */
+export async function startTripAction(bookingId: string): Promise<ActionResult> {
+  const operator = await requireRole("OPERATOR");
+  return refreshPagesIfDone(await startTrip(bookingId, operator.id));
+}
+
+/** "I have arrived". */
+export async function markArrivedAction(bookingId: string): Promise<ActionResult> {
+  const operator = await requireRole("OPERATOR");
+  return refreshPagesIfDone(await markArrived(bookingId, operator.id));
+}
+
+/** "Start the work", with the farmer's start code. */
+export async function startWorkAction(bookingId: string, values: StartWorkInput): Promise<ActionResult> {
+  const operator = await requireRole("OPERATOR");
+  const parsed = startWorkSchema.safeParse(values);
+  if (!parsed.success) {
+    return { ok: false, error: "otpInvalid" };
+  }
+  return refreshPagesIfDone(await startWork(bookingId, operator.id, parsed.data.otp));
+}
+
+/** "Finish the work", with the real amount of work and the farmer's finish code. */
+export async function finishWorkAction(bookingId: string, values: FinishWorkInput): Promise<ActionResult> {
+  const operator = await requireRole("OPERATOR");
+  const parsed = finishWorkSchema.safeParse(values);
+  if (!parsed.success) {
+    return { ok: false, error: "somethingWrong" };
+  }
+  return refreshPagesIfDone(await finishWork(bookingId, operator.id, parsed.data));
 }

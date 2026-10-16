@@ -15,7 +15,9 @@ import {
   ACTIVE_BOOKING_STATUSES,
   buildTimeline,
   DEFAULT_START_HOUR,
+  getOperatorNextStep,
   getOtpToShow,
+  groupOperatorJobs,
   groupProviderBookings,
   splitFarmerBookings,
 } from "@/lib/services/booking-rules";
@@ -183,6 +185,48 @@ export async function listOperatorChoices(
   const busyIds = new Set(clashingJobs.map((job) => job.operatorId));
 
   return operators.map((operator) => ({ ...operator, busy: busyIds.has(operator.id) }));
+}
+
+// ─────────────────────────── The operator ───────────────────────────
+
+/**
+ * The operator's own jobs, grouped: "now" (today, or late), "coming" (a later day) and "done"
+ * (groupOperatorJobs in booking-rules.ts). The OTP codes are left out: the farmer gives them in person.
+ */
+export async function listOperatorJobs(operatorId: string) {
+  const jobs = await db.booking.findMany({
+    where: { operatorId },
+    include: { machine: MACHINE_FOR_CARD, farmer: { select: { name: true } } },
+    omit: SECRET_CODES,
+  });
+  const groups = groupOperatorJobs(jobs, toDhakaDay(new Date()));
+  return { ...groups, done: groups.done.slice(0, EARLIER_TO_SHOW) };
+}
+
+/**
+ * One of the operator's OWN jobs with what the job screen needs, and the next button to show
+ * (getOperatorNextStep in booking-rules.ts). Null for anyone else's job. No OTP codes.
+ */
+export async function getOperatorJob(bookingId: string, operatorId: string) {
+  const job = await db.booking.findFirst({
+    where: { id: bookingId, operatorId },
+    omit: SECRET_CODES,
+    include: {
+      machine: { select: { brand: true, model: true, machineType: { select: { name: true, nameBn: true, icon: true } } } },
+      farmer: { select: { name: true, phone: true } },
+      statusLogs: STATUS_LOGS,
+    },
+  });
+  if (!job) {
+    return null;
+  }
+  return {
+    job,
+    timeline: timelineOf(job),
+    nextStep: getOperatorNextStep(job.status, job.arrivedAt !== null),
+    // The finish form starts with what was booked: decimal of land, or the hours / days.
+    bookedAmount: job.billingUnit === "PER_ACRE" ? job.landDecimal : job.quantity,
+  };
 }
 
 // ─────────────────────────── The booking form ───────────────────────────

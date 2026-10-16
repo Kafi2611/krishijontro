@@ -9,22 +9,29 @@
  *    who changed what, and when.
  * 3. The provider's steps: acceptBooking (makes the two OTP codes), rejectBooking (with a reason)
  *    and assignOperator (an approved operator who is free at that time).
+ * 4. The operator's steps: startTrip (on the way), markArrived, startWork (needs the farmer's
+ *    start OTP) and finishWork (needs the finish OTP + the real amount of work -> the final bill).
  * Every step sends messages (simulated SMS) to the people involved (booking-messages.ts).
  *
  * Expected problems (a taken time, a wrong OTP...) are thrown as a BookingProblem inside the
  * transaction. Throwing cancels the whole transaction, so nothing half-done is ever saved.
  */
 import type { Prisma } from "@/generated/prisma/client";
-import type { BookingStatus } from "@/generated/prisma/enums";
+import type { BillingUnit, BookingStatus } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { isUniqueConstraintError } from "@/lib/db-errors";
 import {
+  arrivedMessage,
   bookingAcceptedMessage,
   bookingRejectedMessage,
+  jobFinishedMessage,
   newJobMessage,
   newRequestMessage,
+  onTheWayMessage,
   operatorAssignedMessage,
   requestSentMessage,
+  workFinishedMessage,
+  workStartedMessage,
   type BookingMessageInfo,
 } from "@/lib/services/booking-messages";
 import {
@@ -40,11 +47,11 @@ import { toDecimal } from "@/lib/services/geo";
 import { findNearestUpazilaId } from "@/lib/services/location";
 import { isMachineListed, isServiceDue } from "@/lib/services/machine-rules";
 import { createNotification } from "@/lib/services/notification";
-import { estimateJob, isRateAllowed } from "@/lib/services/pricing";
-import { listPricedMachineTypes } from "@/lib/services/pricing-rule";
+import { calculateBookingPrice, estimateJob, getBillingQuantity, isRateAllowed } from "@/lib/services/pricing";
+import { getActivePricingRule, listPricedMachineTypes } from "@/lib/services/pricing-rule";
 import { getPlatformFeePercent } from "@/lib/services/settings";
 import { findUsableSubsidy } from "@/lib/services/subsidy";
-import type { BookingInput } from "@/lib/validators/booking";
+import type { BookingInput, FinishWorkInput } from "@/lib/validators/booking";
 import type { ActionResult, ValidationKey } from "@/lib/validators/types";
 
 // ─────────────────────────── Problems inside a transaction ───────────────────────────
@@ -453,5 +460,146 @@ export async function rejectBooking(bookingId: string, providerId: string, reaso
       { userId: booking.farmerId, channel: "SMS", ...bookingRejectedMessage(messageInfo(booking), reason) },
       tx,
     );
+  });
+}
+
+// ─────────────────────────── The operator's steps ───────────────────────────
+
+/**
+ * One of THIS operator's jobs, read inside the transaction (with the OTP codes, to check them).
+ * Throws "notFound" for any other booking, so an operator can only move their own jobs.
+ */
+async function findOperatorJob(tx: Prisma.TransactionClient, bookingId: string, operatorId: string) {
+  const job = await tx.booking.findFirst({
+    where: { id: bookingId, operatorId },
+    include: {
+      machine: { select: { brand: true, model: true, machineTypeId: true, providerId: true } },
+      operator: { select: { name: true } },
+      subsidyApplication: { select: { program: { select: { discountPercent: true } } } },
+    },
+  });
+  if (!job) {
+    throw new BookingProblem("notFound");
+  }
+  return job;
+}
+
+/** The operator sets off with the machine (OPERATOR_ASSIGNED -> ON_THE_WAY). The farmer is told. */
+export async function startTrip(bookingId: string, operatorId: string): Promise<ActionResult> {
+  return runBookingStep(async (tx) => {
+    const job = await findOperatorJob(tx, bookingId, operatorId);
+    await changeBookingStatus(bookingId, "ON_THE_WAY", operatorId, tx);
+    await createNotification(
+      { userId: job.farmerId, channel: "SMS", ...onTheWayMessage(messageInfo(job), job.operator?.name ?? "") },
+      tx,
+    );
+  });
+}
+
+/**
+ * The operator has reached the field. "Arrived" is a step, not a status, so it does not go
+ * through changeBookingStatus: we only save the time in Booking.arrivedAt. It is saved only
+ * while the job is ON_THE_WAY and not marked yet (count 0 means: not allowed now).
+ */
+export async function markArrived(bookingId: string, operatorId: string): Promise<ActionResult> {
+  return runBookingStep(async (tx) => {
+    const job = await findOperatorJob(tx, bookingId, operatorId);
+    const { count } = await tx.booking.updateMany({
+      where: { id: bookingId, status: "ON_THE_WAY", arrivedAt: null },
+      data: { arrivedAt: new Date() },
+    });
+    if (count === 0) {
+      throw new BookingProblem("wrongBookingStatus");
+    }
+    await createNotification(
+      { userId: job.farmerId, channel: "SMS", ...arrivedMessage(messageInfo(job), job.operator?.name ?? "") },
+      tx,
+    );
+  });
+}
+
+/**
+ * The work starts (ON_THE_WAY -> WORKING), but only with the farmer's START code.
+ * The farmer gives the code only when the machine is really at the field, so the work
+ * cannot "start" without them.
+ */
+export async function startWork(bookingId: string, operatorId: string, otp: string): Promise<ActionResult> {
+  return runBookingStep(async (tx) => {
+    const job = await findOperatorJob(tx, bookingId, operatorId);
+    if (!job.arrivedAt) {
+      throw new BookingProblem("notArrivedYet");
+    }
+    if (otp !== job.startOtp) {
+      throw new BookingProblem("otpWrong");
+    }
+    await changeBookingStatus(bookingId, "WORKING", operatorId, tx, { data: { startedAt: new Date() } });
+    await createNotification({ userId: job.farmerId, channel: "SMS", ...workStartedMessage(messageInfo(job)) }, tx);
+  });
+}
+
+/**
+ * The final bill, from the REAL amount of work the operator entered at the finish.
+ * Everything else stays as it was when the farmer booked: the same rate (rateSnapshot), the
+ * same distance, the price rule in force on the booking day (old rules are kept as history),
+ * and the same subsidy %. Only the platform fee % is read again from the settings.
+ * actualValue is decimal of land for machines rented per acre, otherwise hours or days.
+ */
+async function calculateFinalBill(
+  job: {
+    billingUnit: BillingUnit;
+    rateSnapshot: number;
+    distanceKm: number;
+    createdAt: Date;
+    machine: { machineTypeId: string };
+    subsidyApplication: { program: { discountPercent: number } } | null;
+  },
+  actualValue: number,
+) {
+  const rule = await getActivePricingRule(job.machine.machineTypeId, job.createdAt);
+  if (!rule) {
+    throw new BookingProblem("noPriceRule");
+  }
+  const actualQuantity = getBillingQuantity(job.billingUnit, actualValue, actualValue);
+  const price = calculateBookingPrice({
+    quantity: actualQuantity,
+    rate: job.rateSnapshot,
+    minCharge: rule.minCharge,
+    distanceKm: job.distanceKm,
+    freeKm: rule.freeKm,
+    deliveryRatePerKm: rule.deliveryRatePerKm,
+    subsidyPercent: job.subsidyApplication?.program.discountPercent ?? 0,
+    platformFeePercent: await getPlatformFeePercent(),
+  });
+  return { actualQuantity, price };
+}
+
+/**
+ * The work is finished (WORKING -> COMPLETED), but only with the farmer's FINISH code.
+ * The operator enters the real amount of work; the bill is worked out again from it, and the
+ * farmer (final bill) and the provider (their share) are told.
+ */
+export async function finishWork(bookingId: string, operatorId: string, input: FinishWorkInput): Promise<ActionResult> {
+  return runBookingStep(async (tx) => {
+    const job = await findOperatorJob(tx, bookingId, operatorId);
+    if (input.otp !== job.finishOtp) {
+      throw new BookingProblem("otpWrong");
+    }
+
+    const { actualQuantity, price } = await calculateFinalBill(job, input.actualValue);
+    await changeBookingStatus(bookingId, "COMPLETED", operatorId, tx, {
+      data: {
+        actualQuantity,
+        workCharge: price.workCharge,
+        deliveryCharge: price.deliveryCharge,
+        subsidyAmount: price.subsidyAmount,
+        totalAmount: price.totalAmount,
+        platformFee: price.platformFee,
+        completedAt: new Date(),
+      },
+    });
+
+    const info = messageInfo(job);
+    await createNotification({ userId: job.farmerId, channel: "SMS", ...workFinishedMessage(info, price.totalAmount) }, tx);
+    await createNotification({ userId: job.machine.providerId, ...jobFinishedMessage(info, price.providerAmount) }, tx);
   });
 }

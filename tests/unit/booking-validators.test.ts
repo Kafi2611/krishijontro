@@ -1,8 +1,14 @@
 // Unit tests for the booking form rules in src/lib/validators/booking.ts.
-// The rules compare with "now", so every test freezes the clock at
+// The booking rules compare with "now", so every test freezes the clock at
 // 20 October 2026, 6:00 AM in Dhaka (00:00 UTC).
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { bookingSchema, type BookingInput } from "@/lib/validators/booking";
+import {
+  bookingSchema,
+  finishWorkSchema,
+  rejectBookingSchema,
+  startWorkSchema,
+  type BookingInput,
+} from "@/lib/validators/booking";
 
 /** A correct booking: 66 decimal of tilling near Paba, tomorrow at 8 AM. */
 const validBooking: BookingInput = {
@@ -66,5 +72,26 @@ describe("bookingSchema", () => {
   it("refuses a very long field address or note", () => {
     expect(errorKeys({ ...validBooking, fieldAddress: "x".repeat(121) })).toEqual(["tooLong"]);
     expect(errorKeys({ ...validBooking, note: "x".repeat(301) })).toEqual(["tooLong"]);
+  });
+});
+
+describe("OTP forms", () => {
+  it("needs exactly 4 digits", () => {
+    expect(startWorkSchema.safeParse({ otp: "0427" }).success).toBe(true);
+    expect(startWorkSchema.safeParse({ otp: "427" }).success).toBe(false);
+    expect(startWorkSchema.safeParse({ otp: "12345" }).success).toBe(false);
+    expect(startWorkSchema.safeParse({ otp: "12a4" }).success).toBe(false);
+  });
+
+  it("needs a real amount of work above 0 to finish", () => {
+    expect(finishWorkSchema.safeParse({ actualValue: 70, otp: "5089" }).success).toBe(true);
+    expect(finishWorkSchema.safeParse({ actualValue: 0, otp: "5089" }).success).toBe(false);
+  });
+});
+
+describe("rejectBookingSchema", () => {
+  it("needs a reason of at least 3 letters", () => {
+    expect(rejectBookingSchema.safeParse({ reason: "Machine busy" }).success).toBe(true);
+    expect(rejectBookingSchema.safeParse({ reason: "  no " }).success).toBe(false);
   });
 });

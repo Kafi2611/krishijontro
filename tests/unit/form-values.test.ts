@@ -1,6 +1,14 @@
-// Unit tests for src/lib/form-values.ts (reading numbers typed in form boxes).
+// Unit tests for src/lib/form-values.ts (reading numbers and codes typed in form boxes).
 import { describe, expect, it } from "vitest";
-import { numberFromInput } from "@/lib/form-values";
+import { digitsFromInput, numberFromInput } from "@/lib/form-values";
+
+describe("digitsFromInput", () => {
+  it("turns a code typed with Bangla digits into English digits, without spaces", () => {
+    expect(digitsFromInput(" ১২৩৪ ")).toBe("1234");
+    expect(digitsFromInput("0427")).toBe("0427"); // the leading 0 stays
+    expect(digitsFromInput(undefined)).toBe("");
+  });
+});
 
 describe("numberFromInput", () => {
   it("reads normal numbers, with spaces around them", () => {

@@ -3,6 +3,7 @@
 //   bookingSchema       — the farmer's 3-step booking form
 //   rejectBookingSchema — the provider's reason for saying no
 //   assignOperatorSchema — the provider picks an operator
+//   startWorkSchema / finishWorkSchema — the operator types the farmer's OTP (and the real work done)
 import { z } from "zod";
 import { getJobStartAt, isStartFarEnough, START_HOURS } from "@/lib/services/booking-rules";
 import { addDays, toDhakaDay } from "@/lib/services/calendar";
@@ -55,3 +56,22 @@ export const assignOperatorSchema = z.object({
 });
 
 export type AssignOperatorInput = z.infer<typeof assignOperatorSchema>;
+
+/** The farmer's 4-digit code. (The form has already turned Bangla digits into English digits.) */
+const otpField = z.string().trim().regex(/^\d{4}$/, "otpInvalid");
+
+/** The operator starts the work with the farmer's start code. */
+export const startWorkSchema = z.object({
+  otp: otpField,
+});
+
+export type StartWorkInput = z.infer<typeof startWorkSchema>;
+
+/** The operator finishes the work: the real amount of work, and the farmer's finish code. */
+export const finishWorkSchema = z.object({
+  // Decimal of land for machines rented per acre, otherwise hours or days.
+  actualValue: z.number("numberInvalid").positive("numberInvalid").max(10000, "numberInvalid"),
+  otp: otpField,
+});
+
+export type FinishWorkInput = z.infer<typeof finishWorkSchema>;

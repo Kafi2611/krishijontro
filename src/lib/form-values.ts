@@ -19,3 +19,12 @@ export function numberFromInput(value: unknown): number | undefined {
   }
   return Number(text);
 }
+
+/**
+ * Cleans a text box that should hold digits, like an OTP code: Bangla digits become English
+ * digits and spaces at the ends are removed. (The farmer may read the code out in Bangla.)
+ * Example: digitsFromInput(" ১২৩৪ ") -> "1234"
+ */
+export function digitsFromInput(value: unknown): string {
+  return toEnglishDigits(String(value ?? "")).trim();
+}
