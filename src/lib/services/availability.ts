@@ -3,8 +3,8 @@
  *
  * A provider "blocks" days (own land work, family program, repair...). Each block is
  * one AvailabilityBlock row with a time range [startAt, endAt). The calendar page
- * shows blocked days and booked days; Phase 4's booking check refuses any booking
- * that overlaps a block.
+ * shows blocked days and booked days; the booking service (booking.ts) refuses any
+ * booking that overlaps a block.
  *
  * Rules for a new block:
  * - only on the provider's own machine
@@ -12,8 +12,8 @@
  * - not on days that already have an active booking (cancel the booking first)
  * - not on days that are already blocked
  */
-import type { BookingStatus } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
+import { ACTIVE_BOOKING_STATUSES } from "@/lib/services/booking-rules";
 import {
   addDays,
   blockRangeFromDays,
@@ -28,18 +28,6 @@ import type { ActionResult } from "@/lib/validators/types";
 
 /** The most days a provider may block in one go. */
 export const MAX_BLOCK_DAYS = 60;
-
-/**
- * Booking statuses that keep the machine busy. (A cancelled, rejected or finished
- * booking does not.) Phase 4's double-booking check uses the same list.
- */
-export const ACTIVE_BOOKING_STATUSES: BookingStatus[] = [
-  "REQUESTED",
-  "ACCEPTED",
-  "OPERATOR_ASSIGNED",
-  "ON_THE_WAY",
-  "WORKING",
-];
 
 /** Finds the provider's machine (or null), so we never touch someone else's machine. */
 async function findOwnMachine(machineId: string, providerId: string) {

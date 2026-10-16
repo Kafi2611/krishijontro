@@ -16,11 +16,11 @@
  */
 import type { WorkType } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
-import { ACTIVE_BOOKING_STATUSES } from "@/lib/services/availability";
+import { ACTIVE_BOOKING_STATUSES } from "@/lib/services/booking-rules";
 import { addDays, blockRangeFromDays, buildDayStrip, toDhakaDay } from "@/lib/services/calendar";
-import { BANGLADESH_CENTER, distanceInKm, toDecimal, type LatLng } from "@/lib/services/geo";
+import { BANGLADESH_CENTER, distanceInKm, toDecimal } from "@/lib/services/geo";
 import { isMachineListed, isServiceDue } from "@/lib/services/machine-rules";
-import { calculateBookingPrice, getBillingQuantity, isRateAllowed, type BookingPrice } from "@/lib/services/pricing";
+import { estimateJob, isRateAllowed, type JobDetails, type JobEstimate } from "@/lib/services/pricing";
 import { listPricedMachineTypes, type PricedMachineType } from "@/lib/services/pricing-rule";
 import { getMachineRatings, listLatestMachineReviews, type MachineRating } from "@/lib/services/review";
 import { getPlatformFeePercent } from "@/lib/services/settings";
@@ -33,20 +33,6 @@ export const FREE_DAYS_TO_SHOW = 14;
 
 /** Hours (or days) of work a search starts with, for machines rented by the hour or day. */
 export const DEFAULT_HOURS_OR_DAYS = 2;
-
-/** A farmer's job, as the price estimate needs it. */
-export type JobDetails = {
-  landDecimal: number;
-  hoursOrDays: number;
-  field: LatLng;
-};
-
-/** The estimate for one machine and one job. */
-export type JobEstimate = {
-  distanceKm: number; // machine -> field
-  quantity: number; // acres, hours or days the farmer asked for
-  price: BookingPrice;
-};
 
 /** One machine in the search results, with everything its card shows. */
 export type SearchResult = JobEstimate & {
@@ -72,32 +58,7 @@ export type SearchOutcome = {
 };
 
 // ─────────────────────────── Pure helpers (no database) ───────────────────────────
-
-/**
- * Estimates the price of one job on one machine:
- * the distance from the machine to the field, the billed quantity and the full price.
- */
-export function estimateJob(
-  machine: { rate: number; lat: number; lng: number },
-  machineType: PricedMachineType,
-  job: JobDetails,
-  subsidyPercent: number,
-  platformFeePercent: number,
-): JobEstimate {
-  const distanceKm = distanceInKm(machine, job.field);
-  const quantity = getBillingQuantity(machineType.billingUnit, job.landDecimal, job.hoursOrDays);
-  const price = calculateBookingPrice({
-    quantity,
-    rate: machine.rate,
-    minCharge: machineType.minCharge,
-    distanceKm,
-    freeKm: machineType.freeKm,
-    deliveryRatePerKm: machineType.deliveryRatePerKm,
-    subsidyPercent,
-    platformFeePercent,
-  });
-  return { distanceKm, quantity, price };
-}
+// (The price estimate of one job, estimateJob, lives in pricing.ts so the browser can use it too.)
 
 /** The fields the sort needs. Any result with these can be sorted. */
 type SortableResult = { distanceKm: number; trustScore: number; price: { totalAmount: number } };

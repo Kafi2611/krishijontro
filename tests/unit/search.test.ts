@@ -1,10 +1,12 @@
 // Unit tests for the pure parts of the farmer search:
-// the price estimate and the sort (src/lib/services/search.ts), and reading/writing
-// the search in the page address (src/lib/validators/search.ts).
+// the price estimate (estimateJob in src/lib/services/pricing.ts), the sort
+// (src/lib/services/search.ts), and reading/writing the search in the page address
+// (src/lib/validators/search.ts).
 import { describe, expect, it } from "vitest";
 import { addDays, toDhakaDay } from "@/lib/services/calendar";
+import { estimateJob } from "@/lib/services/pricing";
 import type { PricedMachineType } from "@/lib/services/pricing-rule";
-import { estimateJob, sortSearchResults } from "@/lib/services/search";
+import { sortSearchResults } from "@/lib/services/search";
 import { searchInputToQuery, searchParamsToInput, type MachineSearchInput } from "@/lib/validators/search";
 
 // The seeded tractor type: 2000–3000 Tk per acre, 3 free km, 50 Tk/km, minimum 0.5 acre.

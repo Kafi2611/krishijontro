@@ -17,11 +17,15 @@
  *   providerAmount = workCharge + deliveryCharge − platformFee     <- the provider gets this
  *   Every amount is rounded to whole taka.
  *
+ * Part 3: one job on one machine (estimateJob). It measures the distance from the
+ *   machine to the field and prices the job. The search, the machine page, the booking
+ *   form (live, in the browser) and the booking service all use it, so they always agree.
+ *
  * Everything here is a pure function (no database), so it is easy to test
  * and can also run in the browser (the price calculator and the forms use it).
  */
 import type { BillingUnit } from "@/generated/prisma/enums";
-import { decimalToAcre } from "@/lib/services/geo";
+import { decimalToAcre, distanceInKm, type LatLng } from "@/lib/services/geo";
 
 // ─────────────────────────── Part 1: rate limits ───────────────────────────
 
@@ -162,4 +166,54 @@ export function calculateBookingPrice(input: BookingPriceInput): BookingPrice {
     platformFee,
     providerAmount,
   };
+}
+
+// ─────────────────────────── Part 3: one job on one machine ───────────────────────────
+
+/** A farmer's job, as the price estimate needs it. */
+export type JobDetails = {
+  landDecimal: number;
+  hoursOrDays: number; // only used by machines rented per hour or per day
+  field: LatLng;
+};
+
+/** The parts of a machine type's price rule that the price of a job needs. */
+export type JobPriceRule = {
+  billingUnit: BillingUnit;
+  minCharge: number;
+  freeKm: number;
+  deliveryRatePerKm: number;
+};
+
+/** The estimate for one machine and one job. */
+export type JobEstimate = {
+  distanceKm: number; // machine -> field
+  quantity: number; // acres, hours or days the farmer asked for
+  price: BookingPrice;
+};
+
+/**
+ * Estimates the price of one job on one machine:
+ * the distance from the machine to the field, the billed quantity and the full price.
+ */
+export function estimateJob(
+  machine: { rate: number; lat: number; lng: number },
+  rule: JobPriceRule,
+  job: JobDetails,
+  subsidyPercent: number,
+  platformFeePercent: number,
+): JobEstimate {
+  const distanceKm = distanceInKm(machine, job.field);
+  const quantity = getBillingQuantity(rule.billingUnit, job.landDecimal, job.hoursOrDays);
+  const price = calculateBookingPrice({
+    quantity,
+    rate: machine.rate,
+    minCharge: rule.minCharge,
+    distanceKm,
+    freeKm: rule.freeKm,
+    deliveryRatePerKm: rule.deliveryRatePerKm,
+    subsidyPercent,
+    platformFeePercent,
+  });
+  return { distanceKm, quantity, price };
 }
