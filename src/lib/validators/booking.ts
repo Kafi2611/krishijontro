@@ -2,6 +2,7 @@
 // the server (the server actions), so nobody gets past a rule by skipping the form.
 //   bookingSchema       — the farmer's 3-step booking form
 //   rejectBookingSchema — the provider's reason for saying no
+//   assignOperatorSchema — the provider picks an operator
 import { z } from "zod";
 import { getJobStartAt, isStartFarEnough, START_HOURS } from "@/lib/services/booking-rules";
 import { addDays, toDhakaDay } from "@/lib/services/calendar";
@@ -47,3 +48,10 @@ export const rejectBookingSchema = z.object({
 });
 
 export type RejectBookingInput = z.infer<typeof rejectBookingSchema>;
+
+/** The provider picks one of their operators for a booking. */
+export const assignOperatorSchema = z.object({
+  operatorId: z.string().min(1, "chooseOperator"),
+});
+
+export type AssignOperatorInput = z.infer<typeof assignOperatorSchema>;

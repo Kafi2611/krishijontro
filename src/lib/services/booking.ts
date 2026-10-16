@@ -7,7 +7,8 @@
  * 2. changeBookingStatus(): THE only door for a status change. It checks that the move is
  *    allowed (ALLOWED_TRANSITIONS in booking-rules.ts) and writes a BookingStatusLog row:
  *    who changed what, and when.
- * 3. The provider's steps: acceptBooking (makes the two OTP codes) and rejectBooking (with a reason).
+ * 3. The provider's steps: acceptBooking (makes the two OTP codes), rejectBooking (with a reason)
+ *    and assignOperator (an approved operator who is free at that time).
  * Every step sends messages (simulated SMS) to the people involved (booking-messages.ts).
  *
  * Expected problems (a taken time, a wrong OTP...) are thrown as a BookingProblem inside the
@@ -20,7 +21,9 @@ import { isUniqueConstraintError } from "@/lib/db-errors";
 import {
   bookingAcceptedMessage,
   bookingRejectedMessage,
+  newJobMessage,
   newRequestMessage,
+  operatorAssignedMessage,
   requestSentMessage,
   type BookingMessageInfo,
 } from "@/lib/services/booking-messages";
@@ -85,7 +88,7 @@ function emptyToNull(text: string): string | null {
 
 /** Extra things a status change can save at the same time. */
 type StatusChangeExtra = {
-  data?: Prisma.BookingUpdateManyMutationInput; // more columns, e.g. the OTP codes or startedAt
+  data?: Prisma.BookingUncheckedUpdateManyInput; // more columns, e.g. the OTP codes, operatorId or startedAt
   note?: string; // saved on the history row, e.g. the reason for rejecting
 };
 
@@ -388,6 +391,54 @@ export async function acceptBooking(bookingId: string, providerId: string): Prom
     await changeBookingStatus(bookingId, "ACCEPTED", providerId, tx, { data: { startOtp, finishOtp } });
     await createNotification(
       { userId: booking.farmerId, channel: "SMS", ...bookingAcceptedMessage(messageInfo(booking), startOtp, finishOtp) },
+      tx,
+    );
+  });
+}
+
+/**
+ * The provider sends one of their operators to an accepted booking (ACCEPTED -> OPERATOR_ASSIGNED).
+ * The operator must work for this provider, be approved by the admin, and be free at that time.
+ */
+export async function assignOperator(bookingId: string, providerId: string, operatorId: string): Promise<ActionResult> {
+  return runBookingStep(async (tx) => {
+    const booking = await findProviderBooking(tx, bookingId, providerId);
+    const operator = await tx.user.findFirst({
+      where: {
+        id: operatorId,
+        role: "OPERATOR",
+        status: "ACTIVE",
+        operatorProfile: { providerId, approvalStatus: "APPROVED" },
+      },
+      select: { id: true, name: true, phone: true },
+    });
+    if (!operator) {
+      throw new BookingProblem("operatorNotAllowed");
+    }
+
+    // Lock the operator's row (like the machine in createBooking), so the same operator cannot be
+    // sent to two jobs at the same moment. Then check: one operator drives one machine at a time.
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${operatorId} FOR UPDATE`;
+    const otherJobs = await tx.booking.count({
+      where: {
+        operatorId,
+        status: { in: ACTIVE_BOOKING_STATUSES },
+        startAt: { lt: booking.endAt },
+        endAt: { gt: booking.startAt },
+      },
+    });
+    if (otherJobs > 0) {
+      throw new BookingProblem("operatorBusy");
+    }
+
+    await changeBookingStatus(bookingId, "OPERATOR_ASSIGNED", providerId, tx, { data: { operatorId } });
+    const info = messageInfo(booking);
+    await createNotification(
+      { userId: operator.id, channel: "SMS", ...newJobMessage(info, booking.farmer, booking.fieldAddress) },
+      tx,
+    );
+    await createNotification(
+      { userId: booking.farmerId, channel: "SMS", ...operatorAssignedMessage(info, operator) },
       tx,
     );
   });

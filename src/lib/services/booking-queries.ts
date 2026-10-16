@@ -152,6 +152,39 @@ export async function getProviderBooking(bookingId: string, providerId: string) 
   return { booking, timeline: timelineOf(booking) };
 }
 
+/** One operator the provider can choose for a job. busy = already on another job at that time. */
+export type OperatorChoice = { id: string; name: string; phone: string; busy: boolean };
+
+/**
+ * The provider's operators who may be sent to jobs (approved by the admin, account active),
+ * each marked busy if another job of theirs overlaps this booking's time.
+ */
+export async function listOperatorChoices(
+  providerId: string,
+  booking: { id: string; startAt: Date; endAt: Date },
+): Promise<OperatorChoice[]> {
+  const operators = await db.user.findMany({
+    where: { role: "OPERATOR", status: "ACTIVE", operatorProfile: { providerId, approvalStatus: "APPROVED" } },
+    select: { id: true, name: true, phone: true },
+    orderBy: { name: "asc" },
+  });
+
+  // Their other active jobs that overlap this booking's time.
+  const clashingJobs = await db.booking.findMany({
+    where: {
+      id: { not: booking.id },
+      operatorId: { in: operators.map((operator) => operator.id) },
+      status: { in: ACTIVE_BOOKING_STATUSES },
+      startAt: { lt: booking.endAt },
+      endAt: { gt: booking.startAt },
+    },
+    select: { operatorId: true },
+  });
+  const busyIds = new Set(clashingJobs.map((job) => job.operatorId));
+
+  return operators.map((operator) => ({ ...operator, busy: busyIds.has(operator.id) }));
+}
+
 // ─────────────────────────── The booking form ───────────────────────────
 
 /** The machine, as the booking form shows it (only plain values, so it can be sent to the browser). */

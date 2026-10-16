@@ -1,8 +1,9 @@
 // Provider page: one booking of one of the provider's machines (/provider/bookings/<id>).
-// A new request shows the Accept / Reject buttons at the top. Below: the steps so far, the
-// farmer and operator to call, the job, the provider's share of the bill and the field map.
+// At the top, what the provider must do now: Accept / Reject a new request, or choose an
+// operator for an accepted one. Below: the steps so far, the farmer and operator to call,
+// the job, the provider's share of the bill and the field map.
 // The OTP codes are never read here: only the farmer has them.
-import { Inbox } from "lucide-react";
+import { Inbox, UserRound } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -12,10 +13,11 @@ import { BookingHeader } from "@/components/booking/booking-header";
 import { BookingTimeline } from "@/components/booking/booking-timeline";
 import { ContactLine } from "@/components/booking/contact-line";
 import { MapPicker } from "@/components/map/map-picker";
+import { AssignOperatorForm } from "@/components/provider/assign-operator-form";
 import { BookingDecision } from "@/components/provider/booking-decision";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
-import { getProviderBooking } from "@/lib/services/booking-queries";
+import { getProviderBooking, listOperatorChoices } from "@/lib/services/booking-queries";
 
 type ProviderBookingPageProps = {
   params: Promise<{ id: string }>;
@@ -35,6 +37,8 @@ export default async function ProviderBookingPage({ params }: ProviderBookingPag
   }
   const { booking, timeline } = details;
   const field = { lat: booking.fieldLat, lng: booking.fieldLng };
+  // Only an accepted booking needs an operator, so only then we load the choices.
+  const operators = booking.status === "ACCEPTED" ? await listOperatorChoices(provider.id, booking) : [];
 
   const t = await getTranslations("BookingView");
   const tProvider = await getTranslations("ProviderBookings");
@@ -56,6 +60,20 @@ export default async function ProviderBookingPage({ params }: ProviderBookingPag
           <CardContent className="space-y-4">
             <p>{tProvider("decideText", { farmer: booking.farmer.name })}</p>
             <BookingDecision bookingId={booking.id} />
+          </CardContent>
+        </Card>
+      )}
+      {booking.status === "ACCEPTED" && (
+        <Card className="border-amber-300 bg-amber-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserRound className="size-5 text-amber-700" aria-hidden />
+              {tProvider("assignTitle")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p>{tProvider("assignText")}</p>
+            <AssignOperatorForm bookingId={booking.id} operators={operators} />
           </CardContent>
         </Card>
       )}

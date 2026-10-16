@@ -28,6 +28,7 @@ export function formatDhakaTime(date: Date, language: "en" | "bn"): string {
 /** The booking's page for the farmer, the provider and the operator. */
 const farmerLink = (booking: BookingMessageInfo) => `/farmer/bookings/${booking.id}`;
 const providerLink = (booking: BookingMessageInfo) => `/provider/bookings/${booking.id}`;
+const operatorLink = (booking: BookingMessageInfo) => `/operator/jobs/${booking.id}`;
 
 /** To the farmer, right after booking. */
 export function requestSentMessage(booking: BookingMessageInfo, totalAmount: number) {
@@ -81,6 +82,37 @@ export function bookingRejectedMessage(booking: BookingMessageInfo, reason: stri
     titleBn: "বুকিং গৃহীত হয়নি",
     body: `The provider cannot take ${code}. Reason: ${reason}. Please search for another machine.`,
     bodyBn: `যন্ত্র মালিক ${toBanglaDigits(code)} নিতে পারছেন না। কারণ: ${reason}। অনুগ্রহ করে অন্য যন্ত্র খুঁজুন।`,
+    link: farmerLink(booking),
+  };
+}
+
+/** To the operator, when the provider sends them to a job. */
+export function newJobMessage(
+  booking: BookingMessageInfo,
+  farmer: { name: string; phone: string },
+  fieldAddress: string | null,
+) {
+  const code = booking.code;
+  const place = fieldAddress ? `, ${fieldAddress}` : "";
+  return {
+    title: "New job",
+    titleBn: "নতুন কাজ",
+    body: `Job ${code}: ${booking.machineName} on ${formatDhakaTime(booking.startAt, "en")} for ${farmer.name} (${farmer.phone})${place}.`,
+    bodyBn:
+      `কাজ ${toBanglaDigits(code)}: ${formatDhakaTime(booking.startAt, "bn")} সময়ে ${farmer.name} (${toBanglaDigits(farmer.phone)}) এর জন্য ` +
+      `${booking.machineName}${place}।`,
+    link: operatorLink(booking),
+  };
+}
+
+/** To the farmer, when an operator is chosen for the booking. */
+export function operatorAssignedMessage(booking: BookingMessageInfo, operator: { name: string; phone: string }) {
+  const code = booking.code;
+  return {
+    title: "Operator chosen",
+    titleBn: "চালক ঠিক হয়েছে",
+    body: `${operator.name} (${operator.phone}) will bring the machine for ${code} on ${formatDhakaTime(booking.startAt, "en")}.`,
+    bodyBn: `${operator.name} (${toBanglaDigits(operator.phone)}) ${formatDhakaTime(booking.startAt, "bn")} সময়ে ${toBanglaDigits(code)} এর জন্য যন্ত্র নিয়ে আসবেন।`,
     link: farmerLink(booking),
   };
 }

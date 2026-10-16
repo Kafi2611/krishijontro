@@ -4,10 +4,18 @@
 // the booking service with the user's own id (so nobody can act for someone else).
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
-import { acceptBooking, createBooking, rejectBooking, type CreateBookingResult } from "@/lib/services/booking";
 import {
+  acceptBooking,
+  assignOperator,
+  createBooking,
+  rejectBooking,
+  type CreateBookingResult,
+} from "@/lib/services/booking";
+import {
+  assignOperatorSchema,
   bookingSchema,
   rejectBookingSchema,
+  type AssignOperatorInput,
   type BookingInput,
   type RejectBookingInput,
 } from "@/lib/validators/booking";
@@ -53,4 +61,14 @@ export async function rejectBookingAction(bookingId: string, values: RejectBooki
     return { ok: false, error: "reasonRequired" };
   }
   return refreshPagesIfDone(await rejectBooking(bookingId, provider.id, parsed.data.reason));
+}
+
+/** The provider sends one of their operators to an accepted booking. */
+export async function assignOperatorAction(bookingId: string, values: AssignOperatorInput): Promise<ActionResult> {
+  const provider = await requireRole("PROVIDER");
+  const parsed = assignOperatorSchema.safeParse(values);
+  if (!parsed.success) {
+    return { ok: false, error: "chooseOperator" };
+  }
+  return refreshPagesIfDone(await assignOperator(bookingId, provider.id, parsed.data.operatorId));
 }

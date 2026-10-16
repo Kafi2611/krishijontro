@@ -125,7 +125,10 @@
     "machineBlocked": "The owner has blocked this time. Please choose another day.",
     "machineNotAvailable": "This machine cannot take this job right now. Please choose another machine.",
     "wrongBookingStatus": "This booking has already moved on (maybe someone else just changed it). Please reload the page.",
-    "startTimePassed": "The start time has already passed, so this request can only be rejected."
+    "startTimePassed": "The start time has already passed, so this request can only be rejected.",
+    "chooseOperator": "Choose an operator",
+    "operatorNotAllowed": "Choose one of your approved operators",
+    "operatorBusy": "This operator has another job at that time"
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",
@@ -799,6 +802,13 @@
     "confirmReject": "Send the answer",
     "cancel": "Cancel",
     "accepted": "Booking accepted. Now choose an operator.",
-    "rejected": "The farmer was told."
+    "rejected": "The farmer was told.",
+    "assignTitle": "Choose an operator",
+    "assignText": "Who will take the machine to the field? They get the job by SMS, and the farmer gets their name and phone.",
+    "busyTag": "Busy at that time",
+    "assignButton": "Send this operator",
+    "assigned": "Operator sent. They got the job by SMS.",
+    "noOperators": "You have no approved operator yet. Add one; the admin must approve them first.",
+    "addOperator": "Add an operator"
   }
 }
