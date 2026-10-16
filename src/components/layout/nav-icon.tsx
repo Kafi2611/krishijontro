@@ -4,6 +4,7 @@
 import {
   BadgeCheck,
   Bell,
+  CalendarCheck,
   LayoutDashboard,
   Scale,
   Search,
@@ -27,6 +28,7 @@ const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   approvals: BadgeCheck,
   pricing: Scale,
   search: Search,
+  bookings: CalendarCheck,
 };
 
 export function NavIcon({ name, className }: { name: NavIconName; className?: string }) {

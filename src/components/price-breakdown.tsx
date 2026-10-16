@@ -4,7 +4,8 @@
 //   Subsidy (20%)                                  − 317 Tk
 //   You pay                                        1,517 Tk
 // The numbers come from calculateBookingPrice() in lib/services/pricing.ts.
-// Used by the price calculator and the machine details page (and the booking form later).
+// Used by the price calculator, the machine details page and the booking form.
+// PriceLine (one line of a bill) is also used by the saved bill on a booking's page.
 import { useTranslations } from "next-intl";
 import type { BillingUnit } from "@/generated/prisma/enums";
 import type { BookingPrice } from "@/lib/services/pricing";
@@ -30,7 +31,7 @@ type PriceLineProps = {
 };
 
 /** One line of the bill: a name with a small explanation on the left, the amount on the right. */
-function PriceLine({ label, detail, note, amount, className }: PriceLineProps) {
+export function PriceLine({ label, detail, note, amount, className }: PriceLineProps) {
   return (
     <div className={cn("flex items-start justify-between gap-4", className)}>
       <dt>
