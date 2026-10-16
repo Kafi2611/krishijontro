@@ -67,3 +67,25 @@ What was built in each phase, and how to check it.
 - Tap a result: the machine page shows the price line by line, the free days, the map and reviews; **Back to search** returns to the same results. Switch to **বাং** to see the pages in Bangla.
 - Log in as govt (`01700000007`) → **Price limits** → Tractor → set the highest rate to 2500 and save: "2 machines are now outside the limit", and the old limit appears under "Earlier limits". Provider Kamrul (`01720000003`) gets a message and a red note on his Massey Ferguson, and it no longer appears in the farmer search. Run `npm run db:seed` afterwards to reset the demo data.
 - `npm test` runs 113 unit tests (price formula, price limit form, suggestion rules, search sort and address, subsidy, calendar); `npm run lint` and `npm run build` pass.
+
+---
+
+## Phase 4 — Booking (16 October 2026)
+
+**What was built**
+
+- **3-step booking form** (farmer): 1) the job — work, land size (or hours/days) and the field on the map; 2) the day and a start time — times when the machine is already booked or blocked are crossed out, and the form says how long the work takes; 3) a summary and a message for the provider. The price card beside the form changes live while the farmer types (the same formula as the server). It opens from **Book this machine** on the machine page and starts with the farmer's search.
+- **No double booking**: the booking is saved inside one database transaction that first locks the machine's row, then refuses any active booking or blocked time that overlaps. Two farmers pressing "Book now" at the same moment for the same time: one gets the booking, the other is told the time is taken. Each booking gets a code like `KJ-2026-000023`.
+- **One door for every status change**: `changeBookingStatus()` checks the allowed move (e.g. Requested → Accepted, never Requested → Working) and writes a history row (who, what, when). The booking page shows these rows as a **timeline**, with the steps still to come in grey.
+- **Provider**: a **Bookings** page grouped by what to do (new requests, need an operator, upcoming/working, earlier). Accept, or reject with a reason; accepting makes the farmer's two 4-digit codes. Then **choose an operator** — only approved operators of this provider, and one already busy at that time is greyed out.
+- **Operator**: **My jobs** (to do now, coming up, done) and a job screen with the farmer's phone, the field on the map and one big button at a time: **On the way → I have arrived → Start** (type the farmer's start code) **→ Finish** (type the real land or hours worked and the farmer's finish code). The final bill is worked out again from the real amount. Codes may be typed with Bangla digits.
+- **Farmer**: **My bookings** and a booking page with the status, the secret start/finish code (only the farmer ever sees them), the timeline, the provider and operator to call, the bill and the field map. Every step sends a message (simulated SMS) to the right people, and tapping a message opens its booking. Dashboards show current bookings, waiting requests and today's jobs.
+
+**How to test it** (run `npm run db:migrate` once for the new `arrivedAt` column, then `npm run db:seed`)
+
+- Farmer `01700000001` → **Find machines** → tap the Mahindra 575 DI → **Book this machine**: type 66 decimal (the price becomes 1,267 Tk), **Next**, pick tomorrow 10:00 AM, **Next**, **Book now**. The booking page shows "Requested" and the timeline. Open the same booking form again as farmer `01710000001`: 9, 10 and 11 AM are now crossed out.
+- Provider `01700000003` → **Bookings**: the new request is at the top. Press **Reject** with an empty reason (refused), then **Accept**. The farmer now sees a start code on the booking page and in **Messages**. Back as the provider, choose **Selim Mia** and press **Send this operator**.
+- Operator `01700000004` → **My jobs** → the new job: **I am on the way**, **I have arrived**, type a wrong start code (refused), then the farmer's start code → "Working". Type 70 for the land and the farmer's finish code → "Work done". The farmer's bill becomes 1,680 − 336 = **1,344 Tk**.
+- As the farmer, open **Messages** and tap a message: it opens that booking. Switch to **বাং**: every new page is in Bangla, with Bangla digits in codes and times.
+- Log in as another operator (`01730000005`) and open Selim's job address: "Page not found".
+- `npm test` runs 146 unit tests (status moves, job time, codes, timeline, list groups, booking form and OTP rules); `npm run lint` and `npm run build` pass.
