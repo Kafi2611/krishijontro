@@ -56,3 +56,31 @@ export function newRequestMessage(booking: BookingMessageInfo, farmerName: strin
     link: providerLink(booking),
   };
 }
+
+/** To the farmer, when the provider accepts. The two OTP codes are only ever sent to the farmer. */
+export function bookingAcceptedMessage(booking: BookingMessageInfo, startOtp: string, finishOtp: string) {
+  const code = booking.code;
+  return {
+    title: "Booking accepted",
+    titleBn: "বুকিং গৃহীত হয়েছে",
+    body:
+      `${code} is accepted. Start code: ${startOtp}. Finish code: ${finishOtp}. ` +
+      `Give each code to the operator only when the work starts, and when it is finished.`,
+    bodyBn:
+      `${toBanglaDigits(code)} গৃহীত হয়েছে। শুরুর কোড: ${toBanglaDigits(startOtp)}। শেষের কোড: ${toBanglaDigits(finishOtp)}। ` +
+      `কাজ শুরু হলে এবং শেষ হলে তবেই চালককে কোডটি দিন।`,
+    link: farmerLink(booking),
+  };
+}
+
+/** To the farmer, when the provider says no. */
+export function bookingRejectedMessage(booking: BookingMessageInfo, reason: string) {
+  const code = booking.code;
+  return {
+    title: "Booking not accepted",
+    titleBn: "বুকিং গৃহীত হয়নি",
+    body: `The provider cannot take ${code}. Reason: ${reason}. Please search for another machine.`,
+    bodyBn: `যন্ত্র মালিক ${toBanglaDigits(code)} নিতে পারছেন না। কারণ: ${reason}। অনুগ্রহ করে অন্য যন্ত্র খুঁজুন।`,
+    link: farmerLink(booking),
+  };
+}

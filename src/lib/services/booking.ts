@@ -7,6 +7,8 @@
  * 2. changeBookingStatus(): THE only door for a status change. It checks that the move is
  *    allowed (ALLOWED_TRANSITIONS in booking-rules.ts) and writes a BookingStatusLog row:
  *    who changed what, and when.
+ * 3. The provider's steps: acceptBooking (makes the two OTP codes) and rejectBooking (with a reason).
+ * Every step sends messages (simulated SMS) to the people involved (booking-messages.ts).
  *
  * Expected problems (a taken time, a wrong OTP...) are thrown as a BookingProblem inside the
  * transaction. Throwing cancels the whole transaction, so nothing half-done is ever saved.
@@ -15,11 +17,18 @@ import type { Prisma } from "@/generated/prisma/client";
 import type { BookingStatus } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { isUniqueConstraintError } from "@/lib/db-errors";
-import { newRequestMessage, requestSentMessage } from "@/lib/services/booking-messages";
+import {
+  bookingAcceptedMessage,
+  bookingRejectedMessage,
+  newRequestMessage,
+  requestSentMessage,
+  type BookingMessageInfo,
+} from "@/lib/services/booking-messages";
 import {
   ACTIVE_BOOKING_STATUSES,
   canChangeStatus,
   formatBookingCode,
+  generateOtp,
   getBookingYear,
   getJobTimeRange,
   readBookingSerial,
@@ -329,4 +338,69 @@ export async function createBooking(
     }
     throw error;
   }
+}
+
+// ─────────────────────────── The provider's steps ───────────────────────────
+
+/** The facts every message needs, from a booking and its machine. */
+function messageInfo(booking: { id: string; code: string; startAt: Date; machine: { brand: string; model: string } }): BookingMessageInfo {
+  return {
+    id: booking.id,
+    code: booking.code,
+    startAt: booking.startAt,
+    machineName: `${booking.machine.brand} ${booking.machine.model}`,
+  };
+}
+
+/**
+ * A booking of one of THIS provider's machines, read inside the transaction.
+ * Throws "notFound" for any other booking, so a provider can never touch another provider's booking.
+ */
+async function findProviderBooking(tx: Prisma.TransactionClient, bookingId: string, providerId: string) {
+  const booking = await tx.booking.findFirst({
+    where: { id: bookingId, machine: { providerId } },
+    include: {
+      machine: { select: { brand: true, model: true } },
+      farmer: { select: { name: true, phone: true } },
+    },
+  });
+  if (!booking) {
+    throw new BookingProblem("notFound");
+  }
+  return booking;
+}
+
+/**
+ * The provider accepts a request (REQUESTED -> ACCEPTED).
+ * The two OTP codes are made now. They are sent only to the farmer, who gives them to the
+ * operator at the field: the start code to start the work, the finish code to finish it.
+ */
+export async function acceptBooking(bookingId: string, providerId: string): Promise<ActionResult> {
+  return runBookingStep(async (tx) => {
+    const booking = await findProviderBooking(tx, bookingId, providerId);
+    // A request for a time that has already passed cannot be accepted any more (only rejected).
+    if (booking.startAt <= new Date()) {
+      throw new BookingProblem("startTimePassed");
+    }
+
+    const startOtp = generateOtp();
+    const finishOtp = generateOtp();
+    await changeBookingStatus(bookingId, "ACCEPTED", providerId, tx, { data: { startOtp, finishOtp } });
+    await createNotification(
+      { userId: booking.farmerId, channel: "SMS", ...bookingAcceptedMessage(messageInfo(booking), startOtp, finishOtp) },
+      tx,
+    );
+  });
+}
+
+/** The provider says no to a request (REQUESTED -> REJECTED). The reason is saved and sent to the farmer. */
+export async function rejectBooking(bookingId: string, providerId: string, reason: string): Promise<ActionResult> {
+  return runBookingStep(async (tx) => {
+    const booking = await findProviderBooking(tx, bookingId, providerId);
+    await changeBookingStatus(bookingId, "REJECTED", providerId, tx, { note: reason });
+    await createNotification(
+      { userId: booking.farmerId, channel: "SMS", ...bookingRejectedMessage(messageInfo(booking), reason) },
+      tx,
+    );
+  });
 }

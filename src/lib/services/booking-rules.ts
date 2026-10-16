@@ -7,7 +7,7 @@
  *   1. Groups of statuses: which keep a machine busy, which are finished.
  *   2. The allowed moves between statuses (the life of a booking).
  *   3. Job time: how long a job takes, and when it starts and ends.
- *   4. Codes: the booking code (KJ-2026-000123) and the 4-digit OTP codes.
+ *   4. Codes: the booking code (KJ-2026-000123) and the 4-digit OTP codes; the provider's share.
  *   5. What each person sees next: the farmer's OTP, the operator's next button.
  *   6. Sorting bookings into the groups the lists show.
  *   7. The timeline on a booking's page.
@@ -163,6 +163,15 @@ export function getBookingYear(now: Date = new Date()): number {
 export function generateOtp(): string {
   const [randomNumber] = crypto.getRandomValues(new Uint32Array(1));
   return String(randomNumber % 10000).padStart(4, "0");
+}
+
+/**
+ * What the provider gets from a booking: work + delivery − the platform fee.
+ * (The subsidy does not lower it: the government pays that part instead of the farmer.)
+ * Example: work 1584 + delivery 250 − fee 55 -> 1779
+ */
+export function getProviderShare(booking: { workCharge: number; deliveryCharge: number; platformFee: number }): number {
+  return booking.workCharge + booking.deliveryCharge - booking.platformFee;
 }
 
 // ─────────────────────────── 5. What each person sees next ───────────────────────────

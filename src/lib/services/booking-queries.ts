@@ -16,6 +16,7 @@ import {
   buildTimeline,
   DEFAULT_START_HOUR,
   getOtpToShow,
+  groupProviderBookings,
   splitFarmerBookings,
 } from "@/lib/services/booking-rules";
 import { addDays, toDhakaDay, type TimeRange } from "@/lib/services/calendar";
@@ -109,6 +110,46 @@ function codeToShow(booking: { status: BookingStatus; startOtp: string | null; f
     return null;
   }
   return { kind, code };
+}
+
+// ─────────────────────────── The provider ───────────────────────────
+
+/** How many of the "Earlier" bookings the provider's list shows. */
+const EARLIER_TO_SHOW = 30;
+
+/**
+ * The bookings of the provider's machines, grouped by what the provider has to do
+ * (groupProviderBookings in booking-rules.ts). The OTP codes are left out.
+ */
+export async function listProviderBookings(providerId: string) {
+  const bookings = await db.booking.findMany({
+    where: { machine: { providerId } },
+    include: { machine: MACHINE_FOR_CARD, farmer: { select: { name: true } } },
+    omit: SECRET_CODES,
+  });
+  const groups = groupProviderBookings(bookings);
+  return { ...groups, earlier: groups.earlier.slice(0, EARLIER_TO_SHOW) };
+}
+
+/**
+ * One booking of one of the provider's OWN machines, with everything its page shows,
+ * or null for anyone else's booking. The OTP codes are left out: only the farmer has them.
+ */
+export async function getProviderBooking(bookingId: string, providerId: string) {
+  const booking = await db.booking.findFirst({
+    where: { id: bookingId, machine: { providerId } },
+    omit: SECRET_CODES,
+    include: {
+      machine: { select: { brand: true, model: true, machineType: { select: { name: true, nameBn: true, icon: true } } } },
+      farmer: { select: { name: true, phone: true } },
+      operator: { select: { name: true, phone: true } },
+      statusLogs: STATUS_LOGS,
+    },
+  });
+  if (!booking) {
+    return null;
+  }
+  return { booking, timeline: timelineOf(booking) };
 }
 
 // ─────────────────────────── The booking form ───────────────────────────

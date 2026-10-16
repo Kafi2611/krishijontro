@@ -7,6 +7,7 @@
 import { useTranslations } from "next-intl";
 import { PriceLine } from "@/components/price-breakdown";
 import type { BillingUnit } from "@/generated/prisma/enums";
+import { getProviderShare } from "@/lib/services/booking-rules";
 
 /** The Booking columns the bill needs. */
 type BillBooking = {
@@ -32,7 +33,7 @@ export function BookingBill({ booking, view, subsidyPercent }: BookingBillProps)
   const tPrice = useTranslations("Price");
   const tMoney = useTranslations("Money");
 
-  const providerAmount = booking.workCharge + booking.deliveryCharge - booking.platformFee;
+  const providerAmount = getProviderShare(booking);
   const rate = tMoney("rate", { amount: booking.rateSnapshot, unit: booking.billingUnit });
 
   return (

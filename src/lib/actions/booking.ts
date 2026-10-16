@@ -4,8 +4,22 @@
 // the booking service with the user's own id (so nobody can act for someone else).
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
-import { createBooking, type CreateBookingResult } from "@/lib/services/booking";
-import { bookingSchema, type BookingInput } from "@/lib/validators/booking";
+import { acceptBooking, createBooking, rejectBooking, type CreateBookingResult } from "@/lib/services/booking";
+import {
+  bookingSchema,
+  rejectBookingSchema,
+  type BookingInput,
+  type RejectBookingInput,
+} from "@/lib/validators/booking";
+import type { ActionResult } from "@/lib/validators/types";
+
+/** After a successful step, every page is drawn again with the new status. */
+function refreshPagesIfDone(result: ActionResult): ActionResult {
+  if (result.ok) {
+    revalidatePath("/", "layout");
+  }
+  return result;
+}
 
 /** The farmer's "Book now". Returns the new booking's id, or an error key. */
 export async function createBookingAction(values: BookingInput): Promise<CreateBookingResult> {
@@ -21,4 +35,22 @@ export async function createBookingAction(values: BookingInput): Promise<CreateB
     revalidatePath("/", "layout"); // the machine is now busy at that time; the lists change
   }
   return result;
+}
+
+// ─────────────────────────── Provider ───────────────────────────
+
+/** The provider accepts a request: the farmer gets the start and finish codes. */
+export async function acceptBookingAction(bookingId: string): Promise<ActionResult> {
+  const provider = await requireRole("PROVIDER");
+  return refreshPagesIfDone(await acceptBooking(bookingId, provider.id));
+}
+
+/** The provider rejects a request with a reason (sent to the farmer). */
+export async function rejectBookingAction(bookingId: string, values: RejectBookingInput): Promise<ActionResult> {
+  const provider = await requireRole("PROVIDER");
+  const parsed = rejectBookingSchema.safeParse(values);
+  if (!parsed.success) {
+    return { ok: false, error: "reasonRequired" };
+  }
+  return refreshPagesIfDone(await rejectBooking(bookingId, provider.id, parsed.data.reason));
 }

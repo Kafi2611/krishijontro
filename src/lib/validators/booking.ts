@@ -1,6 +1,7 @@
 // Zod rules for the booking forms. The same rules run in the browser (the forms) and on
 // the server (the server actions), so nobody gets past a rule by skipping the form.
-//   bookingSchema — the farmer's 3-step booking form
+//   bookingSchema       — the farmer's 3-step booking form
+//   rejectBookingSchema — the provider's reason for saying no
 import { z } from "zod";
 import { getJobStartAt, isStartFarEnough, START_HOURS } from "@/lib/services/booking-rules";
 import { addDays, toDhakaDay } from "@/lib/services/calendar";
@@ -39,3 +40,10 @@ export const bookingSchema = z
   });
 
 export type BookingInput = z.infer<typeof bookingSchema>;
+
+/** The provider says no: the farmer must be told why (at least 3 letters). */
+export const rejectBookingSchema = z.object({
+  reason: z.string().trim().min(3, "reasonRequired").max(200, "tooLong"),
+});
+
+export type RejectBookingInput = z.infer<typeof rejectBookingSchema>;

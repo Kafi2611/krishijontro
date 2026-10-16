@@ -14,6 +14,7 @@ import {
   getJobTimeRange,
   getOperatorNextStep,
   getOtpToShow,
+  getProviderShare,
   groupOperatorJobs,
   groupProviderBookings,
   isStartFarEnough,
@@ -203,5 +204,11 @@ describe("buildTimeline", () => {
     const steps = buildTimeline([log("REQUESTED", "2026-10-18T03:00:00Z"), rejected], null, "REJECTED");
     expect(steps.map((step) => step.key)).toEqual(["REQUESTED", "REJECTED"]);
     expect(steps[1].note).toBe("Machine is busy that week");
+  });
+});
+
+describe("getProviderShare", () => {
+  it("gives the provider work + delivery − platform fee (the project example)", () => {
+    expect(getProviderShare({ workCharge: 1584, deliveryCharge: 250, platformFee: 55 })).toBe(1779);
   });
 });

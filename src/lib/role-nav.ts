@@ -34,6 +34,7 @@ const ROLE_LINKS: Record<Role, NavItem[]> = {
   ],
   COOP_LEADER: [],
   PROVIDER: [
+    { href: "/provider/bookings", labelKey: "bookings", icon: "bookings" },
     { href: "/provider/machines", labelKey: "machines", icon: "machines" },
     { href: "/provider/operators", labelKey: "operators", icon: "operators" },
     { href: "/provider/business", labelKey: "business", icon: "business" },

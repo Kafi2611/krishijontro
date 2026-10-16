@@ -124,7 +124,8 @@
     "timeTaken": "This machine is already booked at this time. Please choose another time.",
     "machineBlocked": "The owner has blocked this time. Please choose another day.",
     "machineNotAvailable": "This machine cannot take this job right now. Please choose another machine.",
-    "wrongBookingStatus": "This booking has already moved on (maybe someone else just changed it). Please reload the page."
+    "wrongBookingStatus": "This booking has already moved on (maybe someone else just changed it). Please reload the page.",
+    "startTimePassed": "The start time has already passed, so this request can only be rejected."
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",
@@ -163,7 +164,8 @@
     "approvals": "Approvals",
     "pricing": "Price limits",
     "search": "Find machines",
-    "myBookings": "My bookings"
+    "myBookings": "My bookings",
+    "bookings": "Bookings"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -778,5 +780,25 @@
     "priceHint": "Enter the land size to see the price.",
     "cannotBook": "This machine cannot be booked right now (it needs service, or its price is being updated). Please choose another machine.",
     "busyAllDay": "All day"
+  },
+  "ProviderBookings": {
+    "title": "Bookings",
+    "subtitle": "Requests for your machines and the jobs in progress.",
+    "requests": "New requests",
+    "needOperator": "Choose an operator",
+    "ongoing": "Upcoming and working",
+    "earlier": "Earlier",
+    "empty": "No bookings yet. Farmers find your approved machines in the search.",
+    "noneHere": "Nothing here right now.",
+    "decideTitle": "New request",
+    "decideText": "{farmer} is waiting for your answer. If you accept, the farmer gets the start and finish codes.",
+    "accept": "Accept",
+    "reject": "Reject",
+    "reasonLabel": "Why can't you take it?",
+    "reasonPlaceholder": "e.g. The machine is needed on my own land that day",
+    "confirmReject": "Send the answer",
+    "cancel": "Cancel",
+    "accepted": "Booking accepted. Now choose an operator.",
+    "rejected": "The farmer was told."
   }
 }
