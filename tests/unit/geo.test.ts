@@ -1,9 +1,11 @@
-// Unit tests for src/lib/services/geo.ts (distance, land units and the Bangladesh map box).
+// Unit tests for src/lib/services/geo.ts (distance, land units, the Bangladesh map box
+// and the nearest place).
 import { describe, expect, it } from "vitest";
 import {
   decimalToAcre,
   decimalToBigha,
   distanceInKm,
+  findNearestPlace,
   isInsideBangladesh,
   toDecimal,
 } from "@/lib/services/geo";
@@ -55,5 +57,22 @@ describe("isInsideBangladesh", () => {
   it("rejects places far outside Bangladesh", () => {
     expect(isInsideBangladesh({ lat: 28.6139, lng: 77.209 })).toBe(false); // Delhi
     expect(isInsideBangladesh({ lat: 0, lng: 0 })).toBe(false); // a forgotten (empty) point
+  });
+});
+
+describe("findNearestPlace", () => {
+  const upazilas = [
+    { id: "paba", lat: 24.4167, lng: 88.6167 },
+    { id: "godagari", lat: 24.4667, lng: 88.3333 },
+    { id: "no-centre", lat: null, lng: null },
+  ];
+
+  it("finds the place whose centre is closest", () => {
+    expect(findNearestPlace({ lat: 24.42, lng: 88.6 }, upazilas)?.id).toBe("paba");
+    expect(findNearestPlace({ lat: 24.46, lng: 88.35 }, upazilas)?.id).toBe("godagari");
+  });
+
+  it("gives null when no place has a centre", () => {
+    expect(findNearestPlace({ lat: 24.42, lng: 88.6 }, [{ id: "x", lat: null, lng: null }])).toBe(null);
   });
 });

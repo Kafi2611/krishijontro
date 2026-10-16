@@ -1,0 +1,332 @@
+/**
+ * Booking service — creating a booking, and every change of its status after that.
+ *
+ * 1. createBooking(): a farmer books a machine. Inside ONE database transaction we lock
+ *    the machine, check that no other booking or blocked time overlaps (no double booking),
+ *    give the booking its code (KJ-2026-000123) and save it with its first history row.
+ * 2. changeBookingStatus(): THE only door for a status change. It checks that the move is
+ *    allowed (ALLOWED_TRANSITIONS in booking-rules.ts) and writes a BookingStatusLog row:
+ *    who changed what, and when.
+ *
+ * Expected problems (a taken time, a wrong OTP...) are thrown as a BookingProblem inside the
+ * transaction. Throwing cancels the whole transaction, so nothing half-done is ever saved.
+ */
+import type { Prisma } from "@/generated/prisma/client";
+import type { BookingStatus } from "@/generated/prisma/enums";
+import { db } from "@/lib/db";
+import { isUniqueConstraintError } from "@/lib/db-errors";
+import { newRequestMessage, requestSentMessage } from "@/lib/services/booking-messages";
+import {
+  ACTIVE_BOOKING_STATUSES,
+  canChangeStatus,
+  formatBookingCode,
+  getBookingYear,
+  getJobTimeRange,
+  readBookingSerial,
+} from "@/lib/services/booking-rules";
+import { toDecimal } from "@/lib/services/geo";
+import { findNearestUpazilaId } from "@/lib/services/location";
+import { isMachineListed, isServiceDue } from "@/lib/services/machine-rules";
+import { createNotification } from "@/lib/services/notification";
+import { estimateJob, isRateAllowed } from "@/lib/services/pricing";
+import { listPricedMachineTypes } from "@/lib/services/pricing-rule";
+import { getPlatformFeePercent } from "@/lib/services/settings";
+import { findUsableSubsidy } from "@/lib/services/subsidy";
+import type { BookingInput } from "@/lib/validators/booking";
+import type { ActionResult, ValidationKey } from "@/lib/validators/types";
+
+// ─────────────────────────── Problems inside a transaction ───────────────────────────
+
+/**
+ * A problem we expect, like a taken time or a wrong OTP. `key` is the error message key.
+ * We THROW it inside a transaction: throwing cancels ("rolls back") the whole transaction.
+ */
+export class BookingProblem extends Error {
+  readonly key: ValidationKey;
+
+  constructor(key: ValidationKey) {
+    super(key);
+    this.key = key;
+  }
+}
+
+/**
+ * Runs one booking step inside a transaction and turns the outcome into an ActionResult:
+ * { ok: true } when everything was saved, or { ok: false, error } when the step threw a
+ * BookingProblem (then nothing was saved). Any other error is a real bug, so it is thrown on.
+ */
+export async function runBookingStep(step: (tx: Prisma.TransactionClient) => Promise<void>): Promise<ActionResult> {
+  try {
+    await db.$transaction(step);
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof BookingProblem) {
+      return { ok: false, error: error.key };
+    }
+    throw error;
+  }
+}
+
+/** An empty text box is saved as "no value" (null). */
+function emptyToNull(text: string): string | null {
+  return text === "" ? null : text;
+}
+
+// ─────────────────────────── Changing the status ───────────────────────────
+
+/** Extra things a status change can save at the same time. */
+type StatusChangeExtra = {
+  data?: Prisma.BookingUpdateManyMutationInput; // more columns, e.g. the OTP codes or startedAt
+  note?: string; // saved on the history row, e.g. the reason for rejecting
+};
+
+/**
+ * Changes a booking's status — the ONLY place in the app that does it.
+ * 1. checks that the move is allowed (e.g. REQUESTED -> ACCEPTED yes, REQUESTED -> WORKING no)
+ * 2. changes the status (and any extra columns)
+ * 3. writes the history row (BookingStatusLog): from, to, who, when
+ * It must run inside a transaction (tx) together with the rest of the step.
+ * Throws BookingProblem("wrongBookingStatus") if the move is not allowed.
+ */
+export async function changeBookingStatus(
+  bookingId: string,
+  toStatus: BookingStatus,
+  actorId: string,
+  tx: Prisma.TransactionClient,
+  extra: StatusChangeExtra = {},
+): Promise<void> {
+  const booking = await tx.booking.findUnique({ where: { id: bookingId }, select: { status: true } });
+  if (!booking) {
+    throw new BookingProblem("notFound");
+  }
+  if (!canChangeStatus(booking.status, toStatus)) {
+    throw new BookingProblem("wrongBookingStatus");
+  }
+
+  // Change it only if the status is STILL the one we just read. If someone else changed it
+  // a moment ago (two people pressing buttons at once), nothing matches and count is 0.
+  const { count } = await tx.booking.updateMany({
+    where: { id: bookingId, status: booking.status },
+    data: { ...extra.data, status: toStatus },
+  });
+  if (count === 0) {
+    throw new BookingProblem("wrongBookingStatus");
+  }
+
+  await tx.bookingStatusLog.create({
+    data: { bookingId, fromStatus: booking.status, toStatus, actorId, note: extra.note ?? null },
+  });
+}
+
+// ─────────────────────────── Creating a booking ───────────────────────────
+
+export type CreateBookingResult = { ok: true; bookingId: string } | { ok: false; error: ValidationKey };
+
+/** A new booking row (worked out by prepareBooking), with real Date objects for the times. */
+type NewBookingRow = Omit<Prisma.BookingUncheckedCreateInput, "code"> & { startAt: Date; endAt: Date };
+
+/** Everything needed to save a new booking. */
+type PreparedBooking = {
+  row: NewBookingRow;
+  providerId: string;
+  machineName: string;
+};
+
+/**
+ * Step 1 of booking (only reading, before the transaction): checks that the machine can take
+ * the job, then works out the price, the time and the field's upazila.
+ * Returns the booking ready to save, or an error key.
+ */
+async function prepareBooking(
+  farmerId: string,
+  input: BookingInput,
+): Promise<{ ok: true; booking: PreparedBooking } | { ok: false; error: ValidationKey }> {
+  const machine = await db.machine.findUnique({
+    where: { id: input.machineId },
+    include: { provider: { select: { status: true, providerProfile: { select: { approvalStatus: true } } } } },
+  });
+  const providerProfile = machine?.provider.providerProfile;
+  if (!machine || !providerProfile) {
+    return { ok: false, error: "notFound" };
+  }
+
+  // The same checks as the search: a price rule today, the machine listed, the provider
+  // active, the rate inside the limit and no service due.
+  const pricedType = (await listPricedMachineTypes()).find((type) => type.id === machine.machineTypeId);
+  if (!pricedType) {
+    return { ok: false, error: "noPriceRule" };
+  }
+  const listed = isMachineListed({
+    approvalStatus: machine.approvalStatus,
+    status: machine.status,
+    providerApprovalStatus: providerProfile.approvalStatus,
+  });
+  if (!listed || machine.provider.status !== "ACTIVE" || isServiceDue(machine) || !isRateAllowed(machine.rate, pricedType)) {
+    return { ok: false, error: "machineNotAvailable" };
+  }
+  if (!pricedType.workTypes.includes(input.workType)) {
+    return { ok: false, error: "somethingWrong" }; // this machine cannot do that work
+  }
+
+  // The price, with the farmer's subsidy (if any): the same estimate the form showed.
+  const field = { lat: input.lat, lng: input.lng };
+  const job = { landDecimal: toDecimal(input.landValue, input.landUnit), hoursOrDays: input.hoursOrDays, field };
+  const [subsidy, platformFeePercent, fieldUpazilaId] = await Promise.all([
+    findUsableSubsidy(farmerId),
+    getPlatformFeePercent(),
+    findNearestUpazilaId(field),
+  ]);
+  const estimate = estimateJob(machine, pricedType, job, subsidy?.discountPercent ?? 0, platformFeePercent);
+  const { startAt, endAt } = getJobTimeRange(input.day, input.startHour, pricedType.billingUnit, estimate.quantity);
+
+  return {
+    ok: true,
+    booking: {
+      providerId: machine.providerId,
+      machineName: `${machine.brand} ${machine.model}`,
+      row: {
+        farmerId,
+        machineId: machine.id,
+        subsidyApplicationId: subsidy?.applicationId ?? null,
+        workType: input.workType,
+        landDecimal: job.landDecimal,
+        billingUnit: pricedType.billingUnit, // copied, so a later change of the type does not change this booking
+        quantity: estimate.quantity,
+        startAt,
+        endAt,
+        fieldLat: input.lat,
+        fieldLng: input.lng,
+        fieldAddress: emptyToNull(input.fieldAddress),
+        locationId: fieldUpazilaId ?? machine.locationId, // the field's upazila (or the machine's, if none is found)
+        distanceKm: estimate.distanceKm,
+        rateSnapshot: machine.rate, // a later rate change does not change this booking
+        workCharge: estimate.price.workCharge,
+        deliveryCharge: estimate.price.deliveryCharge,
+        subsidyAmount: estimate.price.subsidyAmount,
+        totalAmount: estimate.price.totalAmount,
+        platformFee: estimate.price.platformFee,
+        note: emptyToNull(input.note),
+      },
+    },
+  };
+}
+
+/**
+ * Looks for anything on this machine that overlaps [startAt, endAt): an active booking, or a
+ * time the provider blocked. Returns the error key, or null if the time is free.
+ * Two time ranges overlap when each one starts before the other one ends.
+ */
+async function findTimeClash(
+  tx: Prisma.TransactionClient,
+  machineId: string,
+  startAt: Date,
+  endAt: Date,
+): Promise<ValidationKey | null> {
+  const overlaps = { startAt: { lt: endAt }, endAt: { gt: startAt } };
+
+  const bookingCount = await tx.booking.count({
+    where: { machineId, status: { in: ACTIVE_BOOKING_STATUSES }, ...overlaps },
+  });
+  if (bookingCount > 0) {
+    return "timeTaken";
+  }
+
+  const blockCount = await tx.availabilityBlock.count({ where: { machineId, ...overlaps } });
+  if (blockCount > 0) {
+    return "machineBlocked";
+  }
+  return null;
+}
+
+/**
+ * The next free booking code of this year: the highest code so far + 1.
+ * Codes are padded to 6 digits, so sorting the text also sorts the numbers.
+ * Example: the last code is KJ-2026-000022 -> KJ-2026-000023
+ */
+async function nextBookingCode(tx: Prisma.TransactionClient): Promise<string> {
+  const year = getBookingYear();
+  const last = await tx.booking.findFirst({
+    where: { code: { startsWith: `KJ-${year}-` } },
+    orderBy: { code: "desc" },
+    select: { code: true },
+  });
+  const lastSerial = last ? readBookingSerial(last.code) : 0;
+  return formatBookingCode(year, lastSerial + 1);
+}
+
+/**
+ * Step 2 of booking (inside the transaction): lock, check again, save, send messages.
+ * Returns the new booking's id. Throws a BookingProblem if the time is no longer free.
+ */
+async function saveNewBooking(tx: Prisma.TransactionClient, booking: PreparedBooking, farmerName: string): Promise<string> {
+  const { machineId, farmerId, startAt, endAt } = booking.row;
+
+  // 1. Lock this machine's row until the transaction ends ("FOR UPDATE"). If two farmers book
+  //    the same machine at the same moment, the second one waits here until the first booking
+  //    is saved, so the overlap check below always sees the other booking. No double booking.
+  await tx.$queryRaw`SELECT id FROM "Machine" WHERE id = ${machineId} FOR UPDATE`;
+
+  // 2. Read the machine again inside the lock: it may have gone for repair a moment ago.
+  const machine = await tx.machine.findUniqueOrThrow({ where: { id: machineId } });
+  if (machine.status !== "ACTIVE" || isServiceDue(machine)) {
+    throw new BookingProblem("machineNotAvailable");
+  }
+
+  // 3. The time must be free: no active booking and no blocked time overlaps it.
+  const clash = await findTimeClash(tx, machineId, startAt, endAt);
+  if (clash) {
+    throw new BookingProblem(clash);
+  }
+
+  // 4. Save the booking with the next code, and its first history row. The first row has no
+  //    "from" status, because the booking did not exist before (this is not a status change).
+  const code = await nextBookingCode(tx);
+  const created = await tx.booking.create({ data: { ...booking.row, code, status: "REQUESTED" } });
+  await tx.bookingStatusLog.create({
+    data: { bookingId: created.id, fromStatus: null, toStatus: "REQUESTED", actorId: farmerId },
+  });
+
+  // 5. Tell both sides (simulated SMS).
+  const info = { id: created.id, code, machineName: booking.machineName, startAt };
+  await createNotification({ userId: farmerId, channel: "SMS", ...requestSentMessage(info, created.totalAmount) }, tx);
+  await createNotification({ userId: booking.providerId, channel: "SMS", ...newRequestMessage(info, farmerName) }, tx);
+  return created.id;
+}
+
+/** Saves the prepared booking in one transaction. A BookingProblem becomes { ok: false, error }. */
+async function saveInTransaction(booking: PreparedBooking, farmerName: string): Promise<CreateBookingResult> {
+  try {
+    const bookingId = await db.$transaction((tx) => saveNewBooking(tx, booking, farmerName));
+    return { ok: true, bookingId };
+  } catch (error) {
+    if (error instanceof BookingProblem) {
+      return { ok: false, error: error.key };
+    }
+    throw error;
+  }
+}
+
+/**
+ * A farmer books a machine (the 3-step form's "Book now").
+ * Returns the new booking's id, or an error key for the form (e.g. "timeTaken").
+ */
+export async function createBooking(
+  farmer: { id: string; name: string },
+  input: BookingInput,
+): Promise<CreateBookingResult> {
+  const prepared = await prepareBooking(farmer.id, input);
+  if (!prepared.ok) {
+    return prepared;
+  }
+
+  try {
+    return await saveInTransaction(prepared.booking, farmer.name);
+  } catch (error) {
+    // Two bookings got the same code at the same moment. Codes are @unique, so the database
+    // refused the second one; trying once more gives it the next free code.
+    if (isUniqueConstraintError(error)) {
+      return saveInTransaction(prepared.booking, farmer.name);
+    }
+    throw error;
+  }
+}

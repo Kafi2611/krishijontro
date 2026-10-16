@@ -118,7 +118,13 @@
     "seasonDatesBoth": "Give both season dates, or leave both empty",
     "percentInvalid": "Enter a percent from 0 to 50",
     "dayInPast": "Choose today or a later day",
-    "dayTooFar": "Choose a day within the next 60 days"
+    "dayTooFar": "Choose a day within the next 60 days",
+    "chooseStartTime": "Choose a start time",
+    "startTooSoon": "Choose a start at least 2 hours from now, so the provider has time to answer",
+    "timeTaken": "This machine is already booked at this time. Please choose another time.",
+    "machineBlocked": "The owner has blocked this time. Please choose another day.",
+    "machineNotAvailable": "This machine cannot take this job right now. Please choose another machine.",
+    "wrongBookingStatus": "This booking has already moved on (maybe someone else just changed it). Please reload the page."
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",

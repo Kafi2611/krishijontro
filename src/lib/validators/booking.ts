@@ -1,0 +1,41 @@
+// Zod rules for the booking forms. The same rules run in the browser (the forms) and on
+// the server (the server actions), so nobody gets past a rule by skipping the form.
+//   bookingSchema — the farmer's 3-step booking form
+import { z } from "zod";
+import { getJobStartAt, isStartFarEnough, START_HOURS } from "@/lib/services/booking-rules";
+import { addDays, toDhakaDay } from "@/lib/services/calendar";
+import { MAX_DAYS_AHEAD, machineSearchSchema } from "@/lib/validators/search";
+
+// The booking form asks some of the same questions as the search (work, land, day, field),
+// so it reuses exactly the same rules for them.
+const searchFields = machineSearchSchema.shape;
+
+export const bookingSchema = z
+  .object({
+    machineId: z.string().min(1, "somethingWrong"),
+    // Step 1: the job
+    workType: searchFields.workType,
+    landValue: searchFields.landValue,
+    landUnit: searchFields.landUnit,
+    hoursOrDays: searchFields.hoursOrDays, // only for machines rented per hour / day
+    lat: searchFields.lat,
+    lng: searchFields.lng,
+    fieldAddress: z.string().trim().max(120, "tooLong"), // e.g. "North field, next to the pond"
+    // Step 2: the day and the start time
+    day: searchFields.day,
+    startHour: z.number("chooseStartTime").refine((hour) => START_HOURS.includes(hour), "chooseStartTime"),
+    // Step 3: a message for the provider
+    note: z.string().trim().max(300, "tooLong"),
+  })
+  // "YYYY-MM-DD" text sorts like dates, so we can compare days with <=
+  .refine((booking) => booking.day <= addDays(toDhakaDay(new Date()), MAX_DAYS_AHEAD), {
+    message: "dayTooFar",
+    path: ["day"],
+  })
+  // This also refuses a day in the past (it is never "far enough" ahead).
+  .refine((booking) => isStartFarEnough(getJobStartAt(booking.day, booking.startHour)), {
+    message: "startTooSoon",
+    path: ["startHour"],
+  });
+
+export type BookingInput = z.infer<typeof bookingSchema>;

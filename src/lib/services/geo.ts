@@ -117,3 +117,28 @@ export function decimalToAcre(landDecimal: number): number {
 export function decimalToBigha(landDecimal: number): number {
   return landDecimal / DECIMALS_PER_BIGHA;
 }
+
+/**
+ * The place nearest to a point, from a list of places that have a centre point.
+ * Places without a centre (lat or lng empty) are skipped. Returns null if none has one.
+ * <T extends ...> means: any objects with lat and lng; the nearest of THOSE objects comes back.
+ * Example: a field just outside Rajshahi city -> the upazila Paba
+ */
+export function findNearestPlace<T extends { lat: number | null; lng: number | null }>(
+  point: LatLng,
+  places: T[],
+): T | null {
+  let nearest: T | null = null;
+  let nearestKm = Infinity;
+  for (const place of places) {
+    if (place.lat === null || place.lng === null) {
+      continue;
+    }
+    const km = distanceInKm(point, { lat: place.lat, lng: place.lng });
+    if (km < nearestKm) {
+      nearest = place;
+      nearestKm = km;
+    }
+  }
+  return nearest;
+}
