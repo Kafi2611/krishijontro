@@ -98,7 +98,7 @@ enum MachineStatus {
   INACTIVE
 }
 
-// Life of a booking. Allowed moves between these live in lib/services/booking.ts.
+// Life of a booking. Allowed moves between these live in lib/services/booking-rules.ts.
 enum BookingStatus {
   REQUESTED
   ACCEPTED
@@ -553,6 +553,7 @@ model Booking {
   actualQuantity       Float? // real acres / hours entered by the operator at finish
   status               BookingStatus @default(REQUESTED)
   note                 String?
+  arrivedAt            DateTime? // when the operator pressed "Arrived" at the field (a step, not a status)
   startedAt            DateTime?
   completedAt          DateTime?
   payoutId             String? // which provider payout included this booking

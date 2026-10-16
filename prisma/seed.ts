@@ -19,6 +19,7 @@ import {
 } from "../src/generated/prisma/client";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../src/lib/demo-accounts";
 import { hashPassword } from "../src/lib/password";
+import { estimateWorkHours, formatBookingCode, generateOtp, getBookingYear } from "../src/lib/services/booking-rules";
 import { distanceInKm } from "../src/lib/services/geo";
 import { calculateBookingPrice, getBillingQuantity } from "../src/lib/services/pricing";
 
@@ -41,23 +42,6 @@ function daysFromNow(days: number, hour = 9): Date {
 /** Adds hours to a date. */
 function addHours(date: Date, hours: number): Date {
   return new Date(date.getTime() + hours * 60 * 60 * 1000);
-}
-
-/** A random 4-digit code like "0427" (used for start/finish OTP). */
-function randomOtp(): string {
-  return String(Math.floor(Math.random() * 10000)).padStart(4, "0");
-}
-
-/** Booking code like KJ-2026-000007. */
-function bookingCode(serial: number): string {
-  return `KJ-2026-${String(serial).padStart(6, "0")}`;
-}
-
-/** Rough job length in hours, to set endAt. */
-function jobHours(unit: BillingUnit, quantity: number): number {
-  if (unit === "PER_HOUR") return quantity;
-  if (unit === "PER_DAY") return quantity * 8;
-  return Math.max(2, Math.ceil(quantity * 2)); // about 2 hours per acre
 }
 
 // ─────────────────────────── 1. Empty the database ───────────────────────────
@@ -648,7 +632,8 @@ async function createSeedBooking(
     seed.startInHours !== undefined
       ? addHours(new Date(), seed.startInHours)
       : daysFromNow(seed.startDay ?? 0, seed.startHour ?? 9);
-  const endAt = addHours(startAt, jobHours(rule.billingUnit, quantity));
+  // The same job length the app uses (src/lib/services/booking-rules.ts).
+  const endAt = addHours(startAt, estimateWorkHours(rule.billingUnit, quantity));
   // Booked 3 days before the start, but never in the future
   const createdAt = new Date(Math.min(addHours(startAt, -72).getTime(), addHours(new Date(), -3).getTime()));
   const path = STATUS_PATHS[seed.status];
@@ -658,7 +643,7 @@ async function createSeedBooking(
 
   const booking = await db.booking.create({
     data: {
-      code: bookingCode(serial),
+      code: formatBookingCode(getBookingYear(), serial),
       farmerId: seed.farmerId,
       machineId: machine.id,
       operatorId: path.includes("OPERATOR_ASSIGNED") ? seed.operatorId : null,
@@ -676,10 +661,12 @@ async function createSeedBooking(
       distanceKm,
       rateSnapshot: machine.rate,
       ...price,
-      startOtp: wasAccepted ? randomOtp() : null,
-      finishOtp: wasAccepted ? randomOtp() : null,
+      startOtp: wasAccepted ? generateOtp() : null,
+      finishOtp: wasAccepted ? generateOtp() : null,
       actualQuantity: workFinished ? quantity : null,
       status: seed.status,
+      // The operator arrived 15 minutes before the work started.
+      arrivedAt: workStarted ? addHours(startAt, -0.25) : null,
       startedAt: workStarted ? startAt : null,
       completedAt: workFinished ? endAt : null,
       createdAt,
@@ -901,14 +888,15 @@ async function seedExtras(
     ],
   });
 
-  // Notifications (some as simulated SMS), in English and Bangla
+  // Notifications (some as simulated SMS), in English and Bangla.
+  // `link` is the page a tap on the message opens.
   await db.notification.createMany({
     data: [
-      { userId: users.demoFarmer.id, channel: "SMS", title: "Booking received", titleBn: "বুকিং গ্রহণ করা হয়েছে", body: `Your booking ${requested.code} was sent to the provider. Total: ${requested.totalAmount} Tk.`, bodyBn: `আপনার বুকিং ${requested.code} যন্ত্র মালিকের কাছে পাঠানো হয়েছে। মোট: ${requested.totalAmount} টাকা।` },
-      { userId: users.demoFarmer.id, channel: "IN_APP", title: "Operator on the way", titleBn: "চালক রওনা দিয়েছেন", body: `Selim Mia is coming for booking ${onTheWay.code}.`, bodyBn: `বুকিং ${onTheWay.code} এর জন্য সেলিম মিয়া আসছেন।` },
-      { userId: users.demoFarmer.id, channel: "SMS", title: "Payment received", titleBn: "টাকা পাওয়া গেছে", body: `We received your payment for ${paid.code}. Thank you!`, bodyBn: `${paid.code} এর টাকা পাওয়া গেছে। ধন্যবাদ!`, isRead: true },
-      { userId: users.demoProvider.id, channel: "IN_APP", title: "New booking request", titleBn: "নতুন বুকিং অনুরোধ", body: `A farmer requested your tractor (${requested.code}).`, bodyBn: `একজন কৃষক আপনার ট্রাক্টর চেয়েছেন (${requested.code})।` },
-      { userId: users.demoOperator.id, channel: "SMS", title: "New job today", titleBn: "আজ নতুন কাজ", body: `Job ${onTheWay.code}: irrigation pump at Haripur, 10:00 AM.`, bodyBn: `কাজ ${onTheWay.code}: হরিপুরে সেচ পাম্প, সকাল ১০টা।` },
+      { userId: users.demoFarmer.id, channel: "SMS", title: "Booking received", titleBn: "বুকিং গ্রহণ করা হয়েছে", body: `Your booking ${requested.code} was sent to the provider. Total: ${requested.totalAmount} Tk.`, bodyBn: `আপনার বুকিং ${requested.code} যন্ত্র মালিকের কাছে পাঠানো হয়েছে। মোট: ${requested.totalAmount} টাকা।`, link: `/farmer/bookings/${requested.id}` },
+      { userId: users.demoFarmer.id, channel: "IN_APP", title: "Operator on the way", titleBn: "চালক রওনা দিয়েছেন", body: `Selim Mia is coming for booking ${onTheWay.code}.`, bodyBn: `বুকিং ${onTheWay.code} এর জন্য সেলিম মিয়া আসছেন।`, link: `/farmer/bookings/${onTheWay.id}` },
+      { userId: users.demoFarmer.id, channel: "SMS", title: "Payment received", titleBn: "টাকা পাওয়া গেছে", body: `We received your payment for ${paid.code}. Thank you!`, bodyBn: `${paid.code} এর টাকা পাওয়া গেছে। ধন্যবাদ!`, isRead: true, link: `/farmer/bookings/${paid.id}` },
+      { userId: users.demoProvider.id, channel: "IN_APP", title: "New booking request", titleBn: "নতুন বুকিং অনুরোধ", body: `A farmer requested your tractor (${requested.code}).`, bodyBn: `একজন কৃষক আপনার ট্রাক্টর চেয়েছেন (${requested.code})।`, link: `/provider/bookings/${requested.id}` },
+      { userId: users.demoOperator.id, channel: "SMS", title: "New job today", titleBn: "আজ নতুন কাজ", body: `Job ${onTheWay.code}: irrigation pump at Haripur.`, bodyBn: `কাজ ${onTheWay.code}: হরিপুরে সেচ পাম্প।`, link: `/operator/jobs/${onTheWay.id}` },
       { userId: users.demoTechnician.id, channel: "IN_APP", title: "Repair request", titleBn: "মেরামতের অনুরোধ", body: "Power tiller DF-15L broke down in Tanore.", bodyBn: "তানোরে পাওয়ার টিলার DF-15L নষ্ট হয়েছে।" },
       { userId: users.admin.id, channel: "IN_APP", title: "Provider waiting for approval", titleBn: "যন্ত্র মালিক অনুমোদনের অপেক্ষায়", body: "Ayesha Siddika registered as a provider.", bodyBn: "আয়েশা সিদ্দিকা যন্ত্র মালিক হিসেবে নিবন্ধন করেছেন।" },
       { userId: users.demoOfficer.id, channel: "IN_APP", title: "New subsidy application", titleBn: "নতুন ভর্তুকি আবেদন", body: "Shafiqul Islam applied for the small farmer subsidy.", bodyBn: "শফিকুল ইসলাম ক্ষুদ্র কৃষক ভর্তুকির জন্য আবেদন করেছেন।" },
