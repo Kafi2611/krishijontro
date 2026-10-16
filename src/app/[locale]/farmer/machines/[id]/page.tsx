@@ -1,9 +1,9 @@
 // Farmer page: one machine (/farmer/machines/<id>?<the search>). Shows photos, the
-// price for the farmer's job line by line, the facts, which of the next 14 days are
-// free, the machine and the field on a map, and the latest reviews.
+// price for the farmer's job line by line with a "Book this machine" button, the facts,
+// which of the next 14 days are free, the machine and the field on a map, and the latest reviews.
 // The job (land, hours, field) comes from the search in the address; when the page is
 // opened without a search, the farmer's own land size and upazila are used.
-import { ArrowLeft, CircleAlert, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CalendarCheck, CircleAlert, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
@@ -130,6 +130,15 @@ export default async function FarmerMachinePage({ params, searchParams }: Farmer
               <p className="text-muted-foreground">{t("noPrice")}</p>
             )}
             <p className="text-sm text-muted-foreground">{tPrice("estimateNote")}</p>
+            {details.canTakeJobs && (
+              // The booking form starts with the same search (land, field, day).
+              <Button asChild size="lg" className="w-full">
+                <Link href={`/farmer/machines/${machine.id}/book${search ? `?${searchInputToQuery(search)}` : ""}`}>
+                  <CalendarCheck aria-hidden />
+                  {t("bookButton")}
+                </Link>
+              </Button>
+            )}
             {!search && (
               <Button asChild variant="outline" className="w-full">
                 <Link href="/farmer/search">{t("changeJob")}</Link>

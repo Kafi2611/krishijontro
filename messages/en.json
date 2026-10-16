@@ -682,7 +682,8 @@
     "dayBusy": "Busy",
     "mapTitle": "The machine and your field",
     "description": "Description",
-    "reviewsTitle": "Latest reviews"
+    "reviewsTitle": "Latest reviews",
+    "bookButton": "Book this machine"
   },
   "Timeline": {
     "title": "Booking steps",
@@ -728,7 +729,7 @@
     "noFieldAddress": "Shown on the map",
     "distance": "Distance",
     "distanceValue": "{km, number} km from the machine",
-    "note": "Message from the farmer",
+    "note": "Message",
     "peopleTitle": "Contacts",
     "provider": "Provider",
     "operator": "Operator",
@@ -749,5 +750,33 @@
     "otpStartText": "Give this code to the operator only when the machine is at your field and the work begins. Never tell it on the phone.",
     "otpFinishTitle": "Your finish code",
     "otpFinishText": "Give this code to the operator only when the work is finished and you agree with the area or hours. Never tell it on the phone."
+  },
+  "Booking": {
+    "title": "Book {machine}",
+    "subtitle": "Three short steps. You see the full price before you book.",
+    "back": "Back to the machine",
+    "stepJob": "Your job",
+    "stepTime": "Day and time",
+    "stepConfirm": "Check and book",
+    "stepOf": "Step {step, number} of {total, number}",
+    "fieldAddress": "How to find the field (optional)",
+    "fieldAddressPlaceholder": "e.g. North field, next to the pond",
+    "startTime": "Start time",
+    "takenHint": "Crossed-out times are already taken.",
+    "duration": "The work takes about {hours, plural, one {# hour} other {# hours}}: {start} to {end}.",
+    "busyThatDay": "The machine is already busy on this day:",
+    "freeAllDay": "The machine is free all day.",
+    "summaryTitle": "Your booking",
+    "note": "Message for the provider (optional)",
+    "notePlaceholder": "e.g. Please call me before you come",
+    "payNote": "You pay after the work is finished. The final bill uses the real area or hours.",
+    "next": "Next",
+    "previous": "Back",
+    "bookNow": "Book now",
+    "booked": "Booking sent to the provider",
+    "priceTitle": "Price",
+    "priceHint": "Enter the land size to see the price.",
+    "cannotBook": "This machine cannot be booked right now (it needs service, or its price is being updated). Please choose another machine.",
+    "busyAllDay": "All day"
   }
 }
