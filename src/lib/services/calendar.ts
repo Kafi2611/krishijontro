@@ -1,6 +1,6 @@
 /**
  * Calendar service — pure date helpers for the availability calendar
- * (and, in Phase 4, for checking that two bookings do not overlap).
+ * (and for checking that two time ranges overlap, e.g. the booking form's taken times).
  *
  * Two ideas to know:
  * 1. A "day" is written as text "YYYY-MM-DD" (what <input type="date"> gives us).

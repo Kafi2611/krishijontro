@@ -4,7 +4,7 @@
  * - A provider adds an operator: this creates a User (role OPERATOR) and an
  *   OperatorProfile that points to the provider.
  * - A new operator is PENDING until the admin approves them. Only approved
- *   operators can be sent to jobs (Phase 4).
+ *   operators can be sent to jobs (assignOperator in booking.ts checks it).
  * - The operator gets a welcome SMS (simulated). We never send the password in a
  *   message; the provider tells it to the operator in person.
  */
