@@ -23,7 +23,7 @@ It is built for the course **CSE 3200 – Software Development Project II**.
 
 Next.js (App Router) + TypeScript, Tailwind CSS + shadcn/ui, PostgreSQL (Neon) + Prisma,
 Auth.js, next-intl (English / বাংলা), Zod + React Hook Form, Leaflet + OpenStreetMap
-(maps, no API key), Vitest.
+(maps, no API key), SSLCommerz sandbox (online payment), @react-pdf/renderer (receipts), Vitest.
 
 ## Run it on your computer
 
@@ -36,6 +36,7 @@ Auth.js, next-intl (English / বাংলা), Zod + React Hook Form, Leaflet +
    - `DATABASE_URL` — the **pooled** Neon connection string (host contains `-pooler`)
    - `DIRECT_URL` — the same string **without** `-pooler` (used only for migrations)
    - `AUTH_SECRET` — a long random string (the command to make one is in `.env.example`)
+   - `PAYMENT_GATEWAY` — leave it as `mock` to start (see **Online payment** below)
 4. Create the database tables and fill them with demo data
    (the seed **empties all tables first**, so use a fresh or development database):
    ```bash
@@ -50,6 +51,22 @@ Auth.js, next-intl (English / বাংলা), Zod + React Hook Form, Leaflet +
 
 Machine photos uploaded while the app runs locally are saved in `public/uploads/`
 (this folder is not committed to Git).
+
+## Online payment
+
+Farmers pay after the work is done: online, or in cash to the operator (the operator then
+presses **Cash received**). Online payment goes through a payment gateway:
+
+- **Test gateway** (default, `PAYMENT_GATEWAY="mock"`) — a pretend bank page inside the app.
+  It needs no keys and no internet; press **Pay**, **Make it fail** or **Cancel** to try each ending.
+- **SSLCommerz sandbox** (`PAYMENT_GATEWAY="sslcommerz"`) — a real test gateway (no real money):
+  1. Make a free sandbox store at https://developer.sslcommerz.com/registration/
+  2. Put its store id and password in `.env` as `SSLCOMMERZ_STORE_ID` and `SSLCOMMERZ_STORE_PASSWORD`
+     (keep `SSLCOMMERZ_SANDBOX="true"`), and set `APP_URL` to this site's address.
+  3. Restart the app and pay with one of the test cards shown on the SSLCommerz payment page.
+
+  SSLCommerz also sends a server-to-server message (IPN) to `/api/payment/sslcommerz/ipn`.
+  It only reaches a deployed site, not localhost; payments still work without it.
 
 ## Demo logins
 
@@ -75,6 +92,7 @@ In development mode the login page also lists them (tap one to fill the form).
 | `npm run build` | Build the app for production |
 | `npm run lint` | Check code style |
 | `npm test` | Run unit tests (Vitest) |
+| `npm run db:migrate` | Add new database tables / columns after pulling new code |
 | `npm run db:seed` | Fill the database with demo data |
 | `npx prisma studio` | Open a browser view of the database |
 
