@@ -3,9 +3,11 @@
 // the server and sent to the browser, and only plain data can be sent that way.
 import {
   BadgeCheck,
+  BadgePercent,
   Banknote,
   Bell,
   CalendarCheck,
+  FileCheck,
   LayoutDashboard,
   Scale,
   Search,
@@ -13,6 +15,7 @@ import {
   Store,
   Tractor,
   User,
+  UserCheck,
   Users,
   Wallet,
   type LucideIcon,
@@ -33,6 +36,9 @@ const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   bookings: CalendarCheck,
   earnings: Wallet,
   payments: Banknote,
+  subsidy: BadgePercent,
+  verify: UserCheck,
+  applications: FileCheck,
 };
 
 export function NavIcon({ name, className }: { name: NavIconName; className?: string }) {
