@@ -150,14 +150,12 @@ export async function createPayout(providerId: string, adminId: string, referenc
     }
 
     const payout = await tx.payout.create({
-      data: {
-        providerId,
-        amount,
-        status: "PAID",
-        reference,
-        paidAt: new Date(),
-        bookings: { connect: bookings.map((booking) => ({ id: booking.id })) },
-      },
+      data: { providerId, amount, status: "PAID", reference, paidAt: new Date() },
+    });
+    // Mark the bookings with this payout, so they are never paid out again.
+    await tx.booking.updateMany({
+      where: { id: { in: bookings.map((booking) => booking.id) } },
+      data: { payoutId: payout.id },
     });
     await writeAuditLog(
       {
