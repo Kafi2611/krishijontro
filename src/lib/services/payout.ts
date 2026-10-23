@@ -14,7 +14,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { writeAuditLog } from "@/lib/services/audit";
-import { BookingProblem, runBookingStep } from "@/lib/services/booking";
 import { createNotification } from "@/lib/services/notification";
 import { payoutSentMessage } from "@/lib/services/payment-messages";
 import { getBookingMoney, PAID_BOOKING_STATUSES, sumAmounts } from "@/lib/services/payment-rules";
@@ -142,12 +141,12 @@ export async function listRecentPayouts(take = 30) {
  * the provider. Refused ("nothingToPay") if the total is 0 or less.
  */
 export async function createPayout(providerId: string, adminId: string, reference: string): Promise<ActionResult> {
-  return runBookingStep(async (tx) => {
+  const sent = await db.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${providerId} FOR UPDATE`;
     const bookings = await listUnpaidBookings({ machine: { providerId } }, tx);
     const amount = totalOwed(bookings);
     if (bookings.length === 0 || amount <= 0) {
-      throw new BookingProblem("nothingToPay");
+      return false; // nothing was saved yet, so there is nothing to undo
     }
 
     const payout = await tx.payout.create({
@@ -174,5 +173,7 @@ export async function createPayout(providerId: string, adminId: string, referenc
       { userId: providerId, channel: "SMS", ...payoutSentMessage(amount, bookings.length, reference) },
       tx,
     );
+    return true;
   });
+  return sent ? { ok: true } : { ok: false, error: "nothingToPay" };
 }

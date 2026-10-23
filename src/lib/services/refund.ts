@@ -14,7 +14,6 @@
  */
 import { db } from "@/lib/db";
 import { writeAuditLog } from "@/lib/services/audit";
-import { BookingProblem } from "@/lib/services/booking";
 import { createNotification } from "@/lib/services/notification";
 import { getGateway } from "@/lib/services/payment-gateway";
 import { refundMessage } from "@/lib/services/payment-messages";
@@ -24,7 +23,9 @@ import type { ActionResult } from "@/lib/validators/types";
 
 /**
  * Step 1: saves a PENDING refund, after checking the payment can still give back that much.
- * Throws a BookingProblem (an expected problem) if it cannot; then nothing is saved.
+ * Returns the refund and its payment, or an error key (then nothing was saved: every check
+ * comes before the only write). "as const" tells TypeScript that ok is exactly true or false,
+ * so after "if (!saved.ok)" it knows which of the two answers it has.
  */
 async function savePendingRefund(paymentId: string, input: RefundInput) {
   return db.$transaction(async (tx) => {
@@ -36,20 +37,20 @@ async function savePendingRefund(paymentId: string, input: RefundInput) {
       include: { refunds: true, booking: { select: { id: true, code: true, farmerId: true } } },
     });
     if (!payment) {
-      throw new BookingProblem("notFound");
+      return { ok: false, error: "notFound" } as const;
     }
     if (payment.status !== "SUCCESS") {
-      throw new BookingProblem("paymentNotRefundable");
+      return { ok: false, error: "paymentNotRefundable" } as const;
     }
     // PENDING refunds count too, so the same money cannot be given back twice.
     if (input.amount > getRefundableAmount(payment.amount, payment.refunds)) {
-      throw new BookingProblem("refundTooMuch");
+      return { ok: false, error: "refundTooMuch" } as const;
     }
 
     const refund = await tx.refund.create({
       data: { bookingId: payment.bookingId, paymentId, amount: input.amount, reason: input.reason, status: "PENDING" },
     });
-    return { refund, payment };
+    return { ok: true, refund, payment } as const;
   });
 }
 
@@ -58,15 +59,10 @@ async function savePendingRefund(paymentId: string, input: RefundInput) {
  * Returns { ok: true }, or an error key (e.g. "refundTooMuch", "refundFailed").
  */
 export async function refundPayment(paymentId: string, adminId: string, input: RefundInput): Promise<ActionResult> {
-  // 1. Save it as PENDING (or stop with an expected problem).
-  let saved;
-  try {
-    saved = await savePendingRefund(paymentId, input);
-  } catch (error) {
-    if (error instanceof BookingProblem) {
-      return { ok: false, error: error.key };
-    }
-    throw error;
+  // 1. Save it as PENDING (or stop, if it cannot give back that much).
+  const saved = await savePendingRefund(paymentId, input);
+  if (!saved.ok) {
+    return saved;
   }
   const { refund, payment } = saved;
 
