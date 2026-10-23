@@ -1,7 +1,8 @@
 // The Farmer dashboard: the first page a FARMER user sees after login.
 // It shows a big "Find a machine" box (with a link to the price calculator), the farmer's
-// current bookings (the 3 soonest, with a link to all of them) and the list of farmer features.
-import { Calculator, Search } from "lucide-react";
+// government subsidy (or a link to apply), the current bookings (the 3 soonest, with a link to
+// all of them) and the list of farmer features.
+import { BadgePercent, Calculator, Search } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { BookingCard } from "@/components/booking/booking-card";
 import { RoleDashboard } from "@/components/dashboard/role-dashboard";
@@ -11,13 +12,14 @@ import { requireRole } from "@/lib/auth";
 import { pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 import { listFarmerBookings } from "@/lib/services/booking-queries";
+import { findUsableSubsidy } from "@/lib/services/subsidy";
 
 /** How many current bookings the dashboard shows. */
 const BOOKINGS_ON_DASHBOARD = 3;
 
 export default async function FarmerDashboardPage() {
   const farmer = await requireRole("FARMER");
-  const { current } = await listFarmerBookings(farmer.id);
+  const [{ current }, subsidy] = await Promise.all([listFarmerBookings(farmer.id), findUsableSubsidy(farmer.id)]);
   const t = await getTranslations("FarmerDashboard");
   const locale = await getLocale();
 
@@ -46,6 +48,16 @@ export default async function FarmerDashboardPage() {
               </Link>
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <BadgePercent className="size-8 shrink-0 text-primary" aria-hidden />
+          <p className="flex-1">{subsidy ? t("subsidyActive", { percent: subsidy.discountPercent }) : t("subsidyText")}</p>
+          <Button asChild variant="outline">
+            <Link href="/farmer/subsidy">{t("subsidyButton")}</Link>
+          </Button>
         </CardContent>
       </Card>
 
