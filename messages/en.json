@@ -184,7 +184,9 @@
     "search": "Find machines",
     "myBookings": "My bookings",
     "bookings": "Bookings",
-    "myJobs": "My jobs"
+    "myJobs": "My jobs",
+    "earnings": "Earnings",
+    "payments": "Payments"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -524,7 +526,9 @@
     "waitingTitle": "Waiting for your approval",
     "providersWaiting": "Providers",
     "machinesWaiting": "Machines",
-    "operatorsWaiting": "Operators"
+    "operatorsWaiting": "Operators",
+    "moneyTitle": "Money",
+    "providersToPay": "Providers waiting for their money"
   },
   "ProviderDashboard": {
     "machines": "My machines",
@@ -532,7 +536,8 @@
     "waiting": "Waiting for approval",
     "operators": "Operators",
     "requests": "New requests",
-    "needOperator": "Need an operator"
+    "needOperator": "Need an operator",
+    "waitingPayout": "Waiting to be sent to you (Tk)"
   },
   "GovtDashboard": {
     "typesWithLimit": "Machine types with a price limit (of {total, number})",
@@ -917,5 +922,59 @@
     "receipt": "Download receipt (PDF)",
     "openBooking": "Open the booking",
     "tryAgain": "Back to the booking to try again"
+  },
+  "Earnings": {
+    "title": "Earnings",
+    "subtitle": "Your share of paid jobs, and the money KrishiJontro has sent you.",
+    "earned": "Earned so far (Tk)",
+    "waiting": "Waiting to be sent (Tk)",
+    "paidOut": "Already sent (Tk)",
+    "account": "We send your money to: {account}",
+    "noAccount": "Add your bKash or bank account in Business details, so the admin can send your money.",
+    "waitingTitle": "Paid jobs not sent yet",
+    "howText": "Your share = work + delivery − platform fee. For a cash job you already have the farmer's cash, so only the rest is sent. It can be below 0: then you hold our fee, and it is taken from your next payout.",
+    "waitingEmpty": "Nothing is waiting. New paid jobs show up here.",
+    "booking": "Booking",
+    "share": "Your share",
+    "cash": "Cash you took",
+    "refunded": "Refunded",
+    "owed": "To send",
+    "total": "Total to send",
+    "payoutsTitle": "Payouts sent to you",
+    "payoutsEmpty": "No payout yet.",
+    "payoutLine": "{count, plural, one {# booking} other {# bookings}} · reference {reference}"
+  },
+  "AdminPayments": {
+    "title": "Payments",
+    "subtitle": "Farmers' payments and refunds, and the money sent to providers.",
+    "tabs": {
+      "payments": "Payments",
+      "payouts": "Payouts"
+    },
+    "paymentsEmpty": "No payments yet.",
+    "booking": "Booking {code}",
+    "refundLine": "Refund {amount, number} Tk — {reason}",
+    "refund": "Refund",
+    "refundAmount": "Amount to give back (Tk)",
+    "refundable": "At most {amount, number} Tk",
+    "refundReason": "Reason (the farmer sees it)",
+    "refundReasonPlaceholder": "e.g. The field was smaller than measured",
+    "cashRefundNote": "This was paid in cash: send the money back yourself (bKash or cash), then save it here.",
+    "confirmRefund": "Give the money back",
+    "cancel": "Cancel",
+    "refunded": "Refund saved. The farmer was told.",
+    "toPayTitle": "Providers we owe money to",
+    "toPayEmpty": "No provider is waiting for money.",
+    "bookingCount": "{count, plural, one {# paid booking} other {# paid bookings}}",
+    "account": "Send to: {account}",
+    "noAccount": "This provider has not added a payout account yet.",
+    "owedMinus": "This provider holds our fee from cash jobs. It is taken from their next online job, so there is nothing to send now.",
+    "reference": "Transfer reference",
+    "referencePlaceholder": "e.g. bKash TRX 9KJ27XQ1",
+    "markPaid": "I have sent {amount, number} Tk",
+    "payoutSaved": "Payout saved. The provider was told.",
+    "recentPayoutsTitle": "Latest payouts",
+    "recentPayoutsEmpty": "No payouts yet.",
+    "payoutLine": "{count, plural, one {# booking} other {# bookings}} · reference {reference}"
   }
 }

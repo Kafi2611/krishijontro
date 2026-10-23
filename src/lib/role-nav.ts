@@ -15,7 +15,9 @@ export type NavIconName =
   | "approvals"
   | "pricing"
   | "search"
-  | "bookings";
+  | "bookings"
+  | "earnings"
+  | "payments";
 
 /** A key of the "Nav" section in messages/en.json, e.g. "profile". */
 export type NavLabelKey = keyof (typeof messages)["Nav"];
@@ -35,6 +37,7 @@ const ROLE_LINKS: Record<Role, NavItem[]> = {
   COOP_LEADER: [],
   PROVIDER: [
     { href: "/provider/bookings", labelKey: "bookings", icon: "bookings" },
+    { href: "/provider/earnings", labelKey: "earnings", icon: "earnings" },
     { href: "/provider/machines", labelKey: "machines", icon: "machines" },
     { href: "/provider/operators", labelKey: "operators", icon: "operators" },
     { href: "/provider/business", labelKey: "business", icon: "business" },
@@ -45,6 +48,7 @@ const ROLE_LINKS: Record<Role, NavItem[]> = {
   GOVT: [{ href: "/govt/pricing", labelKey: "pricing", icon: "pricing" }],
   ADMIN: [
     { href: "/admin/approvals", labelKey: "approvals", icon: "approvals" },
+    { href: "/admin/payments", labelKey: "payments", icon: "payments" },
     { href: "/admin/machine-types", labelKey: "machineTypes", icon: "machineTypes" },
   ],
 };

@@ -184,7 +184,9 @@
     "search": "যন্ত্র খুঁজুন",
     "myBookings": "আমার বুকিং",
     "bookings": "বুকিং",
-    "myJobs": "আমার কাজ"
+    "myJobs": "আমার কাজ",
+    "earnings": "আয়",
+    "payments": "পেমেন্ট"
   },
   "Dashboard": {
     "welcome": "স্বাগতম, {name}",
@@ -524,7 +526,9 @@
     "waitingTitle": "আপনার অনুমোদনের অপেক্ষায়",
     "providersWaiting": "যন্ত্র মালিক",
     "machinesWaiting": "যন্ত্র",
-    "operatorsWaiting": "চালক"
+    "operatorsWaiting": "চালক",
+    "moneyTitle": "টাকা",
+    "providersToPay": "টাকার অপেক্ষায় থাকা যন্ত্র মালিক"
   },
   "ProviderDashboard": {
     "machines": "আমার যন্ত্র",
@@ -532,7 +536,8 @@
     "waiting": "অনুমোদনের অপেক্ষায়",
     "operators": "চালক",
     "requests": "নতুন অনুরোধ",
-    "needOperator": "চালক দরকার"
+    "needOperator": "চালক দরকার",
+    "waitingPayout": "আপনাকে পাঠানো বাকি (টাকা)"
   },
   "GovtDashboard": {
     "typesWithLimit": "দামের সীমা আছে এমন যন্ত্রের ধরন ({total, number}টির মধ্যে)",
@@ -917,5 +922,59 @@
     "receipt": "রসিদ নামান (PDF)",
     "openBooking": "বুকিং দেখুন",
     "tryAgain": "আবার চেষ্টা করতে বুকিংয়ে ফিরে যান"
+  },
+  "Earnings": {
+    "title": "আয়",
+    "subtitle": "টাকা পাওয়া কাজে আপনার অংশ, আর কৃষিযন্ত্র আপনাকে যে টাকা পাঠিয়েছে।",
+    "earned": "এ পর্যন্ত আয় (টাকা)",
+    "waiting": "পাঠানো বাকি (টাকা)",
+    "paidOut": "পাঠানো হয়েছে (টাকা)",
+    "account": "আপনার টাকা পাঠানো হয়: {account}",
+    "noAccount": "ব্যবসার তথ্যে আপনার বিকাশ বা ব্যাংক অ্যাকাউন্ট দিন, যাতে অ্যাডমিন টাকা পাঠাতে পারেন।",
+    "waitingTitle": "টাকা পাওয়া কাজ, এখনো পাঠানো হয়নি",
+    "howText": "আপনার অংশ = কাজ + পরিবহন − প্ল্যাটফর্ম ফি। নগদ কাজে কৃষকের টাকা আগেই আপনার হাতে, তাই শুধু বাকিটা পাঠানো হয়। এটি শূন্যের কম হতে পারে: তখন আমাদের ফি আপনার কাছে আছে, পরের পাঠানো টাকা থেকে কেটে নেওয়া হবে।",
+    "waitingEmpty": "কিছু বাকি নেই। নতুন টাকা পাওয়া কাজ এখানে দেখাবে।",
+    "booking": "বুকিং",
+    "share": "আপনার অংশ",
+    "cash": "নগদ নিয়েছেন",
+    "refunded": "ফেরত",
+    "owed": "পাঠানো হবে",
+    "total": "মোট পাঠানো হবে",
+    "payoutsTitle": "আপনাকে পাঠানো টাকা",
+    "payoutsEmpty": "এখনো কোনো টাকা পাঠানো হয়নি।",
+    "payoutLine": "{count, plural, other {#টি বুকিং}} · রেফারেন্স {reference}"
+  },
+  "AdminPayments": {
+    "title": "পেমেন্ট",
+    "subtitle": "কৃষকদের পেমেন্ট ও ফেরত, আর যন্ত্র মালিকদের পাঠানো টাকা।",
+    "tabs": {
+      "payments": "পেমেন্ট",
+      "payouts": "মালিকদের টাকা"
+    },
+    "paymentsEmpty": "এখনো কোনো পেমেন্ট নেই।",
+    "booking": "বুকিং {code}",
+    "refundLine": "ফেরত {amount, number} টাকা — {reason}",
+    "refund": "টাকা ফেরত দিন",
+    "refundAmount": "ফেরতের পরিমাণ (টাকা)",
+    "refundable": "সর্বোচ্চ {amount, number} টাকা",
+    "refundReason": "কারণ (কৃষক দেখতে পাবেন)",
+    "refundReasonPlaceholder": "যেমন: জমি মাপের চেয়ে ছোট ছিল",
+    "cashRefundNote": "এটি নগদে দেওয়া হয়েছিল: আপনি নিজে টাকা ফেরত পাঠান (বিকাশ বা নগদ), তারপর এখানে সংরক্ষণ করুন।",
+    "confirmRefund": "টাকা ফেরত দিন",
+    "cancel": "থাক",
+    "refunded": "ফেরত সংরক্ষণ হয়েছে। কৃষককে জানানো হয়েছে।",
+    "toPayTitle": "যে মালিকদের টাকা পাওনা",
+    "toPayEmpty": "কোনো যন্ত্র মালিক টাকার অপেক্ষায় নেই।",
+    "bookingCount": "{count, plural, other {টাকা পাওয়া #টি বুকিং}}",
+    "account": "পাঠাবেন: {account}",
+    "noAccount": "এই মালিক এখনো টাকা পাওয়ার অ্যাকাউন্ট দেননি।",
+    "owedMinus": "নগদ কাজের আমাদের ফি এই মালিকের কাছে আছে। পরের অনলাইন কাজ থেকে কেটে নেওয়া হবে, তাই এখন পাঠানোর কিছু নেই।",
+    "reference": "লেনদেনের রেফারেন্স",
+    "referencePlaceholder": "যেমন: bKash TRX 9KJ27XQ1",
+    "markPaid": "{amount, number} টাকা পাঠিয়েছি",
+    "payoutSaved": "সংরক্ষণ হয়েছে। মালিককে জানানো হয়েছে।",
+    "recentPayoutsTitle": "সাম্প্রতিক পাঠানো টাকা",
+    "recentPayoutsEmpty": "এখনো কোনো টাকা পাঠানো হয়নি।",
+    "payoutLine": "{count, plural, other {#টি বুকিং}} · রেফারেন্স {reference}"
   }
 }

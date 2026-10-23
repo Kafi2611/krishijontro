@@ -3,6 +3,7 @@
 // the server and sent to the browser, and only plain data can be sent that way.
 import {
   BadgeCheck,
+  Banknote,
   Bell,
   CalendarCheck,
   LayoutDashboard,
@@ -13,6 +14,7 @@ import {
   Tractor,
   User,
   Users,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import type { NavIconName } from "@/lib/role-nav";
@@ -29,6 +31,8 @@ const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   pricing: Scale,
   search: Search,
   bookings: CalendarCheck,
+  earnings: Wallet,
+  payments: Banknote,
 };
 
 export function NavIcon({ name, className }: { name: NavIconName; className?: string }) {
