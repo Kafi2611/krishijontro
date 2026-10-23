@@ -21,6 +21,7 @@ import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../src/lib/demo-accounts";
 import { hashPassword } from "../src/lib/password";
 import { estimateWorkHours, formatBookingCode, generateOtp, getBookingYear } from "../src/lib/services/booking-rules";
 import { distanceInKm } from "../src/lib/services/geo";
+import { makeTransactionId } from "../src/lib/services/payment-rules";
 import { calculateBookingPrice, getBillingQuantity } from "../src/lib/services/pricing";
 
 const db = new PrismaClient({
@@ -402,6 +403,8 @@ async function seedUsers(upazilas: Upazilas, passwordHash: string) {
             verificationStatus: farmer.status,
             verifiedById: farmer.status === "PENDING" ? null : demoOfficer.id,
             verifiedAt: farmer.status === "PENDING" ? null : daysFromNow(-30),
+            // The officer's reason, shown to the farmer on their subsidy page
+            rejectionReason: farmer.status === "REJECTED" ? "The NID number does not match the card" : null,
           },
         },
       },
@@ -711,7 +714,8 @@ async function createSeedBooking(
         method: seed.paymentMethod ?? "MOCK",
         status: "SUCCESS",
         transactionId: `TXN-${booking.code}`,
-        gatewayRef: seed.paymentMethod === "CASH" ? null : `VAL-${serial}${Date.now() % 100000}`,
+        // The gateway's own id for the payment (SSLCommerz's bank_tran_id); cash has none.
+        gatewayRef: seed.paymentMethod === "CASH" ? null : `BANK-${serial}${Date.now() % 100000}`,
         paidAt: addHours(endAt, 1),
       },
     });
@@ -727,7 +731,7 @@ async function createSeedBooking(
     });
   }
 
-  return { id: booking.id, code: booking.code, ...price };
+  return { id: booking.id, code: booking.code, farmerId: seed.farmerId, status: seed.status, ...price };
 }
 
 async function seedBookings(users: Users, machines: Machines, rules: Rules, subsidyApplicationId: string) {
@@ -754,6 +758,8 @@ async function seedBookings(users: Users, machines: Machines, rules: Rules, subs
     [{ status: "PAID", farmerId: users.demoFarmer.id, machineKey: "jamalTiller", operatorId: users.demoOperator.id, startDay: -10, landDecimal: 50, fieldOffsetKm: 4, subsidyApplicationId, paymentMethod: "CASH", fieldAddress: "Haripur north field" }, jamal],
     [{ status: "REVIEWED", farmerId: users.demoFarmer.id, machineKey: "jamalTractor", operatorId: users.demoOperator.id, startDay: -20, landDecimal: 100, fieldOffsetKm: 5, subsidyApplicationId, paymentMethod: "SSLCOMMERZ", fieldAddress: "Haripur south field" }, jamal],
     [{ status: "DISPUTED", farmerId: f9.id, machineKey: "barindTransplanter", operatorId: sumon.id, startDay: -7, landDecimal: 80, fieldOffsetKm: 7, fieldAddress: "Kushura" }, barind],
+    // The demo farmer's finished job that still waits for payment (the price example again: pay 1517 Tk).
+    [{ status: "COMPLETED", farmerId: users.demoFarmer.id, machineKey: "jamalTractor", operatorId: users.demoOperator.id, startDay: -2, landDecimal: 66, fieldOffsetKm: 8, subsidyApplicationId, fieldAddress: "Haripur east field" }, jamal],
   ];
 
   // Extra finished bookings over the last 3 months, so dashboards and charts have data.
@@ -788,7 +794,7 @@ async function seedExtras(
   bookings: Awaited<ReturnType<typeof seedBookings>>,
 ) {
   const [f1, f2, f3, f4] = users.farmers;
-  const [requested, , , , , onTheWay, , breakdown, , paid, reviewed, disputed] = bookings;
+  const [requested, , , , , onTheWay, , breakdown, completed, paid, reviewed, disputed] = bookings;
 
   // A cooperative in Haripur village with 5 members
   const cooperative = await db.cooperative.create({
@@ -857,6 +863,35 @@ async function seedExtras(
     },
   });
 
+  // A payment try that failed for the finished job of booking 9, so that farmer's booking page
+  // shows "Your last payment try did not go through" above the Pay button.
+  await db.payment.create({
+    data: {
+      bookingId: completed.id,
+      payerId: completed.farmerId,
+      amount: completed.totalAmount,
+      method: "MOCK",
+      status: "FAILED",
+      transactionId: makeTransactionId(completed.code),
+      createdAt: daysFromNow(-1, 15),
+    },
+  });
+
+  // A refund: 200 Tk of an online payment was given back, because the field was smaller than
+  // measured. It is not in a payout yet, so the provider's Earnings page shows it.
+  const refunded = bookings.find((booking) => booking.farmerId === f1.id && booking.status === "REVIEWED")!;
+  const refundedPayment = await db.payment.findFirstOrThrow({ where: { bookingId: refunded.id } });
+  await db.refund.create({
+    data: {
+      bookingId: refunded.id,
+      paymentId: refundedPayment.id,
+      amount: 200,
+      reason: "The field was smaller than measured",
+      status: "PROCESSED",
+      processedAt: daysFromNow(-70),
+    },
+  });
+
   // A farmer waiting for a combine harvester
   const durgapur = upazilas.get("Durgapur")!;
   await db.waitlistEntry.create({
@@ -899,7 +934,8 @@ async function seedExtras(
       { userId: users.demoOperator.id, channel: "SMS", title: "New job today", titleBn: "আজ নতুন কাজ", body: `Job ${onTheWay.code}: irrigation pump at Haripur.`, bodyBn: `কাজ ${onTheWay.code}: হরিপুরে সেচ পাম্প।`, link: `/operator/jobs/${onTheWay.id}` },
       { userId: users.demoTechnician.id, channel: "IN_APP", title: "Repair request", titleBn: "মেরামতের অনুরোধ", body: "Power tiller DF-15L broke down in Tanore.", bodyBn: "তানোরে পাওয়ার টিলার DF-15L নষ্ট হয়েছে।" },
       { userId: users.admin.id, channel: "IN_APP", title: "Provider waiting for approval", titleBn: "যন্ত্র মালিক অনুমোদনের অপেক্ষায়", body: "Ayesha Siddika registered as a provider.", bodyBn: "আয়েশা সিদ্দিকা যন্ত্র মালিক হিসেবে নিবন্ধন করেছেন।" },
-      { userId: users.demoOfficer.id, channel: "IN_APP", title: "New subsidy application", titleBn: "নতুন ভর্তুকি আবেদন", body: "Shafiqul Islam applied for the small farmer subsidy.", bodyBn: "শফিকুল ইসলাম ক্ষুদ্র কৃষক ভর্তুকির জন্য আবেদন করেছেন।" },
+      { userId: users.demoOfficer.id, channel: "IN_APP", title: "New subsidy application", titleBn: "নতুন ভর্তুকি আবেদন", body: "Shafiqul Islam applied for the small farmer subsidy.", bodyBn: "শফিকুল ইসলাম ক্ষুদ্র কৃষক ভর্তুকির জন্য আবেদন করেছেন।", link: "/officer/subsidies" },
+      { userId: users.demoOfficer.id, channel: "IN_APP", title: "Farmer to verify", titleBn: "যাচাই করার মতো কৃষক", body: "Shafiqul Islam sent their NID and land details. Please check and verify them.", bodyBn: "শফিকুল ইসলাম তাঁর এনআইডি ও জমির তথ্য পাঠিয়েছেন। অনুগ্রহ করে যাচাই করুন।", link: "/officer/farmers" },
     ],
   });
 
@@ -910,6 +946,9 @@ async function seedExtras(
       { actorId: users.admin.id, action: "MACHINE_APPROVED", entityType: "Machine", entityId: machines.get("jamalTractor")!.id, details: "Approved Mahindra 575 DI", createdAt: daysFromNow(-89) },
       { actorId: users.govtUser.id, action: "PRICING_RULE_CREATED", entityType: "PricingRule", details: "Created price limits for 8 machine types", createdAt: daysFromNow(-100) },
       { actorId: users.govtUser.id, action: "SUBSIDY_PROGRAM_CREATED", entityType: "SubsidyProgram", details: "Small Farmer Mechanization Support 2026", createdAt: daysFromNow(-95) },
+      { actorId: users.demoOfficer.id, action: "FARMER_VERIFIED", entityType: "FarmerProfile", details: "Verified farmer Abdul Karim", createdAt: daysFromNow(-60) },
+      { actorId: users.demoOfficer.id, action: "SUBSIDY_APPROVED", entityType: "SubsidyApplication", details: "Approved Abdul Karim for Small Farmer Mechanization Support 2026", createdAt: daysFromNow(-40) },
+      { actorId: users.admin.id, action: "REFUND_PROCESSED", entityType: "Refund", details: "Refunded 200 Tk: The field was smaller than measured", createdAt: daysFromNow(-70) },
       { actorId: users.admin.id, action: "USER_SUSPENDED", entityType: "User", entityId: users.farmers[6].id, details: "Fake NID reported by officer", createdAt: daysFromNow(-5) },
     ],
   });
