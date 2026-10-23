@@ -251,6 +251,7 @@ model FarmerProfile {
   verificationStatus VerificationStatus @default(PENDING)
   verifiedById       String? // the officer who checked NID + land
   verifiedAt         DateTime?
+  rejectionReason    String? // the officer's reason when the check failed (the farmer sees it)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
@@ -759,7 +760,7 @@ model Payment {
   method        PaymentMethod
   status        PaymentStatus @default(PENDING)
   transactionId String        @unique // our own id sent to the payment gateway
-  gatewayRef    String? // id the gateway sends back (e.g. SSLCommerz val_id)
+  gatewayRef    String? // the gateway's own id for this payment (SSLCommerz bank_tran_id, needed for a refund)
   paidAt        DateTime?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt

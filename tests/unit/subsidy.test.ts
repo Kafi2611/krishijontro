@@ -1,6 +1,7 @@
-// Unit tests for the "is this subsidy program open?" rule in src/lib/services/subsidy.ts.
+// Unit tests for the subsidy rules in src/lib/services/subsidy.ts: is a program open, may a
+// farmer apply, and may the officer approve.
 import { describe, expect, it } from "vitest";
-import { isProgramOpen } from "@/lib/services/subsidy";
+import { getApplyProblem, getApprovalProblem, isProgramOpen } from "@/lib/services/subsidy";
 
 // The seeded program: July 2026 – June 2027, 500,000 Tk budget.
 const program = {
@@ -28,5 +29,45 @@ describe("isProgramOpen", () => {
 
   it("is closed when the whole budget is used", () => {
     expect(isProgramOpen({ ...program, usedAmount: 500000 }, today)).toBe(false);
+  });
+});
+
+describe("getApplyProblem", () => {
+  // The seeded program is for farmers with 200 decimal of land or less.
+  const smallFarmerProgram = { ...program, maxLandDecimal: 200 };
+  const farmer = { nid: "1990817123456", landDecimal: 150, verificationStatus: "PENDING" as const };
+
+  it("lets a farmer who sent their details apply (verification can come later)", () => {
+    expect(getApplyProblem(smallFarmerProgram, farmer, today)).toBeNull();
+  });
+
+  it("asks for the NID and land first", () => {
+    expect(getApplyProblem(smallFarmerProgram, { ...farmer, nid: null }, today)).toBe("fillDetailsFirst");
+    expect(getApplyProblem(smallFarmerProgram, { ...farmer, verificationStatus: "REJECTED" }, today)).toBe("fillDetailsFirst");
+  });
+
+  it("refuses a farmer with more land than the program allows", () => {
+    expect(getApplyProblem(smallFarmerProgram, { ...farmer, landDecimal: 320 }, today)).toBe("landTooBig");
+    // A program without a land limit is for any farmer.
+    expect(getApplyProblem({ ...program, maxLandDecimal: null }, { ...farmer, landDecimal: 320 }, today)).toBeNull();
+  });
+
+  it("refuses when the program is closed", () => {
+    expect(getApplyProblem({ ...smallFarmerProgram, isActive: false }, farmer, today)).toBe("programClosed");
+  });
+});
+
+describe("getApprovalProblem", () => {
+  const smallFarmerProgram = { ...program, maxLandDecimal: 200 };
+
+  it("needs a verified farmer", () => {
+    const pending = { nid: "1990817123456", landDecimal: 150, verificationStatus: "PENDING" as const };
+    expect(getApprovalProblem(smallFarmerProgram, pending, today)).toBe("farmerNotVerified");
+    expect(getApprovalProblem(smallFarmerProgram, { ...pending, verificationStatus: "VERIFIED" }, today)).toBeNull();
+  });
+
+  it("still checks the land limit for a verified farmer", () => {
+    const bigFarmer = { nid: "1990817123456", landDecimal: 320, verificationStatus: "VERIFIED" as const };
+    expect(getApprovalProblem(smallFarmerProgram, bigFarmer, today)).toBe("landTooBig");
   });
 });
