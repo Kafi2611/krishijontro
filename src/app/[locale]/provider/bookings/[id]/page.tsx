@@ -1,7 +1,7 @@
 // Provider page: one booking of one of the provider's machines (/provider/bookings/<id>).
-// At the top, what the provider must do now: Accept / Reject a new request, or choose an
-// operator for an accepted one. Below: the steps so far, the farmer and operator to call,
-// the job, the provider's share of the bill and the field map.
+// At the top, what the provider must do now: Accept / Reject a new request, choose an
+// operator for an accepted one, or "Cash received" for a finished job. Below: the steps so far,
+// the farmer and operator to call, the job, the provider's share of the bill and the field map.
 // The OTP codes are never read here: only the farmer has them.
 import { Inbox, UserRound } from "lucide-react";
 import type { Metadata } from "next";
@@ -13,11 +13,13 @@ import { BookingHeader } from "@/components/booking/booking-header";
 import { BookingTimeline } from "@/components/booking/booking-timeline";
 import { ContactLine } from "@/components/booking/contact-line";
 import { MapPicker } from "@/components/map/map-picker";
+import { CollectPaymentCard } from "@/components/payment/collect-payment-card";
 import { AssignOperatorForm } from "@/components/provider/assign-operator-form";
 import { BookingDecision } from "@/components/provider/booking-decision";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
 import { getProviderBooking, listOperatorChoices } from "@/lib/services/booking-queries";
+import { canPayBooking } from "@/lib/services/payment-rules";
 
 type ProviderBookingPageProps = {
   params: Promise<{ id: string }>;
@@ -77,6 +79,8 @@ export default async function ProviderBookingPage({ params }: ProviderBookingPag
           </CardContent>
         </Card>
       )}
+
+      {canPayBooking(booking.status) && <CollectPaymentCard bookingId={booking.id} amount={booking.totalAmount} />}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

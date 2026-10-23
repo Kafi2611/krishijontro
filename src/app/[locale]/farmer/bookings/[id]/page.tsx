@@ -1,6 +1,7 @@
 // Farmer page: one booking (/farmer/bookings/<id>). It shows the status, the secret start or
-// finish code when the operator will need it, the steps so far (timeline), the people to call,
-// the job, the bill and the field on the map. Only the farmer who booked can open it.
+// finish code when the operator will need it, the payment box (pay when the work is done; the
+// receipt once paid), the steps so far (timeline), the people to call, the job, the bill and
+// the field on the map. Only the farmer who booked can open it.
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -11,9 +12,12 @@ import { BookingTimeline } from "@/components/booking/booking-timeline";
 import { ContactLine } from "@/components/booking/contact-line";
 import { OtpCard } from "@/components/booking/otp-card";
 import { MapPicker } from "@/components/map/map-picker";
+import { BookingPaymentCard } from "@/components/payment/booking-payment-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
 import { getFarmerBooking } from "@/lib/services/booking-queries";
+import { listBookingPayments } from "@/lib/services/payment";
+import { getOnlineGateway } from "@/lib/services/payment-gateway";
 
 type FarmerBookingPageProps = {
   params: Promise<{ id: string }>;
@@ -32,6 +36,7 @@ export default async function FarmerBookingPage({ params }: FarmerBookingPagePro
     notFound(); // no such booking, or it is someone else's
   }
   const { booking, timeline, otp } = details;
+  const payments = await listBookingPayments(booking.id);
   const provider = booking.machine.provider;
   const field = { lat: booking.fieldLat, lng: booking.fieldLng };
 
@@ -43,6 +48,8 @@ export default async function FarmerBookingPage({ params }: FarmerBookingPagePro
       <BookingHeader backHref="/farmer/bookings" backLabel={t("back")} booking={booking} />
 
       {otp && <OtpCard kind={otp.kind} code={otp.code} />}
+
+      <BookingPaymentCard booking={booking} payments={payments} onlineMethod={getOnlineGateway().method} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

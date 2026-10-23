@@ -1,7 +1,8 @@
 // Operator page: one job (/operator/jobs/<id>) — the screen the operator uses in the field.
 // At the top, the one thing to do now (On the way / Arrived / Start with the start code /
-// Finish with the real work and the finish code). Below: the farmer to call, the job, the
-// field on the map (with a link to open it in a map app) and the steps so far.
+// Finish with the real work and the finish code), and after the finish "Cash received" if the
+// farmer pays in cash. Below: the farmer to call, the job, the field on the map (with a link
+// to open it in a map app) and the steps so far.
 // The OTP codes are never read here: the farmer tells them to the operator at the field.
 import { ExternalLink, Navigation } from "lucide-react";
 import type { Metadata } from "next";
@@ -13,10 +14,12 @@ import { BookingTimeline } from "@/components/booking/booking-timeline";
 import { ContactLine } from "@/components/booking/contact-line";
 import { MapPicker } from "@/components/map/map-picker";
 import { JobActions } from "@/components/operator/job-actions";
+import { CollectPaymentCard } from "@/components/payment/collect-payment-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
 import { getOperatorJob } from "@/lib/services/booking-queries";
+import { canPayBooking } from "@/lib/services/payment-rules";
 
 type OperatorJobPageProps = {
   params: Promise<{ id: string }>;
@@ -60,6 +63,8 @@ export default async function OperatorJobPage({ params }: OperatorJobPageProps) 
           </CardContent>
         </Card>
       )}
+
+      {canPayBooking(job.status) && <CollectPaymentCard bookingId={job.id} amount={job.totalAmount} />}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">

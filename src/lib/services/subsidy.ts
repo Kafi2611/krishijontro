@@ -11,6 +11,7 @@
  *   4. the program still has budget left (usedAmount < budget)
  * The discount is a % of the WORK charge only (see calculateBookingPrice in pricing.ts).
  */
+import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 
 /** The subsidy a farmer can use: which application, and how much discount. */
@@ -68,6 +69,25 @@ export async function findUsableSubsidy(farmerId: string, date: Date = new Date(
     programNameBn: usable.program.nameBn,
     discountPercent: usable.program.discountPercent,
   };
+}
+
+/**
+ * Takes a paid booking's subsidy from its program's budget (usedAmount goes up).
+ * Called inside the transaction that marks the booking PAID (payment.ts), because the
+ * government's money is really spent only when the farmer has paid their part.
+ * "increment" adds in the database itself, so two payments at the same moment both count.
+ */
+export async function spendSubsidy(
+  tx: Prisma.TransactionClient,
+  booking: { subsidyAmount: number; subsidyApplication: { programId: string } | null },
+): Promise<void> {
+  if (!booking.subsidyApplication || booking.subsidyAmount <= 0) {
+    return;
+  }
+  await tx.subsidyProgram.update({
+    where: { id: booking.subsidyApplication.programId },
+    data: { usedAmount: { increment: booking.subsidyAmount } },
+  });
 }
 
 /**

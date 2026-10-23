@@ -352,8 +352,8 @@ export async function createBooking(
 
 // ─────────────────────────── The provider's steps ───────────────────────────
 
-/** The facts every message needs, from a booking and its machine. */
-function messageInfo(booking: { id: string; code: string; startAt: Date; machine: { brand: string; model: string } }): BookingMessageInfo {
+/** The facts every message needs, from a booking and its machine. (payment.ts uses it too.) */
+export function messageInfo(booking: { id: string; code: string; startAt: Date; machine: { brand: string; model: string } }): BookingMessageInfo {
   return {
     id: booking.id,
     code: booking.code,

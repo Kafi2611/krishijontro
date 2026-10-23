@@ -131,7 +131,16 @@
     "operatorBusy": "This operator has another job at that time",
     "otpInvalid": "Enter the 4-digit code",
     "otpWrong": "Wrong code. Ask the farmer to read the code on their phone again.",
-    "notArrivedYet": "Press \"I have arrived\" first."
+    "notArrivedYet": "Press \"I have arrived\" first.",
+    "notWaitingForPayment": "This booking is not waiting for payment (maybe it was just paid). Please reload the page.",
+    "paymentStartFailed": "The payment page could not be opened. Please try again.",
+    "paymentNotConfirmed": "The payment gateway did not confirm this payment.",
+    "paymentCheckFailed": "We could not reach the payment gateway to check the payment. Please wait a minute and reload.",
+    "paymentNotRefundable": "Only a successful payment can be refunded.",
+    "refundTooMuch": "This is more than what is left to refund.",
+    "refundFailed": "The payment gateway did not accept the refund. Please try again later.",
+    "referenceRequired": "Enter the bKash or bank transfer number (at least 4 letters)",
+    "nothingToPay": "There is nothing to send to this provider right now."
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",
@@ -157,7 +166,10 @@
     "PAID": "Paid",
     "REVIEWED": "Reviewed",
     "CANCELLED": "Cancelled",
-    "DISPUTED": "Complaint open"
+    "DISPUTED": "Complaint open",
+    "SUCCESS": "Successful",
+    "FAILED": "Failed",
+    "PROCESSED": "Refunded"
   },
   "Nav": {
     "dashboard": "Dashboard",
@@ -852,5 +864,58 @@
     "todayTitle": "Jobs to do now",
     "seeAll": "See all my jobs",
     "nothingNow": "Nothing to do right now."
+  },
+  "PaymentMethods": {
+    "SSLCOMMERZ": "Online (SSLCommerz)",
+    "MOCK": "Online (test)",
+    "CASH": "Cash"
+  },
+  "Payment": {
+    "waitingTitle": "Pay for the work",
+    "waitingText": "The work is done. Please pay {amount, number} Tk.",
+    "lastTryFailed": "Your last payment try {status, select, CANCELLED {was cancelled} other {did not go through}}. No money was taken. You can try again.",
+    "payOnline": "Pay {amount, number} Tk online",
+    "opening": "Opening the payment page...",
+    "testGatewayNote": "Test payment: no real money is taken.",
+    "sslcommerzNote": "Card, bKash, Nagad or Rocket, through SSLCommerz (test mode).",
+    "cashTitle": "Or pay in cash",
+    "cashText": "Give the cash to the operator. They press \"Cash received\" in the app, and you get a message.",
+    "paidTitle": "Paid",
+    "paidText": "{amount, number} Tk paid on {date}. Method: {method}.",
+    "receipt": "Download receipt (PDF)",
+    "refundsTitle": "Money given back",
+    "refundLine": "{amount, number} Tk — {reason}",
+    "collectTitle": "Collect the payment",
+    "collectText": "The work is done. The farmer pays {amount, number} Tk. If they pay you in cash, press the button once the money is in your hand. If they pay online, you do not need to do anything.",
+    "cashReceived": "Cash received: {amount, number} Tk",
+    "cashConfirmTitle": "Did you receive {amount, number} Tk in cash?",
+    "cashConfirmText": "Press Yes only when the money is in your hand. The booking is then marked as paid, and this cannot be undone.",
+    "cashConfirmYes": "Yes, I have the cash",
+    "cashSaved": "Cash payment saved. The farmer was told."
+  },
+  "MockGateway": {
+    "title": "Test payment page",
+    "bankName": "KrishiJontro Test Bank",
+    "text": "This page pretends to be a bank or bKash, so you can try paying. No real money is taken.",
+    "booking": "Booking",
+    "machine": "Machine",
+    "amount": "Amount",
+    "pay": "Pay {amount, number} Tk",
+    "fail": "Make it fail",
+    "cancel": "Cancel",
+    "notPending": "This payment try is already finished.",
+    "back": "Back to the booking"
+  },
+  "PaymentResult": {
+    "successTitle": "Payment successful",
+    "successText": "We received {amount, number} Tk for booking {code}. Thank you!",
+    "pendingTitle": "Checking your payment",
+    "pendingText": "The payment gateway has not confirmed your payment yet. Please reload this page in a minute.",
+    "failedTitle": "Payment not completed",
+    "failedText": "{status, select, CANCELLED {You cancelled the payment.} other {The payment did not go through.}} No money was taken. You can try again.",
+    "transaction": "Transaction: {id}",
+    "receipt": "Download receipt (PDF)",
+    "openBooking": "Open the booking",
+    "tryAgain": "Back to the booking to try again"
   }
 }

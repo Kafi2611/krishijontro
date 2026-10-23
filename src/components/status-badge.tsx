@@ -1,6 +1,6 @@
 // A small coloured label for a status, in the reader's language:
-// green = good (Approved, Active, Work done), yellow = waiting (Pending, Requested),
-// blue = a booking on its way (Accepted ... Working), red = Rejected/Suspended/Complaint,
+// green = good (Approved, Active, Work done, Successful), yellow = waiting (Pending, Requested),
+// blue = a booking on its way (Accepted ... Working), red = Rejected/Suspended/Complaint/Failed,
 // orange = Under repair / Broken down, grey = Not renting / Cancelled.
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,10 @@ const STATUS_COLORS: Record<StatusKey, string> = {
   REVIEWED: "bg-green-100 text-green-800",
   CANCELLED: "bg-muted text-muted-foreground",
   DISPUTED: "bg-red-100 text-red-800",
+  // Payment and refund statuses
+  SUCCESS: "bg-green-100 text-green-800",
+  FAILED: "bg-red-100 text-red-800",
+  PROCESSED: "bg-green-100 text-green-800",
 };
 
 export function StatusBadge({ status, className }: { status: StatusKey; className?: string }) {
