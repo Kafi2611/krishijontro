@@ -1,15 +1,19 @@
 // Provider page: one machine's details (/provider/machines/<id>) — photos, facts,
 // place on the map, approval status, a warning if the rate is outside today's
-// government limit, and buttons to edit, open the calendar, stop/start renting or delete.
+// government limit, a service alert when the engine hours near the next service,
+// the machine's service and repairs (with "Ask a technician"), and buttons to edit,
+// open the calendar, stop/start renting or delete.
 import { ArrowLeft, CalendarDays, CircleAlert, Clock, Pencil, Wrench } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { DetailRow } from "@/components/detail-row";
 import { MachinePhotos } from "@/components/machine-photos";
+import { MaintenanceHistory } from "@/components/maintenance-history";
 import { MapPicker } from "@/components/map/map-picker";
 import { MachineTypeIcon } from "@/components/machine-type-icon";
 import { MachineActions } from "@/components/provider/machine-actions";
+import { MaintenanceRequestForm } from "@/components/provider/maintenance-request-form";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +21,8 @@ import { requireRole } from "@/lib/auth";
 import { localizeDigits, pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 import { getProviderMachine } from "@/lib/services/machine";
-import { isServiceDue } from "@/lib/services/machine-rules";
+import { listMachineMaintenance } from "@/lib/services/maintenance";
+import { getHoursUntilService, getServiceState } from "@/lib/services/maintenance-rules";
 import { checkRateAgainstLimit } from "@/lib/services/pricing-rule";
 
 type MachinePageProps = {
@@ -52,9 +57,13 @@ export default async function MachinePage({ params }: MachinePageProps) {
     notFound(); // no such machine, or it belongs to another provider
   }
   // The government may have changed the limit after this rate was saved.
-  const rateCheck = await checkRateAgainstLimit(machine.machineTypeId, machine.rate);
+  const [rateCheck, maintenance] = await Promise.all([
+    checkRateAgainstLimit(machine.machineTypeId, machine.rate),
+    listMachineMaintenance(machine.id),
+  ]);
 
   const t = await getTranslations("MachineDetails");
+  const tMaintenance = await getTranslations("Maintenance");
   const tMoney = await getTranslations("Money");
   const tCommon = await getTranslations("Common");
   const format = await getFormatter();
@@ -62,7 +71,7 @@ export default async function MachinePage({ params }: MachinePageProps) {
 
   const upazila = machine.location;
   const district = upazila.parent;
-  const serviceIsDue = isServiceDue(machine);
+  const serviceState = getServiceState(machine); // "ok", "soon" or "due"
 
   return (
     <div className="space-y-6">
@@ -135,6 +144,16 @@ export default async function MachinePage({ params }: MachinePageProps) {
           <p>{t("underRepairNote")}</p>
         </NoteBox>
       )}
+      {serviceState === "due" && (
+        <NoteBox tone="orange" icon={<Wrench className="size-5" aria-hidden />}>
+          <p>{tMaintenance("serviceDue")}</p>
+        </NoteBox>
+      )}
+      {serviceState === "soon" && (
+        <NoteBox tone="amber" icon={<Clock className="size-5" aria-hidden />}>
+          <p>{tMaintenance("serviceSoon", { hours: getHoursUntilService(machine) })}</p>
+        </NoteBox>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Photos */}
@@ -182,7 +201,7 @@ export default async function MachinePage({ params }: MachinePageProps) {
               </DetailRow>
               <DetailRow label={t("engine")}>
                 {t("engineValue", { hours: machine.engineHours, due: machine.serviceDueHours })}
-                {serviceIsDue && <span className="block text-sm text-orange-700">{t("serviceDue")}</span>}
+                {serviceState === "due" && <span className="block text-sm text-orange-700">{t("serviceDue")}</span>}
               </DetailRow>
               <DetailRow label={t("bookings")}>{format.number(machine._count.bookings)}</DetailRow>
             </dl>
@@ -200,6 +219,16 @@ export default async function MachinePage({ params }: MachinePageProps) {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{tMaintenance("historyTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <MaintenanceRequestForm machineId={machine.id} serviceIsNear={serviceState !== "ok"} />
+          <MaintenanceHistory items={maintenance} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

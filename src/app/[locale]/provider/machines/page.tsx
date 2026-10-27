@@ -1,6 +1,6 @@
-// Provider page: "My machines" — every machine of this provider as a card,
-// with an "Add machine" button.
-import { Plus, Tractor } from "lucide-react";
+// Provider page: "My machines" — every machine of this provider as a card (with a service
+// alert when the engine hours near the next service), and an "Add machine" button.
+import { Plus, Tractor, Wrench } from "lucide-react";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { MachineCard } from "@/components/machine-card";
@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
 import { Link } from "@/lib/navigation";
 import { listProviderMachines } from "@/lib/services/machine";
+import { getHoursUntilService, getServiceState } from "@/lib/services/maintenance-rules";
 import { getProviderProfile } from "@/lib/services/provider";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -25,6 +26,21 @@ export default async function ProviderMachinesPage() {
     getProviderProfile(provider.id),
   ]);
   const t = await getTranslations("Machines");
+  const tMaintenance = await getTranslations("Maintenance");
+
+  /** An orange line under the card when the machine needs a service soon, or now. */
+  function serviceAlert(machine: { engineHours: number; serviceDueHours: number }) {
+    const state = getServiceState(machine);
+    if (state === "ok") {
+      return undefined;
+    }
+    return (
+      <p className="flex items-center gap-1.5 text-sm font-medium text-orange-700">
+        <Wrench className="size-4" aria-hidden />
+        {state === "due" ? tMaintenance("dueShort") : tMaintenance("soonShort", { hours: getHoursUntilService(machine) })}
+      </p>
+    );
+  }
 
   const addButton = (
     <Button asChild size="lg">
@@ -56,6 +72,7 @@ export default async function ProviderMachinesPage() {
                 href={`/provider/machines/${machine.id}`}
                 showStatus
                 machine={{ ...machine, photoUrl: machine.images[0]?.url ?? null }}
+                extra={serviceAlert(machine)}
               />
             </li>
           ))}
