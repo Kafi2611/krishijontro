@@ -187,7 +187,18 @@
     "DISPUTED": "Complaint open",
     "SUCCESS": "Successful",
     "FAILED": "Failed",
-    "PROCESSED": "Refunded"
+    "PROCESSED": "Refunded",
+    "REPORTED": "Reported",
+    "SEARCHING": "Looking for a machine",
+    "REPLACED": "Replacement found",
+    "NO_REPLACEMENT": "No replacement",
+    "RECEIVED": "New",
+    "INSPECTING": "Inspecting",
+    "REPAIRING": "Repairing",
+    "FIXED": "Fixed",
+    "WAITING": "Waiting",
+    "NOTIFIED": "Told: machine free",
+    "BOOKED": "Booked"
   },
   "Nav": {
     "dashboard": "Dashboard",
@@ -208,7 +219,10 @@
     "subsidy": "Subsidy",
     "verifyFarmers": "Verify farmers",
     "subsidyApplications": "Subsidy applications",
-    "subsidyPrograms": "Subsidy programs"
+    "subsidyPrograms": "Subsidy programs",
+    "breakdowns": "Breakdowns",
+    "repairRequests": "Repair requests",
+    "waitlist": "Waitlist"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -550,7 +564,9 @@
     "machinesWaiting": "Machines",
     "operatorsWaiting": "Operators",
     "moneyTitle": "Money",
-    "providersToPay": "Providers waiting for their money"
+    "providersToPay": "Providers waiting for their money",
+    "problemsTitle": "Problems",
+    "breakdownsOpen": "Breakdowns waiting for a replacement"
   },
   "ProviderDashboard": {
     "machines": "My machines",
@@ -1125,5 +1141,66 @@
     "isActiveHint": "Switch off to stop all new discounts at once.",
     "save": "Save",
     "saved": "Program saved"
+  },
+  "Breakdown": {
+    "openText": "If the machine breaks down and cannot go on, report it here. The farmer pays only for the work done, and we look for another machine.",
+    "openButton": "Report a breakdown",
+    "doneLand": "Land worked before the breakdown (decimal)",
+    "doneHours": "Hours worked before the breakdown",
+    "doneDays": "Days worked before the breakdown",
+    "doneHelp": "Booked: {booked, number}. Type 0 if it broke down at once.",
+    "description": "What is wrong?",
+    "descriptionPlaceholder": "e.g. The gear box makes a noise and the tiller stopped",
+    "photo": "Photo of the machine (if you can)",
+    "submit": "Report the breakdown",
+    "cancel": "Cancel",
+    "reported": "Breakdown reported. The farmer and your provider were told.",
+    "cardTitle": "Machine broke down",
+    "photoAlt": "Photo of the broken machine",
+    "workDone": "Work done before it",
+    "reportedBy": "Reported by {name}, {time}",
+    "searchingText": {
+      "farmer": "We are looking for another machine within {km, number} km. When a provider sends one, you get a new booking with new codes. You pay only for the work done.",
+      "provider": "The machine is under repair: the technicians got a repair request. Providers within {km, number} km were asked to send a replacement.",
+      "operator": "Thank you. The farmer and your provider were told, and we are looking for another machine within {km, number} km."
+    },
+    "replacedText": "Another machine finishes the rest of the work. This booking is billed only for the work done.",
+    "noReplacementFarmer": "No other machine could come. You pay only for the work done, and you are on the waitlist: we will tell you when a machine is free near you.",
+    "noReplacementText": "No other machine could come. The booking was closed with only the work done.",
+    "replacesNote": "This booking finishes the work of <link>{code}</link>, whose machine broke down. Delivery is free.",
+    "continuedNote": "The rest of the work is done by booking <link>{code}</link>."
+  },
+  "Replacement": {
+    "title": "Emergency: a farmer needs your machine",
+    "subtitle": "A machine broke down near one of your free machines. The first provider to send a machine gets the job.",
+    "offerTitle": "{type} needed now",
+    "farmer": "Farmer",
+    "workLeft": "Work left",
+    "rate": "Rate",
+    "freeDelivery": "The farmer's booked rate. Delivery is free in an emergency.",
+    "distance": "{km, number} km from the field",
+    "sendButton": "Send this machine",
+    "confirmTitle": "Send {machine}?",
+    "confirmText": "The booking is accepted at once, and the machine should be at the field by {time}. Then choose an operator.",
+    "confirmYes": "Yes, send it",
+    "sent": "Machine sent. Now choose an operator for the new booking."
+  },
+  "AdminBreakdowns": {
+    "title": "Breakdowns",
+    "subtitle": "Machines that broke down during a job. If no provider sends a replacement within {hours, number} hours, close the search.",
+    "openTitle": "Waiting for a replacement",
+    "noneOpen": "No machine is waiting for a replacement right now.",
+    "machine": "Machine",
+    "problem": "Problem",
+    "brokeAt": "Broke down",
+    "machinesNearby": "Machines nearby that could go",
+    "waitUntil": "Providers have until {time} to send a machine.",
+    "waitedLongEnough": "{hours, number} hours have passed and no provider sent a machine.",
+    "noReplacementButton": "No replacement found",
+    "confirmTitle": "Close the search for {code}?",
+    "confirmText": "The farmer pays only for the work done (nothing, if no work was done) and joins the waitlist. This cannot be undone.",
+    "confirmYes": "Yes, close it",
+    "closed": "Closed. The farmer was told and put on the waitlist.",
+    "closedTitle": "Closed lately"
   }
 }

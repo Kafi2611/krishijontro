@@ -1,17 +1,23 @@
 // The Admin dashboard: the first page an ADMIN user sees after login.
-// It shows how many providers, machines and operators wait for approval, and how many
-// providers wait for their money (each box opens that list), and the list of admin features.
-import { Building2, Tractor, Users, Wallet } from "lucide-react";
+// It shows how many providers, machines and operators wait for approval, how many breakdowns
+// still wait for a replacement machine, and how many providers wait for their money (each box
+// opens that list), and the list of admin features.
+import { Building2, Tractor, TriangleAlert, Users, Wallet } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { RoleDashboard } from "@/components/dashboard/role-dashboard";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { requireRole } from "@/lib/auth";
 import { countPendingApprovals } from "@/lib/services/approval";
 import { countProvidersToPay } from "@/lib/services/payout";
+import { countOpenBreakdowns } from "@/lib/services/replacement";
 
 export default async function AdminDashboardPage() {
   await requireRole("ADMIN");
-  const [pending, providersToPay] = await Promise.all([countPendingApprovals(), countProvidersToPay()]);
+  const [pending, providersToPay, openBreakdowns] = await Promise.all([
+    countPendingApprovals(),
+    countProvidersToPay(),
+    countOpenBreakdowns(),
+  ]);
   const t = await getTranslations("AdminDashboard");
 
   return (
@@ -39,6 +45,18 @@ export default async function AdminDashboardPage() {
             icon={<Users className="size-5" aria-hidden />}
             href="/admin/approvals?tab=operators"
             highlight={pending.operators > 0}
+          />
+        </div>
+      </section>
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">{t("problemsTitle")}</h2>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <StatCard
+            label={t("breakdownsOpen")}
+            value={openBreakdowns}
+            icon={<TriangleAlert className="size-5" aria-hidden />}
+            href="/admin/breakdowns"
+            highlight={openBreakdowns > 0}
           />
         </div>
       </section>

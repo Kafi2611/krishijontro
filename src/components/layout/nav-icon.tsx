@@ -8,16 +8,19 @@ import {
   Bell,
   CalendarCheck,
   FileCheck,
+  Hourglass,
   LayoutDashboard,
   Scale,
   Search,
   Shapes,
   Store,
   Tractor,
+  TriangleAlert,
   User,
   UserCheck,
   Users,
   Wallet,
+  Wrench,
   type LucideIcon,
 } from "lucide-react";
 import type { NavIconName } from "@/lib/role-nav";
@@ -39,6 +42,9 @@ const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   subsidy: BadgePercent,
   verify: UserCheck,
   applications: FileCheck,
+  breakdowns: TriangleAlert,
+  repairs: Wrench,
+  waitlist: Hourglass,
 };
 
 export function NavIcon({ name, className }: { name: NavIconName; className?: string }) {

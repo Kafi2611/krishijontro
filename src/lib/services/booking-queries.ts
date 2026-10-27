@@ -21,6 +21,7 @@ import {
   groupProviderBookings,
   splitFarmerBookings,
 } from "@/lib/services/booking-rules";
+import { getBookedAmount } from "@/lib/services/breakdown-rules";
 import { addDays, toDhakaDay, type TimeRange } from "@/lib/services/calendar";
 import { listUpazilaOptions } from "@/lib/services/location";
 import { getFarmerStartingJob, getMachineForFarmer, searchToJob } from "@/lib/services/search";
@@ -37,6 +38,15 @@ const SECRET_CODES = { startOtp: true, finishOtp: true } satisfies Prisma.Bookin
 const MACHINE_FOR_CARD = {
   select: { brand: true, model: true, machineType: { select: { name: true, nameBn: true, icon: true } } },
 } satisfies Prisma.MachineDefaultArgs;
+
+/**
+ * The bookings linked by a breakdown: the broken booking this one replaces (parentBooking),
+ * and the replacement booking(s) that finish this one's work. Only their id and code.
+ */
+const RELATED_BOOKINGS = {
+  parentBooking: { select: { id: true, code: true } },
+  replacementBookings: { select: { id: true, code: true }, orderBy: { createdAt: "asc" } },
+} satisfies Prisma.BookingInclude;
 
 /** A booking's history rows, oldest first, with the name of the person who made each change. */
 const STATUS_LOGS = {
@@ -93,6 +103,7 @@ export async function getFarmerBooking(bookingId: string, farmerId: string) {
       operator: { select: { name: true, phone: true } },
       subsidyApplication: { select: { program: { select: { discountPercent: true } } } },
       statusLogs: STATUS_LOGS,
+      ...RELATED_BOOKINGS,
     },
   });
   if (!booking) {
@@ -146,6 +157,7 @@ export async function getProviderBooking(bookingId: string, providerId: string) 
       farmer: { select: { name: true, phone: true } },
       operator: { select: { name: true, phone: true } },
       statusLogs: STATUS_LOGS,
+      ...RELATED_BOOKINGS,
     },
   });
   if (!booking) {
@@ -224,6 +236,7 @@ export async function getOperatorJob(bookingId: string, operatorId: string) {
       machine: { select: { brand: true, model: true, machineType: { select: { name: true, nameBn: true, icon: true } } } },
       farmer: { select: { name: true, phone: true } },
       statusLogs: STATUS_LOGS,
+      ...RELATED_BOOKINGS,
     },
   });
   if (!job) {
@@ -233,8 +246,8 @@ export async function getOperatorJob(bookingId: string, operatorId: string) {
     job,
     timeline: timelineOf(job),
     nextStep: getOperatorNextStep(job.status, job.arrivedAt !== null),
-    // The finish form starts with what was booked: decimal of land, or the hours / days.
-    bookedAmount: job.billingUnit === "PER_ACRE" ? job.landDecimal : job.quantity,
+    // The finish and breakdown forms start from what was booked: decimal of land, or the hours / days.
+    bookedAmount: getBookedAmount(job),
   };
 }
 

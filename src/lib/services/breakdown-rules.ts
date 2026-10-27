@@ -65,17 +65,18 @@ function roundTo2(value: number): number {
 }
 
 /**
- * The work the replacement machine must still do, after `doneAmount` (the operator's unit) was done.
+ * The work the replacement machine must still do, after `doneQuantity` (in the billing unit,
+ * as the breakdown report saves it) was done.
  * - per acre: the land that is left (decimal), and the same land in acres as the quantity
  * - per hour / per day: the same field, and the hours or days that are left
- * Example: 66 decimal booked, 40 done -> { landDecimal: 26, quantity: 0.26 }
+ * Example: 66 decimal booked, 0.4 acre done -> { landDecimal: 26, quantity: 0.26 }
  */
-export function getRemainingWork(booking: BookedWork, doneAmount: number): { landDecimal: number; quantity: number } {
+export function getRemainingWork(booking: BookedWork, doneQuantity: number): { landDecimal: number; quantity: number } {
   if (booking.billingUnit === "PER_ACRE") {
-    const landDecimal = roundTo2(booking.landDecimal - doneAmount);
+    const landDecimal = roundTo2(booking.landDecimal - doneQuantity * DECIMALS_PER_ACRE);
     return { landDecimal, quantity: roundTo2(landDecimal / DECIMALS_PER_ACRE) };
   }
-  return { landDecimal: booking.landDecimal, quantity: roundTo2(booking.quantity - doneAmount) };
+  return { landDecimal: booking.landDecimal, quantity: roundTo2(booking.quantity - doneQuantity) };
 }
 
 // ─────────────────────────── 2. The replacement job's time ───────────────────────────

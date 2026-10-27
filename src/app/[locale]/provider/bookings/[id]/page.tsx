@@ -1,7 +1,8 @@
 // Provider page: one booking of one of the provider's machines (/provider/bookings/<id>).
 // At the top, what the provider must do now: Accept / Reject a new request, choose an
-// operator for an accepted one, or "Cash received" for a finished job. Below: the steps so far,
-// the farmer and operator to call, the job, the provider's share of the bill and the field map.
+// operator for an accepted one, or "Cash received" for a finished job; and the breakdown box if
+// the machine broke down. Below: the steps so far, the farmer and operator to call, the job,
+// the provider's share of the bill and the field map.
 // The OTP codes are never read here: only the farmer has them.
 import { Inbox, UserRound } from "lucide-react";
 import type { Metadata } from "next";
@@ -11,7 +12,9 @@ import { BookingBill } from "@/components/booking/booking-bill";
 import { BookingFacts } from "@/components/booking/booking-facts";
 import { BookingHeader } from "@/components/booking/booking-header";
 import { BookingTimeline } from "@/components/booking/booking-timeline";
+import { BreakdownCard } from "@/components/booking/breakdown-card";
 import { ContactLine } from "@/components/booking/contact-line";
+import { RelatedBookings } from "@/components/booking/related-bookings";
 import { MapPicker } from "@/components/map/map-picker";
 import { CollectPaymentCard } from "@/components/payment/collect-payment-card";
 import { AssignOperatorForm } from "@/components/provider/assign-operator-form";
@@ -19,7 +22,9 @@ import { BookingDecision } from "@/components/provider/booking-decision";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
 import { getProviderBooking, listOperatorChoices } from "@/lib/services/booking-queries";
+import { getBookingBreakdown } from "@/lib/services/breakdown";
 import { canPayBooking } from "@/lib/services/payment-rules";
+import { getReplacementRadiusKm } from "@/lib/services/settings";
 
 type ProviderBookingPageProps = {
   params: Promise<{ id: string }>;
@@ -41,6 +46,7 @@ export default async function ProviderBookingPage({ params }: ProviderBookingPag
   const field = { lat: booking.fieldLat, lng: booking.fieldLng };
   // Only an accepted booking needs an operator, so only then we load the choices.
   const operators = booking.status === "ACCEPTED" ? await listOperatorChoices(provider.id, booking) : [];
+  const [breakdown, radiusKm] = await Promise.all([getBookingBreakdown(booking.id), getReplacementRadiusKm()]);
 
   const t = await getTranslations("BookingView");
   const tProvider = await getTranslations("ProviderBookings");
@@ -49,6 +55,9 @@ export default async function ProviderBookingPage({ params }: ProviderBookingPag
   return (
     <div className="space-y-6">
       <BookingHeader backHref="/provider/bookings" backLabel={t("back")} booking={booking} />
+      <RelatedBookings parent={booking.parentBooking} replacements={booking.replacementBookings} />
+
+      {breakdown && <BreakdownCard report={breakdown} billingUnit={booking.billingUnit} view="provider" radiusKm={radiusKm} />}
 
       {/* What the provider must do now */}
       {booking.status === "REQUESTED" && (

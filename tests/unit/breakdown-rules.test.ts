@@ -39,8 +39,8 @@ describe("the work before and after a breakdown", () => {
   });
 
   it("leaves the rest of the land, or the rest of the hours, for the replacement", () => {
-    expect(getRemainingWork(tilling, 40)).toEqual({ landDecimal: 26, quantity: 0.26 });
-    expect(getRemainingWork(tilling, 40.3)).toEqual({ landDecimal: 25.7, quantity: 0.26 });
+    expect(getRemainingWork(tilling, 0.4)).toEqual({ landDecimal: 26, quantity: 0.26 });
+    expect(getRemainingWork(tilling, 0.403)).toEqual({ landDecimal: 25.7, quantity: 0.26 });
     expect(getRemainingWork(pump, 2)).toEqual({ landDecimal: 100, quantity: 4 });
   });
 });

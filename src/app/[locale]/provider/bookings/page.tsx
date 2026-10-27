@@ -1,15 +1,18 @@
-// Provider page: "Bookings" (/provider/bookings). The bookings of the provider's machines,
-// grouped by what the provider has to do: new requests (accept or reject), accepted ones
-// that still need an operator, jobs coming up or going on, and earlier ones.
+// Provider page: "Bookings" (/provider/bookings). At the top, emergency offers: a machine broke
+// down near one of the provider's free machines (they can send it). Then the bookings of the
+// provider's machines, grouped by what the provider has to do: new requests (accept or reject),
+// accepted ones that still need an operator, jobs coming up or going on, and earlier ones.
 import { CalendarClock } from "lucide-react";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { BookingCard } from "@/components/booking/booking-card";
 import { PageHeader } from "@/components/page-header";
+import { ReplacementOffers } from "@/components/provider/replacement-offers";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
 import { listProviderBookings } from "@/lib/services/booking-queries";
 import { getProviderShare } from "@/lib/services/booking-rules";
+import { listReplacementOffers } from "@/lib/services/replacement";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("ProviderBookings");
@@ -18,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ProviderBookingsPage() {
   const provider = await requireRole("PROVIDER");
-  const groups = await listProviderBookings(provider.id);
+  const [groups, offers] = await Promise.all([listProviderBookings(provider.id), listReplacementOffers(provider.id)]);
   const t = await getTranslations("ProviderBookings");
 
   const sections = [
@@ -32,6 +35,8 @@ export default async function ProviderBookingsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title={t("title")} description={t("subtitle")} />
+
+      <ReplacementOffers offers={offers} />
 
       {!hasAny && (
         <Card>
