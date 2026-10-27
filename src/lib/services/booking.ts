@@ -234,8 +234,9 @@ async function prepareBooking(
  * Looks for anything on this machine that overlaps [startAt, endAt): an active booking, or a
  * time the provider blocked. Returns the error key, or null if the time is free.
  * Two time ranges overlap when each one starts before the other one ends.
+ * (The emergency replacement in replacement.ts uses it too.)
  */
-async function findTimeClash(
+export async function findTimeClash(
   tx: Prisma.TransactionClient,
   machineId: string,
   startAt: Date,
@@ -274,6 +275,42 @@ async function nextBookingCode(tx: Prisma.TransactionClient): Promise<string> {
 }
 
 /**
+ * Saves a new REQUESTED booking with the next free code, and its first history row.
+ * The first row has no "from" status, because the booking did not exist before (it is not a
+ * status change). The emergency replacement in replacement.ts saves its booking with it too.
+ * `note` is shown on that first timeline step, e.g. "Replaces KJ-2026-000008".
+ */
+export async function insertNewBooking(
+  tx: Prisma.TransactionClient,
+  row: Omit<Prisma.BookingUncheckedCreateInput, "code">,
+  actorId: string,
+  note: string | null = null,
+) {
+  const code = await nextBookingCode(tx);
+  const created = await tx.booking.create({ data: { ...row, code, status: "REQUESTED" } });
+  await tx.bookingStatusLog.create({
+    data: { bookingId: created.id, fromStatus: null, toStatus: "REQUESTED", actorId, note },
+  });
+  return created;
+}
+
+/**
+ * Runs a step that saves a new booking, and runs it ONE more time if its code was taken.
+ * Two bookings saved at the same moment can get the same code. Codes are @unique, so the
+ * database refuses the second one; trying once more gives it the next free code.
+ */
+export async function retryIfCodeTaken<T>(saveStep: () => Promise<T>): Promise<T> {
+  try {
+    return await saveStep();
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return saveStep();
+    }
+    throw error;
+  }
+}
+
+/**
  * Step 2 of booking (inside the transaction): lock, check again, save, send messages.
  * Returns the new booking's id. Throws a BookingProblem if the time is no longer free.
  */
@@ -297,16 +334,11 @@ async function saveNewBooking(tx: Prisma.TransactionClient, booking: PreparedBoo
     throw new BookingProblem(clash);
   }
 
-  // 4. Save the booking with the next code, and its first history row. The first row has no
-  //    "from" status, because the booking did not exist before (this is not a status change).
-  const code = await nextBookingCode(tx);
-  const created = await tx.booking.create({ data: { ...booking.row, code, status: "REQUESTED" } });
-  await tx.bookingStatusLog.create({
-    data: { bookingId: created.id, fromStatus: null, toStatus: "REQUESTED", actorId: farmerId },
-  });
+  // 4. Save the booking with the next code, and its first history row.
+  const created = await insertNewBooking(tx, booking.row, farmerId);
 
   // 5. Tell both sides (simulated SMS).
-  const info = { id: created.id, code, machineName: booking.machineName, startAt };
+  const info = { id: created.id, code: created.code, machineName: booking.machineName, startAt };
   await createNotification({ userId: farmerId, channel: "SMS", ...requestSentMessage(info, created.totalAmount) }, tx);
   await createNotification({ userId: booking.providerId, channel: "SMS", ...newRequestMessage(info, farmerName) }, tx);
   return created.id;
@@ -337,17 +369,7 @@ export async function createBooking(
   if (!prepared.ok) {
     return prepared;
   }
-
-  try {
-    return await saveInTransaction(prepared.booking, farmer.name);
-  } catch (error) {
-    // Two bookings got the same code at the same moment. Codes are @unique, so the database
-    // refused the second one; trying once more gives it the next free code.
-    if (isUniqueConstraintError(error)) {
-      return saveInTransaction(prepared.booking, farmer.name);
-    }
-    throw error;
-  }
+  return retryIfCodeTaken(() => saveInTransaction(prepared.booking, farmer.name));
 }
 
 // ─────────────────────────── The provider's steps ───────────────────────────
@@ -468,8 +490,9 @@ export async function rejectBooking(bookingId: string, providerId: string, reaso
 /**
  * One of THIS operator's jobs, read inside the transaction (with the OTP codes, to check them).
  * Throws "notFound" for any other booking, so an operator can only move their own jobs.
+ * (breakdown.ts uses it too, when the operator reports a breakdown.)
  */
-async function findOperatorJob(tx: Prisma.TransactionClient, bookingId: string, operatorId: string) {
+export async function findOperatorJob(tx: Prisma.TransactionClient, bookingId: string, operatorId: string) {
   const job = await tx.booking.findFirst({
     where: { id: bookingId, operatorId },
     include: {

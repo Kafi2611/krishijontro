@@ -80,33 +80,42 @@ export function sortSearchResults<T extends SortableResult>(results: T[], sort: 
 
 // ─────────────────────────── Database helpers ───────────────────────────
 
-/** The where-condition for LISTED machines (the same rule as isMachineListed in machine-rules.ts). */
-const LISTED_MACHINE = {
+/**
+ * The where-condition for LISTED machines (the same rule as isMachineListed in machine-rules.ts).
+ * The emergency replacement search (replacement.ts) uses it too.
+ */
+export const LISTED_MACHINE = {
   approvalStatus: "APPROVED",
   status: "ACTIVE",
   provider: { status: "ACTIVE", providerProfile: { approvalStatus: "APPROVED" } },
 } as const;
 
 /**
- * Of the given machines, the ones that are busy on a day: an active booking or a
- * blocked range touches that day. Returns their ids as a Set (quick to check).
+ * Of the given machines, the ones that are busy at some moment between startAt and endAt:
+ * an active booking or a blocked range overlaps that time. Returns their ids as a Set (quick
+ * to check). The emergency replacement search (replacement.ts) uses it too.
  */
-async function findBusyMachineIds(machineIds: string[], day: string): Promise<Set<string>> {
-  const { startAt, endAt } = blockRangeFromDays(day, day); // the whole day, 00:00 to 24:00
+export async function findBusyMachineIdsBetween(machineIds: string[], startAt: Date, endAt: Date): Promise<Set<string>> {
   // Two ranges overlap when each one starts before the other one ends.
-  const touchesDay = { startAt: { lt: endAt }, endAt: { gt: startAt } };
+  const overlaps = { startAt: { lt: endAt }, endAt: { gt: startAt } };
 
   const [bookings, blocks] = await Promise.all([
     db.booking.findMany({
-      where: { machineId: { in: machineIds }, status: { in: ACTIVE_BOOKING_STATUSES }, ...touchesDay },
+      where: { machineId: { in: machineIds }, status: { in: ACTIVE_BOOKING_STATUSES }, ...overlaps },
       select: { machineId: true },
     }),
     db.availabilityBlock.findMany({
-      where: { machineId: { in: machineIds }, ...touchesDay },
+      where: { machineId: { in: machineIds }, ...overlaps },
       select: { machineId: true },
     }),
   ]);
   return new Set([...bookings, ...blocks].map((row) => row.machineId));
+}
+
+/** Of the given machines, the ones that are busy at some time on a day (00:00 to 24:00). */
+async function findBusyMachineIds(machineIds: string[], day: string): Promise<Set<string>> {
+  const { startAt, endAt } = blockRangeFromDays(day, day);
+  return findBusyMachineIdsBetween(machineIds, startAt, endAt);
 }
 
 /**
