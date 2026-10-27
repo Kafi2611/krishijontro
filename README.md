@@ -68,6 +68,19 @@ presses **Cash received**). Online payment goes through a payment gateway:
   SSLCommerz also sends a server-to-server message (IPN) to `/api/payment/sslcommerz/ipn`.
   It only reaches a deployed site, not localhost; payments still work without it.
 
+## Platform settings
+
+Some business rules read their numbers from the `Setting` table, so they can change without new code.
+`npm run db:seed` adds them; until the admin settings page exists, change them with `npx prisma studio`.
+
+| Setting | Default | Used for |
+| --- | --- | --- |
+| `platformFeePercent` | 3 | KrishiJontro's share of each booking (work + delivery) |
+| `freeCancellationHours` | 24 | A farmer cancels for free until this many hours before the start |
+| `cancellationFeePercent` | 10 | The late cancellation fee, as a % of the work charge |
+| `replacementRadiusKm` | 15 | How far around the field we look for a machine after a breakdown |
+| `replacementTimeoutHours` | 2 | When the admin may close the search with "No replacement found" |
+
 ## Demo logins
 
 After `npm run db:seed`, every demo account uses the password **`demo1234`**.
