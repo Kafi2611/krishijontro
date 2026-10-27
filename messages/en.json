@@ -1313,5 +1313,20 @@
     "reasonPlaceholder": "e.g. The machine needs a repair that day",
     "providerConfirm": "Cancel and tell the farmer",
     "providerCancelled": "The booking is cancelled. The farmer was told."
+  },
+  "Waitlist": {
+    "title": "Waitlist",
+    "subtitle": "Machines you are waiting for. When one becomes free near your field, the first farmer in the line gets a message.",
+    "find": "Find machines",
+    "empty": "You are not waiting for any machine. If a search finds no free machine, you can join the waitlist there.",
+    "wantedDay": "Wanted on {day}",
+    "notifiedAt": "Told on {time} that a machine may be free. Search again to book it.",
+    "leave": "Leave the list",
+    "left": "You left the waitlist.",
+    "joinTitle": "No free machine?",
+    "joinText": "Join the waitlist for a {type}. When one becomes free near your field on this day, you get a message first.",
+    "joinButton": "Join the waitlist",
+    "joined": "You are on the waitlist. We will send you a message.",
+    "seeList": "See my waitlist"
   }
 }

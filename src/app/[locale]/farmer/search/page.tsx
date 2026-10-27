@@ -1,10 +1,12 @@
 // Farmer page: "Find a machine" (/farmer/search?workType=...&landValue=...&...).
 // The search lives in the page address. The server reads it, runs searchMachines(),
 // and shows a machine suggestion, the results on a map, and the results as a list.
+// When no machine is free, the farmer can join the waitlist for that kind of machine.
 // With nothing in the address, it starts from the farmer's own upazila and land size.
 import { BadgePercent, SearchX } from "lucide-react";
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { JoinWaitlistCard } from "@/components/farmer/join-waitlist-card";
 import { MachineSearchForm } from "@/components/farmer/machine-search-form";
 import { SearchResultsList } from "@/components/farmer/search-results";
 import { SuggestionNote } from "@/components/farmer/suggestion-note";
@@ -12,10 +14,11 @@ import { ResultsMap } from "@/components/map/results-map";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
+import { pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 import { toDhakaDay } from "@/lib/services/calendar";
 import { listUpazilaOptions } from "@/lib/services/location";
-import { listPricedMachineTypes } from "@/lib/services/pricing-rule";
+import { listPricedMachineTypes, type PricedMachineType } from "@/lib/services/pricing-rule";
 import { getFarmerSearchDefaults, searchMachines } from "@/lib/services/search";
 import { cn } from "@/lib/utils";
 import { SEARCH_SORTS, searchInputToQuery, searchParamsToInput } from "@/lib/validators/search";
@@ -54,6 +57,16 @@ export default async function FarmerSearchPage({ searchParams }: FarmerSearchPag
 
   const query = searchInputToQuery(search);
   const machineHref = (machineId: string) => `/farmer/machines/${machineId}?${query}`;
+  const locale = await getLocale();
+
+  // No free machine: the kind of machine the farmer would wait for — the one they picked,
+  // otherwise the suggested one, otherwise the first kind that can do the work.
+  let waitlistType: PricedMachineType | null = null;
+  if (outcome && outcome.results.length === 0) {
+    const picked = machineTypes.find((type) => type.id === search.machineTypeId);
+    const firstForWork = machineTypes.find((type) => type.workTypes.includes(search.workType));
+    waitlistType = picked ?? outcome.suggestion?.machineType ?? firstForWork ?? null;
+  }
 
   return (
     <div className="space-y-6">
@@ -141,6 +154,21 @@ export default async function FarmerSearchPage({ searchParams }: FarmerSearchPag
             </Card>
           ) : (
             <SearchResultsList results={outcome.results} machineHref={machineHref} />
+          )}
+
+          {waitlistType && (
+            <JoinWaitlistCard
+              machineTypeName={pickByLocale(waitlistType.name, waitlistType.nameBn, locale)}
+              values={{
+                machineTypeId: waitlistType.id,
+                workType: search.workType,
+                landValue: search.landValue,
+                landUnit: search.landUnit,
+                lat: search.lat,
+                lng: search.lng,
+                day: search.day,
+              }}
+            />
           )}
 
           {outcome.busyCount > 0 && (

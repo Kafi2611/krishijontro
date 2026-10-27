@@ -39,6 +39,7 @@ const ROLE_LINKS: Record<Role, NavItem[]> = {
   FARMER: [
     { href: "/farmer/search", labelKey: "search", icon: "search" },
     { href: "/farmer/bookings", labelKey: "myBookings", icon: "bookings" },
+    { href: "/farmer/waitlist", labelKey: "waitlist", icon: "waitlist" },
     { href: "/farmer/subsidy", labelKey: "subsidy", icon: "subsidy" },
   ],
   COOP_LEADER: [],
