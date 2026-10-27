@@ -5,7 +5,7 @@
  * an "SMS" is just a Notification with channel = SMS, shown in the same list.
  * Every message is saved in English AND Bangla, so it can be shown in either language.
  */
-import type { NotificationChannel, Prisma } from "@/generated/prisma/client";
+import type { NotificationChannel, Prisma, Role } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 
 export type NewNotification = {
@@ -30,6 +30,24 @@ export async function createNotification(
 }
 
 /**
+ * Sends the same notification to every active user of one role,
+ * e.g. every technician gets "A tractor needs a repair".
+ */
+export async function notifyRole(
+  role: Role,
+  notification: Omit<NewNotification, "userId">,
+  tx: Prisma.TransactionClient = db,
+): Promise<void> {
+  const users = await tx.user.findMany({
+    where: { role, status: "ACTIVE" },
+    select: { id: true },
+  });
+  await tx.notification.createMany({
+    data: users.map((user) => ({ ...notification, userId: user.id })),
+  });
+}
+
+/**
  * Sends the same notification to every active admin,
  * e.g. "A new machine is waiting for approval".
  */
@@ -37,13 +55,7 @@ export async function notifyAllAdmins(
   notification: Omit<NewNotification, "userId">,
   tx: Prisma.TransactionClient = db,
 ): Promise<void> {
-  const admins = await tx.user.findMany({
-    where: { role: "ADMIN", status: "ACTIVE" },
-    select: { id: true },
-  });
-  await tx.notification.createMany({
-    data: admins.map((admin) => ({ ...notification, userId: admin.id })),
-  });
+  await notifyRole("ADMIN", notification, tx);
 }
 
 /** How many notifications this user has not read yet (the number on the bell). */

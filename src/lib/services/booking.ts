@@ -46,6 +46,8 @@ import {
 import { toDecimal } from "@/lib/services/geo";
 import { findNearestUpazilaId } from "@/lib/services/location";
 import { isMachineListed, isServiceDue } from "@/lib/services/machine-rules";
+import { addEngineHours } from "@/lib/services/maintenance";
+import { getEngineHoursUsed } from "@/lib/services/maintenance-rules";
 import { createNotification } from "@/lib/services/notification";
 import { calculateBookingPrice, estimateJob, getBillingQuantity, isRateAllowed } from "@/lib/services/pricing";
 import { getActivePricingRule, listPricedMachineTypes } from "@/lib/services/pricing-rule";
@@ -599,7 +601,8 @@ async function calculateFinalBill(
 /**
  * The work is finished (WORKING -> COMPLETED), but only with the farmer's FINISH code.
  * The operator enters the real amount of work; the bill is worked out again from it, and the
- * farmer (final bill) and the provider (their share) are told.
+ * farmer (final bill) and the provider (their share) are told. The job's engine hours are added
+ * to the machine (maintenance.ts).
  */
 export async function finishWork(bookingId: string, operatorId: string, input: FinishWorkInput): Promise<ActionResult> {
   return runBookingStep(async (tx) => {
@@ -624,5 +627,8 @@ export async function finishWork(bookingId: string, operatorId: string, input: F
     const info = messageInfo(job);
     await createNotification({ userId: job.farmerId, channel: "SMS", ...workFinishedMessage(info, price.totalAmount) }, tx);
     await createNotification({ userId: job.machine.providerId, ...jobFinishedMessage(info, price.providerAmount) }, tx);
+
+    // The engine ran for this job: count its hours (the provider is warned when a service is near).
+    await addEngineHours(tx, job.machineId, getEngineHoursUsed(job.billingUnit, actualQuantity));
   });
 }
