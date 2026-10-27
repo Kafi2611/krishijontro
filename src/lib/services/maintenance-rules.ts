@@ -6,7 +6,8 @@
  *   1. Engine hours: how many hours a finished job adds to the machine's engine.
  *   2. Service alerts: a machine is "ok", "soon" (fewer than SERVICE_WARNING_HOURS left) or
  *      "due". A due machine is left out of the farmer search until it is serviced.
- *   3. The repair steps a technician walks through: Received → Inspecting → Repairing → Fixed.
+ *   3. The repair steps a technician walks through: Received → Inspecting → Repairing → Fixed,
+ *      and the button the technician sees next.
  */
 import type { BillingUnit, MaintenanceStatus } from "@/generated/prisma/enums";
 import { HOURS_PER_ACRE } from "@/lib/services/booking-rules";
@@ -108,4 +109,35 @@ export function getNextMaintenanceStatus(status: MaintenanceStatus): Maintenance
 /** True while the technician still has work to do on the request (any step before FIXED). */
 export function isMaintenanceOpen(status: MaintenanceStatus): boolean {
   return status !== "FIXED";
+}
+
+/** The button a technician sees on a request. */
+export type TechnicianStep = "take" | "inspect" | "repair" | "finish";
+
+/**
+ * The technician's next button on a request, or null when there is nothing for them to do:
+ * - nobody has taken it yet -> "take" ("Take this job")
+ * - it is theirs: Received -> "inspect", Inspecting -> "repair", Repairing -> "finish" (parts + cost)
+ * - it is another technician's, or it is already fixed -> null
+ */
+export function getTechnicianStep(
+  request: { status: MaintenanceStatus; technicianId: string | null },
+  technicianId: string,
+): TechnicianStep | null {
+  if (request.technicianId === null) {
+    return request.status === "RECEIVED" ? "take" : null;
+  }
+  if (request.technicianId !== technicianId) {
+    return null;
+  }
+  if (request.status === "RECEIVED") {
+    return "inspect";
+  }
+  if (request.status === "INSPECTING") {
+    return "repair";
+  }
+  if (request.status === "REPAIRING") {
+    return "finish";
+  }
+  return null;
 }

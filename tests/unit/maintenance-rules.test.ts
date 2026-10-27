@@ -7,6 +7,7 @@ import {
   getNextMaintenanceStatus,
   getNextServiceDueHours,
   getServiceState,
+  getTechnicianStep,
   isMaintenanceOpen,
   isNewServiceAlert,
 } from "@/lib/services/maintenance-rules";
@@ -55,5 +56,22 @@ describe("the repair steps", () => {
   it("is open until it is fixed", () => {
     expect(isMaintenanceOpen("REPAIRING")).toBe(true);
     expect(isMaintenanceOpen("FIXED")).toBe(false);
+  });
+});
+
+describe("getTechnicianStep", () => {
+  it("lets any technician take a new request nobody has taken", () => {
+    expect(getTechnicianStep({ status: "RECEIVED", technicianId: null }, "tech-1")).toBe("take");
+  });
+
+  it("shows the owner the next step: inspect, repair, then finish", () => {
+    expect(getTechnicianStep({ status: "RECEIVED", technicianId: "tech-1" }, "tech-1")).toBe("inspect");
+    expect(getTechnicianStep({ status: "INSPECTING", technicianId: "tech-1" }, "tech-1")).toBe("repair");
+    expect(getTechnicianStep({ status: "REPAIRING", technicianId: "tech-1" }, "tech-1")).toBe("finish");
+    expect(getTechnicianStep({ status: "FIXED", technicianId: "tech-1" }, "tech-1")).toBeNull();
+  });
+
+  it("shows nothing on another technician's request", () => {
+    expect(getTechnicianStep({ status: "INSPECTING", technicianId: "tech-2" }, "tech-1")).toBeNull();
   });
 });

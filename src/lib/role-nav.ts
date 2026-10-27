@@ -50,7 +50,7 @@ const ROLE_LINKS: Record<Role, NavItem[]> = {
     { href: "/provider/business", labelKey: "business", icon: "business" },
   ],
   OPERATOR: [{ href: "/operator/jobs", labelKey: "myJobs", icon: "bookings" }],
-  TECHNICIAN: [],
+  TECHNICIAN: [{ href: "/technician/requests", labelKey: "repairRequests", icon: "repairs" }],
   OFFICER: [
     { href: "/officer/farmers", labelKey: "verifyFarmers", icon: "verify" },
     { href: "/officer/subsidies", labelKey: "subsidyApplications", icon: "applications" },
