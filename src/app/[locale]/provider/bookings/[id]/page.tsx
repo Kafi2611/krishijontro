@@ -2,7 +2,8 @@
 // At the top, what the provider must do now: Accept / Reject a new request, choose an
 // operator for an accepted one, or "Cash received" for a finished job; and the breakdown box if
 // the machine broke down. Below: the steps so far, the farmer and operator to call, the job,
-// the provider's share of the bill and the field map.
+// the provider's share of the bill, the field map, and "Cancel the booking" (with a reason)
+// while an accepted booking has not started.
 // The OTP codes are never read here: only the farmer has them.
 import { Inbox, UserRound } from "lucide-react";
 import type { Metadata } from "next";
@@ -18,12 +19,14 @@ import { ContactLine } from "@/components/booking/contact-line";
 import { RelatedBookings } from "@/components/booking/related-bookings";
 import { MapPicker } from "@/components/map/map-picker";
 import { CollectPaymentCard } from "@/components/payment/collect-payment-card";
+import { ProviderCancelForm } from "@/components/provider/provider-cancel-form";
 import { AssignOperatorForm } from "@/components/provider/assign-operator-form";
 import { BookingDecision } from "@/components/provider/booking-decision";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
 import { getProviderBooking, listOperatorChoices } from "@/lib/services/booking-queries";
 import { getBookingBreakdown } from "@/lib/services/breakdown";
+import { canProviderCancel } from "@/lib/services/cancellation-rules";
 import { canPayBooking } from "@/lib/services/payment-rules";
 import { listBookingReviews } from "@/lib/services/review";
 import { getReplacementRadiusKm } from "@/lib/services/settings";
@@ -58,6 +61,7 @@ export default async function ProviderBookingPage({ params }: ProviderBookingPag
   const tProvider = await getTranslations("ProviderBookings");
   const tTimeline = await getTranslations("Timeline");
   const tReviews = await getTranslations("Reviews");
+  const tCancel = await getTranslations("Cancel");
 
   return (
     <div className="space-y-6">
@@ -65,6 +69,12 @@ export default async function ProviderBookingPage({ params }: ProviderBookingPag
       <RelatedBookings parent={booking.parentBooking} replacements={booking.replacementBookings} />
 
       {breakdown && <BreakdownCard report={breakdown} billingUnit={booking.billingUnit} view="provider" radiusKm={radiusKm} />}
+
+      {booking.status === "CANCELLED" && booking.cancellationFee > 0 && (
+        <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-950">
+          {tCancel("feeDueProvider", { fee: booking.cancellationFee })}
+        </p>
+      )}
 
       {/* What the provider must do now */}
       {booking.status === "REQUESTED" && (
@@ -159,6 +169,18 @@ export default async function ProviderBookingPage({ params }: ProviderBookingPag
           <MapPicker value={field} center={field} zoom={14} />
         </CardContent>
       </Card>
+
+      {canProviderCancel(booking.status) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{tCancel("providerTitle")}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-muted-foreground">{tCancel("providerText")}</p>
+            <ProviderCancelForm bookingId={booking.id} />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

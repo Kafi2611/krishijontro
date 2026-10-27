@@ -1292,5 +1292,26 @@
     "engineValue": "{hours, number} hours (next service at {due, number})",
     "owner": "Owner",
     "historyTitle": "Earlier service and repairs of this machine"
+  },
+  "Cancel": {
+    "farmerTitle": "Change of plans?",
+    "freeRequested": "The provider has not answered yet, so cancelling is free.",
+    "freeUntil": "You can cancel for free until {time}.",
+    "feeNow": "Cancelling now costs a late fee of {fee, number} Tk ({percent, number}% of the work charge), because the work starts in less than {hours, number} hours.",
+    "button": "Cancel the booking",
+    "confirmTitle": "Cancel this booking?",
+    "confirmFree": "It is free. The provider is told at once.",
+    "confirmFee": "A late fee of {fee, number} Tk will be due to the provider. The provider is told at once.",
+    "confirmYes": "Yes, cancel it",
+    "keep": "Keep the booking",
+    "cancelled": "The booking is cancelled. The provider was told.",
+    "feeDueFarmer": "You cancelled late: a fee of {fee, number} Tk is due to the provider.",
+    "feeDueProvider": "The farmer cancelled late: a fee of {fee, number} Tk is due to you.",
+    "providerTitle": "Cannot do this job?",
+    "providerText": "If you cancel, the farmer pays nothing and is told at once. Your trust score goes down by 5 points for 90 days.",
+    "reasonLabel": "Why can't you do it?",
+    "reasonPlaceholder": "e.g. The machine needs a repair that day",
+    "providerConfirm": "Cancel and tell the farmer",
+    "providerCancelled": "The booking is cancelled. The farmer was told."
   }
 }

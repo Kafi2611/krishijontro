@@ -2,7 +2,8 @@
 // finish code when the operator will need it, the breakdown box if the machine broke down (with
 // links between the broken booking and its replacement), the payment box (pay when the work is
 // done; the receipt once paid), the review form once paid (or the review given), the steps so
-// far (timeline), the people to call, the job, the bill and the field on the map.
+// far (timeline), the people to call, the job, the bill, the field on the map, and "Cancel the
+// booking" (with what it costs now) until the operator sets off.
 // Only the farmer who booked can open it.
 import { Star } from "lucide-react";
 import type { Metadata } from "next";
@@ -13,6 +14,7 @@ import { BookingFacts } from "@/components/booking/booking-facts";
 import { BookingHeader } from "@/components/booking/booking-header";
 import { BookingReviews } from "@/components/booking/booking-reviews";
 import { BookingTimeline } from "@/components/booking/booking-timeline";
+import { FarmerCancelCard } from "@/components/booking/farmer-cancel-card";
 import { BreakdownCard } from "@/components/booking/breakdown-card";
 import { ContactLine } from "@/components/booking/contact-line";
 import { OtpCard } from "@/components/booking/otp-card";
@@ -24,10 +26,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
 import { getFarmerBooking } from "@/lib/services/booking-queries";
 import { getBookingBreakdown } from "@/lib/services/breakdown";
+import { canFarmerCancel, getCancellationFee, getFreeCancellationEnd } from "@/lib/services/cancellation-rules";
 import { listBookingPayments } from "@/lib/services/payment";
 import { getOnlineGateway } from "@/lib/services/payment-gateway";
 import { listBookingReviews } from "@/lib/services/review";
-import { getReplacementRadiusKm } from "@/lib/services/settings";
+import { getCancellationRules, getReplacementRadiusKm } from "@/lib/services/settings";
 
 type FarmerBookingPageProps = {
   params: Promise<{ id: string }>;
@@ -46,11 +49,12 @@ export default async function FarmerBookingPage({ params }: FarmerBookingPagePro
     notFound(); // no such booking, or it is someone else's
   }
   const { booking, timeline, otp } = details;
-  const [payments, breakdown, radiusKm, reviews] = await Promise.all([
+  const [payments, breakdown, radiusKm, reviews, cancelRules] = await Promise.all([
     listBookingPayments(booking.id),
     getBookingBreakdown(booking.id),
     getReplacementRadiusKm(),
     listBookingReviews(booking.id),
+    getCancellationRules(),
   ]);
   const provider = booking.machine.provider;
   const field = { lat: booking.fieldLat, lng: booking.fieldLng };
@@ -58,6 +62,7 @@ export default async function FarmerBookingPage({ params }: FarmerBookingPagePro
   const t = await getTranslations("BookingView");
   const tTimeline = await getTranslations("Timeline");
   const tReviews = await getTranslations("Reviews");
+  const tCancel = await getTranslations("Cancel");
 
   return (
     <div className="space-y-6">
@@ -69,6 +74,12 @@ export default async function FarmerBookingPage({ params }: FarmerBookingPagePro
       />
 
       {otp && <OtpCard kind={otp.kind} code={otp.code} />}
+
+      {booking.status === "CANCELLED" && booking.cancellationFee > 0 && (
+        <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-950">
+          {tCancel("feeDueFarmer", { fee: booking.cancellationFee })}
+        </p>
+      )}
 
       {breakdown && <BreakdownCard report={breakdown} billingUnit={booking.billingUnit} view="farmer" radiusKm={radiusKm} />}
 
@@ -152,6 +163,16 @@ export default async function FarmerBookingPage({ params }: FarmerBookingPagePro
           </Card>
         </div>
       </div>
+
+      {canFarmerCancel(booking.status) && (
+        <FarmerCancelCard
+          bookingId={booking.id}
+          status={booking.status}
+          fee={getCancellationFee(booking, cancelRules)}
+          freeUntil={getFreeCancellationEnd(booking.startAt, cancelRules.freeHours)}
+          rules={cancelRules}
+        />
+      )}
 
       <Card>
         <CardHeader>

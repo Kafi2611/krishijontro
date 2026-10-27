@@ -213,3 +213,42 @@ export function operatorReviewedMessage(booking: BookingMessageInfo, stars: numb
     link: operatorLink(booking),
   };
 }
+
+/** To the provider, when the farmer cancels. Says if a late cancellation fee is due. */
+export function farmerCancelledMessage(booking: BookingMessageInfo, fee: number) {
+  const code = booking.code;
+  const feeText = fee > 0 ? `A late cancellation fee of ${fee} Tk is due to you.` : "The machine is free again at that time.";
+  const feeTextBn =
+    fee > 0 ? `দেরিতে বাতিলের জন্য আপনার পাওনা ${toBanglaDigits(fee)} টাকা।` : "ওই সময়ে যন্ত্রটি আবার খালি।";
+  return {
+    title: "Booking cancelled by the farmer",
+    titleBn: "কৃষক বুকিং বাতিল করেছেন",
+    body: `The farmer cancelled ${code} (${booking.machineName}, ${formatDhakaTime(booking.startAt, "en")}). ${feeText}`,
+    bodyBn: `কৃষক ${toBanglaDigits(code)} (${booking.machineName}, ${formatDhakaTime(booking.startAt, "bn")}) বাতিল করেছেন। ${feeTextBn}`,
+    link: providerLink(booking),
+  };
+}
+
+/** To the farmer, when the provider cancels a booking they had accepted. The farmer owes nothing. */
+export function providerCancelledMessage(booking: BookingMessageInfo, reason: string) {
+  const code = booking.code;
+  return {
+    title: "Booking cancelled by the provider",
+    titleBn: "যন্ত্র মালিক বুকিং বাতিল করেছেন",
+    body: `The provider cancelled ${code}. Reason: ${reason}. You pay nothing. Please search for another machine.`,
+    bodyBn: `যন্ত্র মালিক ${toBanglaDigits(code)} বাতিল করেছেন। কারণ: ${reason}। আপনাকে কোনো টাকা দিতে হবে না। অনুগ্রহ করে অন্য যন্ত্র খুঁজুন।`,
+    link: farmerLink(booking),
+  };
+}
+
+/** To the operator who was sent to a job that is now cancelled. */
+export function jobCancelledMessage(booking: BookingMessageInfo) {
+  const code = booking.code;
+  return {
+    title: "Job cancelled",
+    titleBn: "কাজ বাতিল",
+    body: `Job ${code} on ${formatDhakaTime(booking.startAt, "en")} is cancelled. You do not need to go.`,
+    bodyBn: `${formatDhakaTime(booking.startAt, "bn")} সময়ের কাজ ${toBanglaDigits(code)} বাতিল হয়েছে। আপনাকে যেতে হবে না।`,
+    link: operatorLink(booking),
+  };
+}

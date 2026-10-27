@@ -1,7 +1,7 @@
 // Zod rules for the booking forms. The same rules run in the browser (the forms) and on
 // the server (the server actions), so nobody gets past a rule by skipping the form.
 //   bookingSchema       — the farmer's 3-step booking form
-//   rejectBookingSchema — the provider's reason for saying no
+//   rejectBookingSchema — the provider's reason for saying no (also when they cancel later)
 //   assignOperatorSchema — the provider picks an operator
 //   startWorkSchema / finishWorkSchema — the operator types the farmer's OTP (and the real work done)
 import { z } from "zod";
@@ -49,6 +49,11 @@ export const rejectBookingSchema = z.object({
 });
 
 export type RejectBookingInput = z.infer<typeof rejectBookingSchema>;
+
+/** The provider cancels a booking they accepted: the farmer must be told why, like for a rejection. */
+export const providerCancelSchema = rejectBookingSchema;
+
+export type ProviderCancelInput = RejectBookingInput;
 
 /** The provider picks one of their operators for a booking. */
 export const assignOperatorSchema = z.object({

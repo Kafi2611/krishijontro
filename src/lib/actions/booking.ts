@@ -19,14 +19,17 @@ import {
   assignOperatorSchema,
   bookingSchema,
   finishWorkSchema,
+  providerCancelSchema,
   rejectBookingSchema,
   startWorkSchema,
   type AssignOperatorInput,
   type BookingInput,
   type FinishWorkInput,
+  type ProviderCancelInput,
   type RejectBookingInput,
   type StartWorkInput,
 } from "@/lib/validators/booking";
+import { cancelByFarmer, cancelByProvider } from "@/lib/services/cancellation";
 import type { ActionResult } from "@/lib/validators/types";
 
 /** After a successful step, every page is drawn again with the new status. */
@@ -53,6 +56,12 @@ export async function createBookingAction(values: BookingInput): Promise<CreateB
   return result;
 }
 
+/** The farmer cancels their booking (free early on; a late fee near the start). */
+export async function cancelBookingAction(bookingId: string): Promise<ActionResult> {
+  const farmer = await requireRole("FARMER");
+  return refreshPagesIfDone(await cancelByFarmer(bookingId, farmer.id));
+}
+
 // ─────────────────────────── Provider ───────────────────────────
 
 /** The provider accepts a request: the farmer gets the start and finish codes. */
@@ -69,6 +78,16 @@ export async function rejectBookingAction(bookingId: string, values: RejectBooki
     return { ok: false, error: "reasonRequired" };
   }
   return refreshPagesIfDone(await rejectBooking(bookingId, provider.id, parsed.data.reason));
+}
+
+/** The provider cancels a booking they accepted, with a reason (the farmer pays nothing). */
+export async function providerCancelBookingAction(bookingId: string, values: ProviderCancelInput): Promise<ActionResult> {
+  const provider = await requireRole("PROVIDER");
+  const parsed = providerCancelSchema.safeParse(values);
+  if (!parsed.success) {
+    return { ok: false, error: "reasonRequired" };
+  }
+  return refreshPagesIfDone(await cancelByProvider(bookingId, provider.id, parsed.data.reason));
 }
 
 /** The provider sends one of their operators to an accepted booking. */
