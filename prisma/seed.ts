@@ -20,9 +20,11 @@ import {
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../src/lib/demo-accounts";
 import { hashPassword } from "../src/lib/password";
 import { estimateWorkHours, formatBookingCode, generateOtp, getBookingYear } from "../src/lib/services/booking-rules";
+import { DEFAULT_CANCELLATION_FEE_PERCENT } from "../src/lib/services/cancellation-rules";
 import { distanceInKm } from "../src/lib/services/geo";
 import { makeTransactionId } from "../src/lib/services/payment-rules";
 import { calculateBookingPrice, getBillingQuantity } from "../src/lib/services/pricing";
+import { calculateTrustScore, getCancellationWindowStart } from "../src/lib/services/trust-rules";
 
 const db = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
@@ -323,7 +325,6 @@ async function seedUsers(upazilas: Upazilas, passwordHash: string) {
           locationId: upazilaId("Paba"),
           approvalStatus: "APPROVED",
           approvedAt: daysFromNow(-90),
-          trustScore: 88,
           payoutAccount: "bKash 01700000003",
         },
       },
@@ -412,12 +413,13 @@ async function seedUsers(upazilas: Upazilas, passwordHash: string) {
     farmers.push({ ...user, upazila: farmer.upazila });
   }
 
-  // 4 more providers (the last one still waits for admin approval)
+  // 4 more providers (the last one still waits for admin approval).
+  // Their trust scores are worked out at the end, from their reviews (seedTrustScores).
   const providerSeeds = [
-    { name: "Shahidul Haque", type: "COMPANY", business: "Barind Agro Services Ltd.", upazila: "Godagari", approval: "APPROVED", trust: 92 },
-    { name: "Moinul Hossain", type: "COOPERATIVE", business: "Tanore Krishok Samabay Samity", upazila: "Tanore", approval: "APPROVED", trust: 75 },
-    { name: "Kamrul Hasan", type: "INDIVIDUAL", business: "Kamrul Tractor House", upazila: "Savar", approval: "APPROVED", trust: 85 },
-    { name: "Ayesha Siddika", type: "INDIVIDUAL", business: "Ayesha Krishi Jontro", upazila: "Kapasia", approval: "PENDING", trust: 80 },
+    { name: "Shahidul Haque", type: "COMPANY", business: "Barind Agro Services Ltd.", upazila: "Godagari", approval: "APPROVED" },
+    { name: "Moinul Hossain", type: "COOPERATIVE", business: "Tanore Krishok Samabay Samity", upazila: "Tanore", approval: "APPROVED" },
+    { name: "Kamrul Hasan", type: "INDIVIDUAL", business: "Kamrul Tractor House", upazila: "Savar", approval: "APPROVED" },
+    { name: "Ayesha Siddika", type: "INDIVIDUAL", business: "Ayesha Krishi Jontro", upazila: "Kapasia", approval: "PENDING" },
   ] as const;
 
   const providers = [];
@@ -435,7 +437,6 @@ async function seedUsers(upazilas: Upazilas, passwordHash: string) {
             locationId: upazilaId(provider.upazila),
             approvalStatus: provider.approval,
             approvedAt: provider.approval === "APPROVED" ? daysFromNow(-80) : null,
-            trustScore: provider.trust,
             payoutAccount: `bKash 017200000${String(index + 1).padStart(2, "0")}`,
           },
         },
@@ -502,7 +503,7 @@ type Rules = Awaited<ReturnType<typeof seedMachineTypesAndPrices>>;
 async function seedMachines(upazilas: Upazilas, rules: Rules, users: Users) {
   const machineSeeds = [
     { key: "jamalTractor", provider: users.demoProvider.id, type: "Tractor", brand: "Mahindra", model: "575 DI", year: 2021, hp: 47, rate: 2400, upazila: "Paba", hours: 820, due: 1000, reg: "RAJ-TR-1001" },
-    { key: "jamalTiller", provider: users.demoProvider.id, type: "Power Tiller", brand: "Dongfeng", model: "DF-12L", year: 2020, hp: 12, rate: 1500, upazila: "Paba", hours: 410, due: 500, reg: "RAJ-PT-1002" },
+    { key: "jamalTiller", provider: users.demoProvider.id, type: "Power Tiller", brand: "Dongfeng", model: "DF-12L", year: 2020, hp: 12, rate: 1500, upazila: "Paba", hours: 480, due: 500, reg: "RAJ-PT-1002" },
     { key: "jamalPump", provider: users.demoProvider.id, type: "Irrigation Pump", brand: "Kirloskar", model: "KDS 5", year: 2019, hp: 5, rate: 200, upazila: "Paba", hours: 1300, due: 1500, reg: null },
     { key: "barindCombine1", provider: users.barindProvider.id, type: "Combine Harvester", brand: "Kubota", model: "DC-70G", year: 2022, hp: 70, rate: 3000, upazila: "Godagari", hours: 1480, due: 1500, reg: "RAJ-CH-2001" },
     { key: "barindCombine2", provider: users.barindProvider.id, type: "Combine Harvester", brand: "Yanmar", model: "AW70", year: 2021, hp: 70, rate: 3200, upazila: "Godagari", hours: 900, due: 1500, reg: "RAJ-CH-2002" },
@@ -597,6 +598,18 @@ type BookingSeed = {
   subsidyApplicationId?: string;
   paymentMethod?: PaymentMethod;
   fieldAddress: string;
+  review?: SeedReview; // stars for REVIEWED bookings (default: machine 5, operator 4)
+  cancel?: { by: "farmer" | "provider"; late?: boolean; reason?: string }; // for CANCELLED bookings
+};
+
+type SeedReview = { machineStars: number; operatorStars: number; machineComment: string; operatorComment: string };
+
+/** The review a REVIEWED booking gets when its seed does not say otherwise. */
+const DEFAULT_REVIEW: SeedReview = {
+  machineStars: 5,
+  operatorStars: 4,
+  machineComment: "Machine worked very well.",
+  operatorComment: "Good driver, came a little late.",
 };
 
 type Machines = Awaited<ReturnType<typeof seedMachines>>;
@@ -643,6 +656,8 @@ async function createSeedBooking(
   const wasAccepted = path.includes("ACCEPTED");
   const workStarted = path.includes("WORKING");
   const workFinished = path.includes("COMPLETED");
+  // A farmer who cancels less than 24 hours before the start pays 10% of the work charge.
+  const cancellationFee = seed.cancel?.late ? Math.round((workCharge * DEFAULT_CANCELLATION_FEE_PERCENT) / 100) : 0;
 
   const booking = await db.booking.create({
     data: {
@@ -664,6 +679,7 @@ async function createSeedBooking(
       distanceKm,
       rateSnapshot: machine.rate,
       ...price,
+      cancellationFee,
       startOtp: wasAccepted ? generateOtp() : null,
       finishOtp: wasAccepted ? generateOtp() : null,
       actualQuantity: workFinished ? quantity : null,
@@ -680,6 +696,7 @@ async function createSeedBooking(
   const timeFor = (status: BookingStatus): Date => {
     if (status === "REQUESTED") return createdAt;
     if (status === "ACCEPTED" || status === "REJECTED") return addHours(createdAt, 1);
+    if (status === "CANCELLED" && seed.cancel?.late) return addHours(startAt, -5); // 5 hours before the start
     if (status === "OPERATOR_ASSIGNED" || status === "CANCELLED") return addHours(createdAt, 2);
     if (status === "ON_THE_WAY") return addHours(startAt, -1);
     if (status === "WORKING") return startAt;
@@ -690,6 +707,7 @@ async function createSeedBooking(
     return addHours(endAt, 3); // REVIEWED
   };
   const actorFor = (status: BookingStatus): string | undefined => {
+    if (status === "CANCELLED" && seed.cancel?.by === "provider") return actors.providerId;
     if (["ACCEPTED", "REJECTED", "OPERATOR_ASSIGNED"].includes(status)) return actors.providerId;
     if (["ON_THE_WAY", "WORKING", "COMPLETED", "BREAKDOWN"].includes(status)) return seed.operatorId;
     return seed.farmerId; // REQUESTED, CANCELLED, PAID, REVIEWED, DISPUTED
@@ -700,6 +718,7 @@ async function createSeedBooking(
       fromStatus: index === 0 ? null : path[index - 1],
       toStatus: status,
       actorId: actorFor(status),
+      note: status === "CANCELLED" ? (seed.cancel?.reason ?? null) : null,
       createdAt: timeFor(status),
     })),
   });
@@ -723,15 +742,16 @@ async function createSeedBooking(
 
   // Two separate reviews (machine + operator) for REVIEWED bookings
   if (seed.status === "REVIEWED" && seed.operatorId) {
+    const review = seed.review ?? DEFAULT_REVIEW;
     await db.review.createMany({
       data: [
-        { bookingId: booking.id, reviewerId: seed.farmerId, target: "MACHINE", machineId: machine.id, rating: 5, comment: "Machine worked very well." },
-        { bookingId: booking.id, reviewerId: seed.farmerId, target: "OPERATOR", machineId: machine.id, operatorId: seed.operatorId, rating: 4, comment: "Good driver, came a little late." },
+        { bookingId: booking.id, reviewerId: seed.farmerId, target: "MACHINE", machineId: machine.id, rating: review.machineStars, comment: review.machineComment },
+        { bookingId: booking.id, reviewerId: seed.farmerId, target: "OPERATOR", machineId: machine.id, operatorId: seed.operatorId, rating: review.operatorStars, comment: review.operatorComment },
       ],
     });
   }
 
-  return { id: booking.id, code: booking.code, farmerId: seed.farmerId, status: seed.status, ...price };
+  return { id: booking.id, code: booking.code, farmerId: seed.farmerId, status: seed.status, startAt, ...price };
 }
 
 async function seedBookings(users: Users, machines: Machines, rules: Rules, subsidyApplicationId: string) {
@@ -749,11 +769,13 @@ async function seedBookings(users: Users, machines: Machines, rules: Rules, subs
     [{ status: "REQUESTED", farmerId: users.demoFarmer.id, machineKey: "jamalTractor", startDay: 5, landDecimal: 66, fieldOffsetKm: 8, subsidyApplicationId, fieldAddress: "Haripur north field" }, jamal],
     [{ status: "ACCEPTED", farmerId: f1.id, machineKey: "jamalTiller", operatorId: shamim.id, startDay: 3, landDecimal: 40, fieldOffsetKm: 2, fieldAddress: "Parila, near school" }, jamal],
     [{ status: "REJECTED", farmerId: f2.id, machineKey: "barindCombine1", startDay: -2, landDecimal: 150, fieldOffsetKm: 12, fieldAddress: "Damkura east" }, barind],
-    [{ status: "CANCELLED", farmerId: f3.id, machineKey: "kamrulTractor", startDay: 4, landDecimal: 50, fieldOffsetKm: 5, fieldAddress: "Haripur pond side" }, kamrul],
+    [{ status: "CANCELLED", farmerId: f3.id, machineKey: "kamrulTractor", startDay: 4, landDecimal: 50, fieldOffsetKm: 5, fieldAddress: "Haripur pond side", cancel: { by: "provider", reason: "The tractor is needed on my own land that day" } }, kamrul],
     [{ status: "OPERATOR_ASSIGNED", farmerId: f4.id, machineKey: "barindReaper", operatorId: sumon.id, startDay: 1, landDecimal: 120, fieldOffsetKm: 4, fieldAddress: "Mohanpur bil" }, barind],
     [{ status: "ON_THE_WAY", farmerId: users.demoFarmer.id, machineKey: "jamalPump", operatorId: users.demoOperator.id, startInHours: 1, landDecimal: 100, hoursOrDays: 6, fieldOffsetKm: 3.5, fieldAddress: "Haripur south field" }, jamal],
     [{ status: "WORKING", farmerId: f6.id, machineKey: "barindCombine2", operatorId: rubel.id, startInHours: -1, landDecimal: 132, fieldOffsetKm: 6, fieldAddress: "Rishikul plot 4" }, barind],
-    [{ status: "BREAKDOWN", farmerId: f5.id, machineKey: "tanoreTiller", operatorId: liton.id, startInHours: -2, landDecimal: 99, fieldOffsetKm: 2.5, fieldAddress: "Kalma village" }, tanore],
+    // The field is 8 km south of the broken tiller, so the demo provider's free tiller in Paba is
+    // within 15 km: they get the emergency offer to send it.
+    [{ status: "BREAKDOWN", farmerId: f5.id, machineKey: "tanoreTiller", operatorId: liton.id, startInHours: -2, landDecimal: 99, fieldOffsetKm: -8, fieldAddress: "Badhair south field" }, tanore],
     [{ status: "COMPLETED", farmerId: f8.id, machineKey: "kamrulTractor", operatorId: babul.id, startDay: -1, landDecimal: 75, fieldOffsetKm: 3, fieldAddress: "Tetuljhora" }, kamrul],
     [{ status: "PAID", farmerId: users.demoFarmer.id, machineKey: "jamalTiller", operatorId: users.demoOperator.id, startDay: -10, landDecimal: 50, fieldOffsetKm: 4, subsidyApplicationId, paymentMethod: "CASH", fieldAddress: "Haripur north field" }, jamal],
     [{ status: "REVIEWED", farmerId: users.demoFarmer.id, machineKey: "jamalTractor", operatorId: users.demoOperator.id, startDay: -20, landDecimal: 100, fieldOffsetKm: 5, subsidyApplicationId, paymentMethod: "SSLCOMMERZ", fieldAddress: "Haripur south field" }, jamal],
@@ -765,15 +787,20 @@ async function seedBookings(users: Users, machines: Machines, rules: Rules, subs
   // Extra finished bookings over the last 3 months, so dashboards and charts have data.
   const history: [BookingSeed, { providerId: string }][] = [
     [{ status: "REVIEWED", farmerId: f1.id, machineKey: "jamalTractor", operatorId: shamim.id, startDay: -75, landDecimal: 90, fieldOffsetKm: 2, paymentMethod: "MOCK", fieldAddress: "Parila" }, jamal],
-    [{ status: "REVIEWED", farmerId: f4.id, machineKey: "barindCombine1", operatorId: rubel.id, startDay: -60, landDecimal: 320, fieldOffsetKm: 5, paymentMethod: "SSLCOMMERZ", fieldAddress: "Mohanpur" }, barind],
+    [{ status: "REVIEWED", farmerId: f4.id, machineKey: "barindCombine1", operatorId: rubel.id, startDay: -60, landDecimal: 320, fieldOffsetKm: 5, paymentMethod: "SSLCOMMERZ", fieldAddress: "Mohanpur", review: { machineStars: 5, operatorStars: 5, machineComment: "Fast and clean harvest.", operatorComment: "Very skilled driver." } }, barind],
     [{ status: "PAID", farmerId: f6.id, machineKey: "barindCombine2", operatorId: rubel.id, startDay: -55, landDecimal: 66, fieldOffsetKm: 6, paymentMethod: "CASH", fieldAddress: "Rishikul" }, barind],
-    [{ status: "REVIEWED", farmerId: f8.id, machineKey: "kamrulSprayer", operatorId: babul.id, startDay: -45, landDecimal: 75, hoursOrDays: 1, fieldOffsetKm: 2, paymentMethod: "MOCK", fieldAddress: "Tetuljhora" }, kamrul],
+    [{ status: "REVIEWED", farmerId: f8.id, machineKey: "kamrulSprayer", operatorId: babul.id, startDay: -45, landDecimal: 75, hoursOrDays: 1, fieldOffsetKm: 2, paymentMethod: "MOCK", fieldAddress: "Tetuljhora", review: { machineStars: 4, operatorStars: 4, machineComment: "Good sprayer, a little slow.", operatorComment: "Polite and careful." } }, kamrul],
     [{ status: "PAID", farmerId: f3.id, machineKey: "jamalPump", operatorId: users.demoOperator.id, startDay: -40, landDecimal: 45, hoursOrDays: 4, fieldOffsetKm: 1, paymentMethod: "CASH", fieldAddress: "Haripur" }, jamal],
-    [{ status: "REVIEWED", farmerId: f5.id, machineKey: "tanorePump", operatorId: liton.id, startDay: -35, landDecimal: 120, hoursOrDays: 8, fieldOffsetKm: 3, paymentMethod: "MOCK", fieldAddress: "Kalma" }, tanore],
+    [{ status: "REVIEWED", farmerId: f5.id, machineKey: "tanorePump", operatorId: liton.id, startDay: -35, landDecimal: 120, hoursOrDays: 8, fieldOffsetKm: 3, paymentMethod: "MOCK", fieldAddress: "Kalma", review: { machineStars: 3, operatorStars: 4, machineComment: "The pump stopped twice, but the field got water.", operatorComment: "Fixed the pump himself and stayed late." } }, tanore],
     [{ status: "PAID", farmerId: f2.id, machineKey: "barindReaper", operatorId: sumon.id, startDay: -28, landDecimal: 180, fieldOffsetKm: 9, paymentMethod: "SSLCOMMERZ", fieldAddress: "Damkura" }, barind],
     [{ status: "REVIEWED", farmerId: f9.id, machineKey: "kamrulReaper", operatorId: babul.id, startDay: -21, landDecimal: 140, fieldOffsetKm: 4, paymentMethod: "MOCK", fieldAddress: "Kushura" }, kamrul],
     [{ status: "PAID", farmerId: f1.id, machineKey: "jamalTiller", operatorId: shamim.id, startDay: -14, landDecimal: 90, fieldOffsetKm: 2, paymentMethod: "CASH", fieldAddress: "Parila" }, jamal],
     [{ status: "REVIEWED", farmerId: f6.id, machineKey: "barindTransplanter", operatorId: sumon.id, startDay: -12, landDecimal: 66, fieldOffsetKm: 6, paymentMethod: "SSLCOMMERZ", fieldAddress: "Rishikul" }, barind],
+    // Cancellations (added last, so the codes of the bookings above stay the same):
+    // a farmer who cancelled 5 hours before the start (a late fee for the demo provider), and the
+    // demo farmer's accepted pump booking that starts in 10 hours (cancelling it now costs a late fee).
+    [{ status: "CANCELLED", farmerId: f2.id, machineKey: "jamalTiller", startDay: -3, landDecimal: 60, fieldOffsetKm: 2, fieldAddress: "Damkura", cancel: { by: "farmer", late: true } }, jamal],
+    [{ status: "ACCEPTED", farmerId: users.demoFarmer.id, machineKey: "jamalPump", startInHours: 10, landDecimal: 50, hoursOrDays: 3, fieldOffsetKm: 4, subsidyApplicationId, fieldAddress: "Haripur west field" }, jamal],
   ];
 
   const created = [];
@@ -815,6 +842,7 @@ async function seedExtras(
 
   // The breakdown (booking 8): report + repair request for the technician
   const tanoreTiller = machines.get("tanoreTiller")!;
+  // 40 of the 99 decimal were tilled (0.4 acre), so a replacement must do the other 59 decimal.
   const report = await db.breakdownReport.create({
     data: {
       bookingId: breakdown.id,
@@ -823,13 +851,15 @@ async function seedExtras(
       description: "Gear box makes noise and the tiller stopped.",
       completedQuantity: 0.4,
       status: "SEARCHING",
+      createdAt: addHours(breakdown.startAt, 1), // the same time as the BREAKDOWN step of the booking
     },
   });
   await db.machine.update({ where: { id: tanoreTiller.id }, data: { status: "UNDER_MAINTENANCE" } });
   await db.maintenanceRequest.createMany({
     data: [
       { machineId: tanoreTiller.id, requestedById: users.tanoreProvider.id, technicianId: users.demoTechnician.id, breakdownReportId: report.id, type: "REPAIR", description: "Gear box noise, tiller stopped during work.", status: "INSPECTING" },
-      { machineId: machines.get("tanorePump")!.id, requestedById: users.tanoreProvider.id, technicianId: users.demoTechnician.id, type: "SERVICE", description: "Engine hours passed service limit (2000 h).", status: "RECEIVED" },
+      // Nobody has taken this one yet: the technician can press "Take this job".
+      { machineId: machines.get("tanorePump")!.id, requestedById: users.tanoreProvider.id, technicianId: null, type: "SERVICE", description: "Engine hours passed service limit (2000 h).", status: "RECEIVED" },
       { machineId: machines.get("barindTractor")!.id, requestedById: users.barindProvider.id, technicianId: users.demoTechnician.id, type: "SERVICE", description: "Regular 2000 hour service.", status: "REPAIRING", partsUsed: "Engine oil 8L, oil filter x1", partsCost: 4200, labourCost: 1500 },
       { machineId: machines.get("jamalTractor")!.id, requestedById: users.demoProvider.id, technicianId: users.demoTechnician.id, type: "SERVICE", description: "500 hour service.", status: "FIXED", partsUsed: "Engine oil 6L, fuel filter x1, air filter x1", partsCost: 3800, labourCost: 1200, technicianNote: "All good. Next service at 1000 h.", fixedAt: daysFromNow(-50) },
     ],
@@ -907,6 +937,23 @@ async function seedExtras(
     },
   });
 
+  // The demo farmer waits for a power tiller near Tanore tomorrow. When the technician fixes the
+  // broken Tanore tiller, it becomes free again and the demo farmer gets the message.
+  const tanore = upazilas.get("Tanore")!;
+  await db.waitlistEntry.create({
+    data: {
+      farmerId: users.demoFarmer.id,
+      machineTypeId: rules.get("Power Tiller")!.machineTypeId,
+      workType: "TILLING",
+      locationId: tanore.id,
+      fieldLat: tanore.lat,
+      fieldLng: tanore.lng,
+      landDecimal: 66,
+      wantedDate: daysFromNow(1, 0), // the start of tomorrow in Dhaka
+      createdAt: daysFromNow(-1, 18),
+    },
+  });
+
   // A support ticket with a short conversation
   const ticket = await db.supportTicket.create({
     data: {
@@ -932,7 +979,9 @@ async function seedExtras(
       { userId: users.demoFarmer.id, channel: "SMS", title: "Payment received", titleBn: "টাকা পাওয়া গেছে", body: `We received your payment for ${paid.code}. Thank you!`, bodyBn: `${paid.code} এর টাকা পাওয়া গেছে। ধন্যবাদ!`, isRead: true, link: `/farmer/bookings/${paid.id}` },
       { userId: users.demoProvider.id, channel: "IN_APP", title: "New booking request", titleBn: "নতুন বুকিং অনুরোধ", body: `A farmer requested your tractor (${requested.code}).`, bodyBn: `একজন কৃষক আপনার ট্রাক্টর চেয়েছেন (${requested.code})।`, link: `/provider/bookings/${requested.id}` },
       { userId: users.demoOperator.id, channel: "SMS", title: "New job today", titleBn: "আজ নতুন কাজ", body: `Job ${onTheWay.code}: irrigation pump at Haripur.`, bodyBn: `কাজ ${onTheWay.code}: হরিপুরে সেচ পাম্প।`, link: `/operator/jobs/${onTheWay.id}` },
-      { userId: users.demoTechnician.id, channel: "IN_APP", title: "Repair request", titleBn: "মেরামতের অনুরোধ", body: "Power tiller DF-15L broke down in Tanore.", bodyBn: "তানোরে পাওয়ার টিলার DF-15L নষ্ট হয়েছে।" },
+      { userId: users.demoTechnician.id, channel: "IN_APP", title: "Repair request", titleBn: "মেরামতের অনুরোধ", body: "Power tiller DF-15L broke down in Tanore.", bodyBn: "তানোরে পাওয়ার টিলার DF-15L নষ্ট হয়েছে।", link: "/technician/requests" },
+      { userId: users.demoProvider.id, channel: "SMS", title: "Emergency: a farmer needs your machine", titleBn: "জরুরি: একজন কৃষকের আপনার যন্ত্র দরকার", body: `A Power Tiller broke down near your free Power Tiller (booking ${breakdown.code}). The first provider to send a machine gets the job. Open Bookings to send yours.`, bodyBn: `আপনার খালি পাওয়ার টিলারের কাছে একটি পাওয়ার টিলার নষ্ট হয়েছে (বুকিং ${breakdown.code})। যিনি প্রথমে যন্ত্র পাঠাবেন, কাজটি তাঁর। পাঠাতে বুকিং পাতা খুলুন।`, link: "/provider/bookings" },
+      { userId: users.demoProvider.id, channel: "IN_APP", title: "Service soon", titleBn: "শীঘ্রই সার্ভিসিং", body: "Dongfeng DF-12L has only 20 engine hours left before its service. Please ask for a service.", bodyBn: "Dongfeng DF-12L এর সার্ভিসিংয়ের আর মাত্র ২০ ইঞ্জিন-ঘণ্টা বাকি। অনুগ্রহ করে সার্ভিসিংয়ের অনুরোধ করুন।", link: `/provider/machines/${machines.get("jamalTiller")!.id}` },
       { userId: users.admin.id, channel: "IN_APP", title: "Provider waiting for approval", titleBn: "যন্ত্র মালিক অনুমোদনের অপেক্ষায়", body: "Ayesha Siddika registered as a provider.", bodyBn: "আয়েশা সিদ্দিকা যন্ত্র মালিক হিসেবে নিবন্ধন করেছেন।" },
       { userId: users.demoOfficer.id, channel: "IN_APP", title: "New subsidy application", titleBn: "নতুন ভর্তুকি আবেদন", body: "Shafiqul Islam applied for the small farmer subsidy.", bodyBn: "শফিকুল ইসলাম ক্ষুদ্র কৃষক ভর্তুকির জন্য আবেদন করেছেন।", link: "/officer/subsidies" },
       { userId: users.demoOfficer.id, channel: "IN_APP", title: "Farmer to verify", titleBn: "যাচাই করার মতো কৃষক", body: "Shafiqul Islam sent their NID and land details. Please check and verify them.", bodyBn: "শফিকুল ইসলাম তাঁর এনআইডি ও জমির তথ্য পাঠিয়েছেন। অনুগ্রহ করে যাচাই করুন।", link: "/officer/farmers" },
@@ -952,6 +1001,24 @@ async function seedExtras(
       { actorId: users.admin.id, action: "USER_SUSPENDED", entityType: "User", entityId: users.farmers[6].id, details: "Fake NID reported by officer", createdAt: daysFromNow(-5) },
     ],
   });
+}
+
+// ─────────────────────────── 9. Trust scores ───────────────────────────
+
+/**
+ * Works out every provider's trust score with the app's own formula (trust-rules.ts):
+ * their average stars × 20, minus 5 for each booking they cancelled in the last 90 days.
+ */
+async function seedTrustScores() {
+  const providers = await db.providerProfile.findMany({ select: { userId: true } });
+  for (const { userId } of providers) {
+    const ratings = await db.review.aggregate({ where: { machine: { providerId: userId } }, _avg: { rating: true } });
+    const recentCancellations = await db.bookingStatusLog.count({
+      where: { toStatus: "CANCELLED", actorId: userId, createdAt: { gte: getCancellationWindowStart() } },
+    });
+    const trustScore = calculateTrustScore({ averageRating: ratings._avg.rating, recentCancellations });
+    await db.providerProfile.update({ where: { userId }, data: { trustScore } });
+  }
 }
 
 // ─────────────────────────── Run everything ───────────────────────────
@@ -996,6 +1063,7 @@ async function main() {
 
   console.log("Adding cooperative, repairs, payouts, tickets and notifications...");
   await seedExtras(users, machines, rules, upazilas, bookings);
+  await seedTrustScores();
 
   console.log(`Done! ${bookings.length} bookings created. Log in with 01700000001 / ${DEMO_PASSWORD}`);
 }
