@@ -149,7 +149,16 @@
     "farmerNotVerified": "Verify this farmer's NID and land first (Verify farmers page).",
     "discountInvalid": "Enter a discount from 1 to 50 %",
     "budgetInvalid": "Enter a budget of at least 1,000 Tk",
-    "budgetBelowUsed": "The budget cannot be less than the money already spent."
+    "budgetBelowUsed": "The budget cannot be less than the money already spent.",
+    "describeProblem": "Please write what is wrong (at least 5 letters).",
+    "doneTooMuch": "The work done must be less than what was booked. If all the work is done, press \"Finish the work\" instead.",
+    "replacementTaken": "Another provider has already sent a machine, or the search was closed.",
+    "alreadyTaken": "Another technician has already taken this job.",
+    "wrongRepairStep": "This step cannot be done now (maybe it was just changed). Please reload the page.",
+    "alreadyRequested": "A request of this kind for this machine is still open.",
+    "alreadyWaiting": "You are already on the waitlist for this machine on this day.",
+    "ratingRequired": "Please choose 1 to 5 stars.",
+    "cannotCancel": "This booking cannot be cancelled any more."
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",

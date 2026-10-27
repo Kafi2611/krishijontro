@@ -25,6 +25,17 @@ export function formatDhakaTime(date: Date, language: "en" | "bn"): string {
   return new Intl.DateTimeFormat(locale, { timeZone: "Asia/Dhaka", dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
+/**
+ * A day ("YYYY-MM-DD") for a message, without a time.
+ * Example: "Oct 20, 2026" (en) or "২০ অক্টো, ২০২৬" (bn)
+ */
+export function formatDhakaDay(day: string, language: "en" | "bn"): string {
+  const locale = language === "bn" ? "bn-BD" : "en";
+  // Noon in Dhaka, so the day is the same in every time zone the server may run in.
+  const noon = new Date(`${day}T12:00:00+06:00`);
+  return new Intl.DateTimeFormat(locale, { timeZone: "Asia/Dhaka", dateStyle: "medium" }).format(noon);
+}
+
 /** The booking's page for the farmer, the provider and the operator. */
 const farmerLink = (booking: BookingMessageInfo) => `/farmer/bookings/${booking.id}`;
 const providerLink = (booking: BookingMessageInfo) => `/provider/bookings/${booking.id}`;
