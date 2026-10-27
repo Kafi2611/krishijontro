@@ -26,13 +26,10 @@ import { getMachineRatings, listLatestMachineReviews, type MachineRating } from 
 import { getPlatformFeePercent } from "@/lib/services/settings";
 import { suggestMachineType, type MachineSuggestion } from "@/lib/services/suggest";
 import { findUsableSubsidy, type UsableSubsidy } from "@/lib/services/subsidy";
-import { DEFAULT_SEARCH_KM, type MachineSearchInput, type SearchSort } from "@/lib/validators/search";
+import { DEFAULT_HOURS_OR_DAYS, DEFAULT_SEARCH_KM, type MachineSearchInput, type SearchSort } from "@/lib/validators/search";
 
 /** How many days the farmer's "free days" row shows. */
 export const FREE_DAYS_TO_SHOW = 14;
-
-/** Hours (or days) of work a search starts with, for machines rented by the hour or day. */
-export const DEFAULT_HOURS_OR_DAYS = 2;
 
 /** One machine in the search results, with everything its card shows. */
 export type SearchResult = JobEstimate & {

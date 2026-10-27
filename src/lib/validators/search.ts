@@ -15,6 +15,9 @@ export const SEARCH_DISTANCES_KM = [5, 10, 15, 25, 50] as const;
 /** Search this far around the field when the farmer has not chosen. */
 export const DEFAULT_SEARCH_KM = 15;
 
+/** Hours (or days) of work a search starts with, for machines rented by the hour or day. */
+export const DEFAULT_HOURS_OR_DAYS = 2;
+
 /** Farmers can search (and later book) up to this many days ahead. */
 export const MAX_DAYS_AHEAD = 60;
 
