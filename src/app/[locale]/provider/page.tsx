@@ -1,9 +1,9 @@
 // The Provider dashboard: the first page a PROVIDER user sees after login.
 // It shows the account's approval note, the bookings waiting for the provider (new requests,
 // and accepted ones that need an operator), the money waiting to be sent to them, machine and
-// operator counts, machines that need a service (each box opens its page), and the list of
-// provider features.
-import { CircleCheck, Clock, Inbox, Tractor, UserRound, Users, Wallet, Wrench } from "lucide-react";
+// operator counts, machines that need a service (each box opens its page), the trust score
+// farmers see, and the list of provider features.
+import { CircleCheck, Clock, Inbox, ShieldCheck, Tractor, UserRound, Users, Wallet, Wrench } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { RoleDashboard } from "@/components/dashboard/role-dashboard";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -31,6 +31,9 @@ export default async function ProviderDashboardPage() {
   return (
     <RoleDashboard role="PROVIDER">
       {profile && <ProviderApprovalNote approvalStatus={profile.approvalStatus} />}
+      {profile && (
+        <StatCard label={t("trustScore")} value={profile.trustScore} icon={<ShieldCheck className="size-5" aria-hidden />} />
+      )}
       {/* Bookings waiting for the provider: amber when there is something to do */}
       <div className="grid grid-cols-2 gap-3">
         <StatCard

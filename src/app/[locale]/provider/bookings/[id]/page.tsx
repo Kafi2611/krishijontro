@@ -11,6 +11,7 @@ import { getTranslations } from "next-intl/server";
 import { BookingBill } from "@/components/booking/booking-bill";
 import { BookingFacts } from "@/components/booking/booking-facts";
 import { BookingHeader } from "@/components/booking/booking-header";
+import { BookingReviews } from "@/components/booking/booking-reviews";
 import { BookingTimeline } from "@/components/booking/booking-timeline";
 import { BreakdownCard } from "@/components/booking/breakdown-card";
 import { ContactLine } from "@/components/booking/contact-line";
@@ -24,6 +25,7 @@ import { requireRole } from "@/lib/auth";
 import { getProviderBooking, listOperatorChoices } from "@/lib/services/booking-queries";
 import { getBookingBreakdown } from "@/lib/services/breakdown";
 import { canPayBooking } from "@/lib/services/payment-rules";
+import { listBookingReviews } from "@/lib/services/review";
 import { getReplacementRadiusKm } from "@/lib/services/settings";
 
 type ProviderBookingPageProps = {
@@ -46,11 +48,16 @@ export default async function ProviderBookingPage({ params }: ProviderBookingPag
   const field = { lat: booking.fieldLat, lng: booking.fieldLng };
   // Only an accepted booking needs an operator, so only then we load the choices.
   const operators = booking.status === "ACCEPTED" ? await listOperatorChoices(provider.id, booking) : [];
-  const [breakdown, radiusKm] = await Promise.all([getBookingBreakdown(booking.id), getReplacementRadiusKm()]);
+  const [breakdown, radiusKm, reviews] = await Promise.all([
+    getBookingBreakdown(booking.id),
+    getReplacementRadiusKm(),
+    listBookingReviews(booking.id),
+  ]);
 
   const t = await getTranslations("BookingView");
   const tProvider = await getTranslations("ProviderBookings");
   const tTimeline = await getTranslations("Timeline");
+  const tReviews = await getTranslations("Reviews");
 
   return (
     <div className="space-y-6">
@@ -90,6 +97,17 @@ export default async function ProviderBookingPage({ params }: ProviderBookingPag
       )}
 
       {canPayBooking(booking.status) && <CollectPaymentCard bookingId={booking.id} amount={booking.totalAmount} />}
+
+      {reviews.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{tReviews("title")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <BookingReviews reviews={reviews} />
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

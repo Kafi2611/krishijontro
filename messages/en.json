@@ -576,7 +576,8 @@
     "requests": "New requests",
     "needOperator": "Need an operator",
     "waitingPayout": "Waiting to be sent to you (Tk)",
-    "serviceAlerts": "Machines that need a service"
+    "serviceAlerts": "Machines that need a service",
+    "trustScore": "Trust score (out of 100)"
   },
   "GovtDashboard": {
     "typesWithLimit": "Machine types with a price limit (of {total, number})",
@@ -728,7 +729,20 @@
     "spraying": "A power sprayer covers the whole crop quickly; you pay by the day."
   },
   "Reviews": {
-    "starsLabel": "{rating, number} out of 5 stars"
+    "starsLabel": "{rating, number} out of 5 stars",
+    "title": "Review",
+    "formTitle": "How was the work?",
+    "formText": "Give stars to the machine and to the operator. Other farmers see the machine's stars, and they change the provider's trust score.",
+    "machineLabel": "The machine: {machine}",
+    "operatorLabel": "The operator: {name}",
+    "starButton": "{count, plural, one {# star} other {# stars}}",
+    "commentLabel": "A few words (if you like)",
+    "machinePlaceholder": "e.g. Worked well, the field is evenly tilled",
+    "operatorPlaceholder": "e.g. Came on time and was careful",
+    "submit": "Send review",
+    "sent": "Thank you for your review!",
+    "machine": "Machine",
+    "operator": "Operator"
   },
   "MachineView": {
     "title": "Machine",
@@ -911,7 +925,8 @@
   "OperatorDashboard": {
     "todayTitle": "Jobs to do now",
     "seeAll": "See all my jobs",
-    "nothingNow": "Nothing to do right now."
+    "nothingNow": "Nothing to do right now.",
+    "rating": "My rating out of 5 ({count, plural, one {# review} other {# reviews}})"
   },
   "PaymentMethods": {
     "SSLCOMMERZ": "Online (SSLCommerz)",

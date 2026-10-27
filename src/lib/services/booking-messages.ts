@@ -187,3 +187,29 @@ export function jobFinishedMessage(booking: BookingMessageInfo, providerAmount: 
     link: providerLink(booking),
   };
 }
+
+/** To the provider, when the farmer reviews a paid job: the machine's and the operator's stars. */
+export function newReviewMessage(booking: BookingMessageInfo, machineStars: number, operatorStars: number | null) {
+  const code = booking.code;
+  const operatorPart = operatorStars === null ? "" : `, operator ${operatorStars}/5`;
+  const operatorPartBn = operatorStars === null ? "" : `, চালক ${toBanglaDigits(operatorStars)}/৫`;
+  return {
+    title: "New review",
+    titleBn: "নতুন রিভিউ",
+    body: `The farmer reviewed ${code} (${booking.machineName}): machine ${machineStars}/5${operatorPart}.`,
+    bodyBn: `কৃষক ${toBanglaDigits(code)} (${booking.machineName}) এর রিভিউ দিয়েছেন: যন্ত্র ${toBanglaDigits(machineStars)}/৫${operatorPartBn}।`,
+    link: providerLink(booking),
+  };
+}
+
+/** To the operator, when the farmer rates their work. */
+export function operatorReviewedMessage(booking: BookingMessageInfo, stars: number) {
+  const code = booking.code;
+  return {
+    title: "You got a rating",
+    titleBn: "আপনি রেটিং পেয়েছেন",
+    body: `The farmer gave you ${stars} of 5 stars for ${code}.`,
+    bodyBn: `${toBanglaDigits(code)} এর জন্য কৃষক আপনাকে ৫ এর মধ্যে ${toBanglaDigits(stars)} তারা দিয়েছেন।`,
+    link: operatorLink(booking),
+  };
+}

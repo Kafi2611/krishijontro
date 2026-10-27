@@ -576,7 +576,8 @@
     "requests": "নতুন অনুরোধ",
     "needOperator": "চালক দরকার",
     "waitingPayout": "আপনাকে পাঠানো বাকি (টাকা)",
-    "serviceAlerts": "সার্ভিসিং দরকার এমন যন্ত্র"
+    "serviceAlerts": "সার্ভিসিং দরকার এমন যন্ত্র",
+    "trustScore": "আস্থা স্কোর (১০০ এর মধ্যে)"
   },
   "GovtDashboard": {
     "typesWithLimit": "দামের সীমা আছে এমন যন্ত্রের ধরন ({total, number}টির মধ্যে)",
@@ -728,7 +729,20 @@
     "spraying": "স্প্রে মেশিন দ্রুত পুরো ফসলে স্প্রে করে; ভাড়া দিন হিসেবে।"
   },
   "Reviews": {
-    "starsLabel": "৫ এর মধ্যে {rating, number} তারা"
+    "starsLabel": "৫ এর মধ্যে {rating, number} তারা",
+    "title": "রিভিউ",
+    "formTitle": "কাজ কেমন হয়েছে?",
+    "formText": "যন্ত্র ও চালককে আলাদা করে তারা দিন। অন্য কৃষকেরা যন্ত্রের তারা দেখেন, আর এতে যন্ত্র মালিকের আস্থা স্কোর বদলায়।",
+    "machineLabel": "যন্ত্র: {machine}",
+    "operatorLabel": "চালক: {name}",
+    "starButton": "{count, plural, other {# তারা}}",
+    "commentLabel": "দু-এক কথা (চাইলে)",
+    "machinePlaceholder": "যেমন: ভালো কাজ করেছে, জমি সমানভাবে চাষ হয়েছে",
+    "operatorPlaceholder": "যেমন: সময়মতো এসেছেন, যত্ন নিয়ে কাজ করেছেন",
+    "submit": "রিভিউ পাঠান",
+    "sent": "রিভিউয়ের জন্য ধন্যবাদ!",
+    "machine": "যন্ত্র",
+    "operator": "চালক"
   },
   "MachineView": {
     "title": "যন্ত্র",
@@ -911,7 +925,8 @@
   "OperatorDashboard": {
     "todayTitle": "এখন করার কাজ",
     "seeAll": "আমার সব কাজ দেখুন",
-    "nothingNow": "এখন করার মতো কোনো কাজ নেই।"
+    "nothingNow": "এখন করার মতো কোনো কাজ নেই।",
+    "rating": "৫ এর মধ্যে আমার রেটিং ({count, plural, other {# টি রিভিউ}})"
   },
   "PaymentMethods": {
     "SSLCOMMERZ": "অনলাইন (SSLCommerz)",

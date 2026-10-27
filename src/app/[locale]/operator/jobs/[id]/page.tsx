@@ -11,6 +11,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { BookingFacts } from "@/components/booking/booking-facts";
 import { BookingHeader } from "@/components/booking/booking-header";
+import { BookingReviews } from "@/components/booking/booking-reviews";
 import { BookingTimeline } from "@/components/booking/booking-timeline";
 import { BreakdownCard } from "@/components/booking/breakdown-card";
 import { ContactLine } from "@/components/booking/contact-line";
@@ -25,6 +26,7 @@ import { requireRole } from "@/lib/auth";
 import { getOperatorJob } from "@/lib/services/booking-queries";
 import { getBookingBreakdown } from "@/lib/services/breakdown";
 import { canPayBooking } from "@/lib/services/payment-rules";
+import { listBookingReviews } from "@/lib/services/review";
 import { getReplacementRadiusKm } from "@/lib/services/settings";
 
 type OperatorJobPageProps = {
@@ -44,7 +46,11 @@ export default async function OperatorJobPage({ params }: OperatorJobPageProps) 
     notFound(); // no such job, or it belongs to another operator
   }
   const { job, timeline, nextStep, bookedAmount } = details;
-  const [breakdown, radiusKm] = await Promise.all([getBookingBreakdown(job.id), getReplacementRadiusKm()]);
+  const [breakdown, radiusKm, reviews] = await Promise.all([
+    getBookingBreakdown(job.id),
+    getReplacementRadiusKm(),
+    listBookingReviews(job.id),
+  ]);
   const field = { lat: job.fieldLat, lng: job.fieldLng };
   // OpenStreetMap with a pin on the field; on a phone it can be opened in a map app.
   const mapLink = `https://www.openstreetmap.org/?mlat=${field.lat}&mlon=${field.lng}#map=17/${field.lat}/${field.lng}`;
@@ -52,6 +58,7 @@ export default async function OperatorJobPage({ params }: OperatorJobPageProps) 
   const t = await getTranslations("BookingView");
   const tJobs = await getTranslations("OperatorJobs");
   const tTimeline = await getTranslations("Timeline");
+  const tReviews = await getTranslations("Reviews");
 
   return (
     <div className="space-y-6">
@@ -84,6 +91,17 @@ export default async function OperatorJobPage({ params }: OperatorJobPageProps) 
       )}
 
       {canPayBooking(job.status) && <CollectPaymentCard bookingId={job.id} amount={job.totalAmount} />}
+
+      {reviews.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{tReviews("title")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <BookingReviews reviews={reviews} />
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-6">
