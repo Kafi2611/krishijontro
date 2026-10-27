@@ -2,6 +2,7 @@
 // and the price of a booking (part 2).
 import { describe, expect, it } from "vitest";
 import {
+  billFromCharges,
   calculateBookingPrice,
   getAllowedRateRange,
   getBillingQuantity,
@@ -187,5 +188,26 @@ describe("calculateBookingPrice", () => {
     ]) {
       expect(Number.isInteger(amount)).toBe(true);
     }
+  });
+});
+
+describe("billFromCharges", () => {
+  it("adds the subsidy, the farmer's total, the fee and the provider's share to two charges", () => {
+    expect(billFromCharges({ workCharge: 1584, deliveryCharge: 250 }, 20, 3)).toEqual({
+      workCharge: 1584,
+      deliveryCharge: 250,
+      subsidyAmount: 317,
+      totalAmount: 1517,
+      platformFee: 55,
+      providerAmount: 1779,
+    });
+  });
+
+  it("gives no subsidy without a subsidy %, and works with no delivery", () => {
+    const bill = billFromCharges({ workCharge: 1000, deliveryCharge: 0 }, 0, 3);
+    expect(bill.subsidyAmount).toBe(0);
+    expect(bill.totalAmount).toBe(1000);
+    expect(bill.platformFee).toBe(30);
+    expect(bill.providerAmount).toBe(970);
   });
 });

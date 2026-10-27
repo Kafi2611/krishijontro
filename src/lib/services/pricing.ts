@@ -118,17 +118,46 @@ export type BookingPriceInput = {
   platformFeePercent: number; // e.g. 3; taken from the provider's share, not added for the farmer
 };
 
-/** The full price of a job, every amount in whole taka. */
-export type BookingPrice = {
+/** The full price of a job, every amount in whole taka (Bill is defined below). */
+export type BookingPrice = Bill & {
   billedQuantity: number; // the quantity we really bill = max(quantity, minCharge)
-  workCharge: number;
   chargedKm: number; // km that cost money = max(0, distanceKm − freeKm)
+};
+
+/** A bill: the two charges, and what they mean for the farmer, the government and the provider. */
+export type Bill = {
+  workCharge: number;
   deliveryCharge: number;
   subsidyAmount: number; // paid by the government, not by the farmer
   totalAmount: number; // what the farmer pays
   platformFee: number; // what KrishiJontro keeps
   providerAmount: number; // what the machine provider gets
 };
+
+/**
+ * The last step of every bill: from the work charge and the delivery charge, works out the
+ * subsidy, what the farmer pays, the platform fee and the provider's share (whole taka).
+ * calculateBookingPrice uses it, and so do the two bills of a breakdown (breakdown-rules.ts).
+ * Example: work 1584, delivery 250, 20% subsidy, 3% fee
+ *          -> subsidy 317, farmer pays 1517, fee 55, provider gets 1779
+ */
+export function billFromCharges(
+  charges: { workCharge: number; deliveryCharge: number },
+  subsidyPercent: number,
+  platformFeePercent: number,
+): Bill {
+  const { workCharge, deliveryCharge } = charges;
+
+  // The subsidy is a discount on the WORK charge only (not on delivery).
+  const subsidyAmount = Math.round((workCharge * subsidyPercent) / 100);
+  const totalAmount = workCharge + deliveryCharge - subsidyAmount;
+
+  // The platform fee comes out of the provider's share; the farmer does not pay extra for it.
+  const platformFee = Math.round(((workCharge + deliveryCharge) * platformFeePercent) / 100);
+  const providerAmount = workCharge + deliveryCharge - platformFee;
+
+  return { workCharge, deliveryCharge, subsidyAmount, totalAmount, platformFee, providerAmount };
+}
 
 /**
  * Works out the price of a booking (the formula is at the top of this file).
@@ -148,24 +177,8 @@ export function calculateBookingPrice(input: BookingPriceInput): BookingPrice {
   const chargedKm = Math.round(Math.max(0, input.distanceKm - input.freeKm) * 10) / 10;
   const deliveryCharge = Math.round(chargedKm * input.deliveryRatePerKm);
 
-  // The subsidy is a discount on the WORK charge only (not on delivery).
-  const subsidyAmount = Math.round((workCharge * input.subsidyPercent) / 100);
-  const totalAmount = workCharge + deliveryCharge - subsidyAmount;
-
-  // The platform fee comes out of the provider's share; the farmer does not pay extra for it.
-  const platformFee = Math.round(((workCharge + deliveryCharge) * input.platformFeePercent) / 100);
-  const providerAmount = workCharge + deliveryCharge - platformFee;
-
-  return {
-    billedQuantity,
-    workCharge,
-    chargedKm,
-    deliveryCharge,
-    subsidyAmount,
-    totalAmount,
-    platformFee,
-    providerAmount,
-  };
+  const bill = billFromCharges({ workCharge, deliveryCharge }, input.subsidyPercent, input.platformFeePercent);
+  return { billedQuantity, chargedKm, ...bill };
 }
 
 // ─────────────────────────── Part 3: one job on one machine ───────────────────────────
