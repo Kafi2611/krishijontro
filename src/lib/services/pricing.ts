@@ -21,6 +21,10 @@
  *   machine to the field and prices the job. The search, the machine page, the booking
  *   form (live, in the browser) and the booking service all use it, so they always agree.
  *
+ * Part 4: the final bill (calculateFinalBill). When the work is finished, only the work
+ *   charge is worked out again from the REAL amount of work; the delivery charge stays as
+ *   it was booked.
+ *
  * Everything here is a pure function (no database), so it is easy to test
  * and can also run in the browser (the price calculator and the forms use it).
  */
@@ -229,4 +233,37 @@ export function estimateJob(
     platformFeePercent,
   });
   return { distanceKm, quantity, price };
+}
+
+// ─────────────────────────── Part 4: the final bill ───────────────────────────
+
+/** What the final bill needs: the booked rate and delivery, and the real amount of work. */
+export type FinalBillInput = {
+  actualQuantity: number; // the real acres, hours or days of work done
+  rate: number; // the rate the farmer booked at (Booking.rateSnapshot)
+  minCharge: number; // the smallest quantity we bill (0 for a replacement booking)
+  deliveryCharge: number; // the delivery charge saved when the farmer booked
+  subsidyPercent: number;
+  platformFeePercent: number;
+};
+
+/**
+ * The bill when the work is finished. Only the WORK charge changes with the real amount of
+ * work. The delivery charge stays as it was booked: the machine made the same trip whatever
+ * the field size. (Working it out again from the distance would also be wrong for a group
+ * booking, whose delivery is a share of one trip, and for a replacement, which comes for free.)
+ * Example: booked 66 decimal, the operator enters 70 decimal (0.7 acre) at 2400 Tk/acre,
+ *          booked delivery 250, 20% subsidy, 3% fee
+ *          -> work 1680, delivery 250, subsidy 336, farmer pays 1594, fee 58, provider gets 1872
+ */
+export function calculateFinalBill(input: FinalBillInput): Bill & { billedQuantity: number } {
+  // The same minimum as at booking time: a tiny job is still billed as the minimum.
+  const billedQuantity = Math.max(input.actualQuantity, input.minCharge);
+  const workCharge = Math.round(billedQuantity * input.rate);
+  const bill = billFromCharges(
+    { workCharge, deliveryCharge: input.deliveryCharge },
+    input.subsidyPercent,
+    input.platformFeePercent,
+  );
+  return { billedQuantity, ...bill };
 }

@@ -49,7 +49,7 @@ import { isMachineListed, isServiceDue } from "@/lib/services/machine-rules";
 import { addEngineHours } from "@/lib/services/maintenance";
 import { getEngineHoursUsed } from "@/lib/services/maintenance-rules";
 import { createNotification } from "@/lib/services/notification";
-import { calculateBookingPrice, estimateJob, getBillingQuantity, isRateAllowed } from "@/lib/services/pricing";
+import { calculateFinalBill, estimateJob, getBillingQuantity, isRateAllowed } from "@/lib/services/pricing";
 import { getActivePricingRule, listPricedMachineTypes } from "@/lib/services/pricing-rule";
 import { getPlatformFeePercent } from "@/lib/services/settings";
 import { findUsableSubsidy } from "@/lib/services/subsidy";
@@ -562,36 +562,38 @@ export async function startWork(bookingId: string, operatorId: string, otp: stri
   });
 }
 
+/** The booking fields the final bill needs (see workOutFinalBill). */
+export type BillableBooking = {
+  billingUnit: BillingUnit;
+  rateSnapshot: number;
+  deliveryCharge: number;
+  parentBookingId: string | null;
+  createdAt: Date;
+  machine: { machineTypeId: string };
+  subsidyApplication: { program: { discountPercent: number } } | null;
+};
+
 /**
- * The final bill, from the REAL amount of work the operator entered at the finish.
+ * The final bill, from the REAL amount of work (calculateFinalBill in pricing.ts).
  * Everything else stays as it was when the farmer booked: the same rate (rateSnapshot), the
- * same distance, the price rule in force on the booking day (old rules are kept as history),
- * and the same subsidy %. Only the platform fee % is read again from the settings.
+ * same delivery charge, the same subsidy %, and the minimum charge of the price rule in force
+ * on the booking day (old rules are kept as history). A replacement booking has no minimum:
+ * it only finishes another machine's job. Only the platform fee % is read again from the settings.
  * actualValue is decimal of land for machines rented per acre, otherwise hours or days.
+ * Exported, because the admin's complaint decision (dispute.ts) corrects a bill the same way.
  */
-async function calculateFinalBill(
-  job: {
-    billingUnit: BillingUnit;
-    rateSnapshot: number;
-    distanceKm: number;
-    createdAt: Date;
-    machine: { machineTypeId: string };
-    subsidyApplication: { program: { discountPercent: number } } | null;
-  },
-  actualValue: number,
-) {
+export async function workOutFinalBill(job: BillableBooking, actualValue: number) {
   const rule = await getActivePricingRule(job.machine.machineTypeId, job.createdAt);
   if (!rule) {
     throw new BookingProblem("noPriceRule");
   }
   const actualQuantity = getBillingQuantity(job.billingUnit, actualValue, actualValue);
-  const price = calculateBookingPrice({
-    quantity: actualQuantity,
+  const isReplacement = job.parentBookingId !== null;
+  const price = calculateFinalBill({
+    actualQuantity,
     rate: job.rateSnapshot,
-    minCharge: rule.minCharge,
-    distanceKm: job.distanceKm,
-    freeKm: rule.freeKm,
-    deliveryRatePerKm: rule.deliveryRatePerKm,
+    minCharge: isReplacement ? 0 : rule.minCharge,
+    deliveryCharge: job.deliveryCharge,
     subsidyPercent: job.subsidyApplication?.program.discountPercent ?? 0,
     platformFeePercent: await getPlatformFeePercent(),
   });
@@ -611,7 +613,7 @@ export async function finishWork(bookingId: string, operatorId: string, input: F
       throw new BookingProblem("otpWrong");
     }
 
-    const { actualQuantity, price } = await calculateFinalBill(job, input.actualValue);
+    const { actualQuantity, price } = await workOutFinalBill(job, input.actualValue);
     await changeBookingStatus(bookingId, "COMPLETED", operatorId, tx, {
       data: {
         actualQuantity,

@@ -1,8 +1,9 @@
-// Unit tests for src/lib/services/pricing.ts: the government rate limits (part 1)
-// and the price of a booking (part 2).
+// Unit tests for src/lib/services/pricing.ts: the government rate limits (part 1),
+// the price of a booking (part 2) and the final bill when the work is finished (part 4).
 import { describe, expect, it } from "vitest";
 import {
   billFromCharges,
+  calculateFinalBill,
   calculateBookingPrice,
   getAllowedRateRange,
   getBillingQuantity,
@@ -209,5 +210,44 @@ describe("billFromCharges", () => {
     expect(bill.totalAmount).toBe(1000);
     expect(bill.platformFee).toBe(30);
     expect(bill.providerAmount).toBe(970);
+  });
+});
+
+describe("calculateFinalBill", () => {
+  // The project's price example, booked: 0.66 acre at 2400, delivery 250 (8 km), 20% subsidy, 3% fee.
+  const booked = { rate: 2400, minCharge: 0.5, deliveryCharge: 250, subsidyPercent: 20, platformFeePercent: 3 };
+
+  it("gives the same bill as the booking when the real work equals the booked work", () => {
+    const bill = calculateFinalBill({ ...booked, actualQuantity: 0.66 });
+    expect(bill.workCharge).toBe(1584);
+    expect(bill.totalAmount).toBe(1517);
+    expect(bill.platformFee).toBe(55);
+    expect(bill.providerAmount).toBe(1779);
+  });
+
+  it("changes only the work charge when more land was done", () => {
+    const bill = calculateFinalBill({ ...booked, actualQuantity: 0.7 });
+    expect(bill).toEqual({
+      billedQuantity: 0.7,
+      workCharge: 1680,
+      deliveryCharge: 250,
+      subsidyAmount: 336,
+      totalAmount: 1594,
+      platformFee: 58,
+      providerAmount: 1872,
+    });
+  });
+
+  it("keeps the booked delivery charge, e.g. a group member's share or a free replacement", () => {
+    expect(calculateFinalBill({ ...booked, actualQuantity: 0.66, deliveryCharge: 84 }).deliveryCharge).toBe(84);
+    expect(calculateFinalBill({ ...booked, actualQuantity: 0.66, deliveryCharge: 0 }).totalAmount).toBe(1267);
+  });
+
+  it("still bills the minimum for a tiny job, but not when the minimum is 0 (a replacement)", () => {
+    expect(calculateFinalBill({ ...booked, actualQuantity: 0.2 }).billedQuantity).toBe(0.5);
+    const replacement = calculateFinalBill({ ...booked, actualQuantity: 0.26, minCharge: 0, deliveryCharge: 0 });
+    expect(replacement.billedQuantity).toBe(0.26);
+    expect(replacement.workCharge).toBe(624);
+    expect(replacement.totalAmount).toBe(499); // the same as billReplacement in breakdown-rules.ts
   });
 });
