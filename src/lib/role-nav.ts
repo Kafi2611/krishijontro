@@ -29,7 +29,8 @@ export type NavIconName =
   | "audit"
   | "disputes"
   | "support"
-  | "tickets";
+  | "tickets"
+  | "members";
 
 /** A key of the "Nav" section in messages/en.json, e.g. "profile". */
 export type NavLabelKey = keyof (typeof messages)["Nav"];
@@ -48,7 +49,7 @@ const ROLE_LINKS: Record<Role, NavItem[]> = {
     { href: "/farmer/waitlist", labelKey: "waitlist", icon: "waitlist" },
     { href: "/farmer/subsidy", labelKey: "subsidy", icon: "subsidy" },
   ],
-  COOP_LEADER: [],
+  COOP_LEADER: [{ href: "/cooperative/members", labelKey: "members", icon: "members" }],
   PROVIDER: [
     { href: "/provider/bookings", labelKey: "bookings", icon: "bookings" },
     { href: "/provider/earnings", labelKey: "earnings", icon: "earnings" },

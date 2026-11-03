@@ -25,6 +25,7 @@ import {
   UserCheck,
   UserCog,
   Users,
+  UsersRound,
   Wallet,
   Wrench,
   type LucideIcon,
@@ -57,6 +58,7 @@ const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   disputes: MessageSquareWarning,
   support: LifeBuoy,
   tickets: Headset,
+  members: UsersRound,
 };
 
 export function NavIcon({ name, className }: { name: NavIconName; className?: string }) {

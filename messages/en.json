@@ -170,7 +170,10 @@
     "fineTooBig": "The fine must be at least 1 Tk and not more than the provider's share of this job.",
     "subjectRequired": "Write a short subject (at least 3 letters)",
     "messageRequired": "Write your message",
-    "ticketClosed": "This ticket is closed, so nobody can write in it. Open a new one if you need help."
+    "ticketClosed": "This ticket is closed, so nobody can write in it. Open a new one if you need help.",
+    "createCooperativeFirst": "Make your cooperative first (Cooperative details).",
+    "farmerNotFound": "No farmer account has this mobile number. Ask the farmer to register first.",
+    "alreadyMember": "This farmer is already a member."
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",
@@ -245,7 +248,8 @@
     "allBookings": "All bookings",
     "disputes": "Complaints",
     "support": "Help",
-    "tickets": "Support tickets"
+    "tickets": "Support tickets",
+    "members": "Members"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -1611,5 +1615,41 @@
     "back": "Support tickets",
     "answerTitle": "Answer",
     "closedNote": "This ticket is closed."
+  },
+  "Cooperative": {
+    "createTitle": "Make your cooperative",
+    "createText": "Give your cooperative's name and village. Then add the member farmers and book one machine for many plots at once.",
+    "createFirst": "You have no cooperative yet.",
+    "setupTitle": "Cooperative details",
+    "setupSubtitle": "The name, village and upazila farmers and providers will see.",
+    "backToDashboard": "Back to the dashboard",
+    "name": "Cooperative name",
+    "namePlaceholder": "e.g. Haripur Krishi Samabay Samity",
+    "upazila": "Upazila",
+    "chooseUpazila": "Choose an upazila",
+    "village": "Village",
+    "registrationNo": "Registration number",
+    "optional": "optional",
+    "saveButton": "Save",
+    "saved": "Cooperative saved",
+    "edit": "Edit details",
+    "statMembers": "Members",
+    "statGroupBookings": "Group bookings",
+    "membersTitle": "Members",
+    "membersSubtitle": "The farmers of {name}. You can book a machine for their plots together.",
+    "addMemberTitle": "Add a member",
+    "memberPhone": "Farmer's mobile number",
+    "memberPhoneHint": "The farmer must already have a KrishiJontro farmer account.",
+    "addMember": "Add",
+    "memberAdded": "Member added. The farmer got a message.",
+    "memberCount": "{count, plural, =0 {No members yet} one {# member} other {# members}}",
+    "noMembers": "Add the farmers of your village by their mobile number.",
+    "memberFacts": "{land} decimal · {village}",
+    "memberSuspended": "This account is suspended: no machine can be booked for it.",
+    "remove": "Remove",
+    "removeTitle": "Remove {name}?",
+    "removeText": "They leave the cooperative. Their bookings stay as they are.",
+    "removeYes": "Yes, remove",
+    "memberRemoved": "Member removed"
   }
 }
