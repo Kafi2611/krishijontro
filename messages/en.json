@@ -159,7 +159,8 @@
     "alreadyWaiting": "You are already on the waitlist for this machine on this day.",
     "ratingRequired": "Please choose 1 to 5 stars.",
     "cannotCancel": "This booking cannot be cancelled any more.",
-    "settingOutOfRange": "Enter a whole number inside the range shown below the box"
+    "settingOutOfRange": "Enter a whole number inside the range shown below the box",
+    "cannotChangeOwnAccount": "You cannot suspend or activate your own account."
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",
@@ -224,7 +225,8 @@
     "breakdowns": "Breakdowns",
     "repairRequests": "Repair requests",
     "waitlist": "Waitlist",
-    "settings": "Settings"
+    "settings": "Settings",
+    "users": "Users"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -1366,5 +1368,32 @@
     "machineTypesTitle": "Machine types",
     "machineTypesText": "Add a machine type or change its name, icon or work.",
     "machineTypesLink": "Open machine types"
+  },
+  "Lists": {
+    "search": "Search",
+    "pages": "Pages",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page, number} of {pageCount, number}"
+  },
+  "AdminUsers": {
+    "title": "Users",
+    "subtitle": "Every account. Suspend an account to stop it at once; activate it again any time.",
+    "addStaff": "Add a staff account",
+    "filterLabel": "Show accounts of",
+    "allRoles": "Everyone",
+    "searchPlaceholder": "Name or mobile number",
+    "found": "{count, plural, =0 {No accounts} one {# account} other {# accounts}}",
+    "empty": "No account matches.",
+    "worksFor": "Works for {name}",
+    "joined": "Joined {date}",
+    "thisIsYou": "This is your own account.",
+    "suspend": "Suspend",
+    "activate": "Activate",
+    "reason": "Why? (the user is told)",
+    "reasonPlaceholder": "e.g. Fake NID reported by the officer",
+    "confirmSuspend": "Suspend the account",
+    "suspended": "Account suspended. The user is logged out.",
+    "activated": "Account active again"
   }
 }

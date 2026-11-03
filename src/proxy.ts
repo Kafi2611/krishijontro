@@ -43,7 +43,10 @@ export default auth(function proxy(request) {
     }
 
     // 3. Already logged in -> the login and register pages are not needed.
-    if (path === "/login" || path === "/register") {
+    //    (Except "/login?suspended=1": a suspended user still has a login cookie, and the
+    //    pages send them there to read that their account is suspended.)
+    const isSuspendedNote = path === "/login" && request.nextUrl.searchParams.has("suspended");
+    if ((path === "/login" || path === "/register") && !isSuspendedNote) {
       return NextResponse.redirect(new URL(ownHome, request.url));
     }
   }

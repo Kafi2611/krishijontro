@@ -19,6 +19,7 @@ import {
   TriangleAlert,
   User,
   UserCheck,
+  UserCog,
   Users,
   Wallet,
   Wrench,
@@ -47,6 +48,7 @@ const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   repairs: Wrench,
   waitlist: Hourglass,
   settings: Settings,
+  users: UserCog,
 };
 
 export function NavIcon({ name, className }: { name: NavIconName; className?: string }) {

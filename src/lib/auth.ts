@@ -4,6 +4,7 @@
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { getLocale } from "next-intl/server";
+import { cache } from "react";
 import type { Role } from "@/generated/prisma/enums";
 import { authConfig } from "@/lib/auth.config";
 import { db } from "@/lib/db";
@@ -72,31 +73,53 @@ export type SessionUser = {
   role: Role;
 };
 
-/** Returns the logged-in user, or null if nobody is logged in. */
-export async function getCurrentUser(): Promise<SessionUser | null> {
+/**
+ * Who the login cookie says is logged in, and whether that account may still be used.
+ * The cookie was made at login, and the admin may have suspended the account since then,
+ * so we also read the account's status from the database. That way a suspended user is
+ * stopped at once, not only at their next login.
+ * React's cache() runs this only once per page request, even when the layout, the page and
+ * the navbar all ask who is logged in.
+ */
+const readLogin = cache(async (): Promise<{ user: SessionUser; isSuspended: boolean } | null> => {
   const session = await auth();
   if (!session?.user?.id) {
     return null;
   }
+  const account = await db.user.findUnique({ where: { id: session.user.id }, select: { status: true } });
   return {
-    id: session.user.id,
-    name: session.user.name ?? "",
-    phone: session.user.phone,
-    role: session.user.role,
+    user: {
+      id: session.user.id,
+      name: session.user.name ?? "",
+      phone: session.user.phone,
+      role: session.user.role,
+    },
+    isSuspended: account?.status !== "ACTIVE", // also true if the account no longer exists
   };
+});
+
+/** Returns the logged-in user, or null if nobody is logged in (or their account is suspended). */
+export async function getCurrentUser(): Promise<SessionUser | null> {
+  const login = await readLogin();
+  if (!login || login.isSuspended) {
+    return null;
+  }
+  return login.user;
 }
 
 /**
  * Makes sure someone is logged in and returns them.
  * If nobody is logged in, it sends the visitor to the login page instead.
+ * A suspended user goes to the login page too, which then says the account is suspended.
  */
 export async function requireUser(): Promise<SessionUser> {
-  const user = await getCurrentUser();
-  if (!user) {
+  const login = await readLogin();
+  if (!login || login.isSuspended) {
     const locale = await getLocale();
-    return redirect({ href: "/login", locale });
+    const href = login ? "/login?suspended=1" : "/login";
+    return redirect({ href, locale });
   }
-  return user;
+  return login.user;
 }
 
 /**
