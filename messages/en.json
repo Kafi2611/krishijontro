@@ -160,7 +160,8 @@
     "ratingRequired": "Please choose 1 to 5 stars.",
     "cannotCancel": "This booking cannot be cancelled any more.",
     "settingOutOfRange": "Enter a whole number inside the range shown below the box",
-    "cannotChangeOwnAccount": "You cannot suspend or activate your own account."
+    "cannotChangeOwnAccount": "You cannot suspend or activate your own account.",
+    "chooseUpazila": "Choose the upazila"
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",
@@ -1395,5 +1396,30 @@
     "confirmSuspend": "Suspend the account",
     "suspended": "Account suspended. The user is logged out.",
     "activated": "Account active again"
+  },
+  "StaffForm": {
+    "title": "Add a staff account",
+    "subtitle": "For people who cannot sign up themselves. Tell them the first password in person.",
+    "back": "Back to users",
+    "role": "Role",
+    "roleHints": {
+      "COOP_LEADER": "Makes a cooperative, adds member farmers and books one machine for many plots.",
+      "TECHNICIAN": "Repairs and services machines.",
+      "OFFICER": "Verifies the farmers and decides the subsidy applications of ONE upazila.",
+      "GOVT": "Sets price limits and subsidy programs, and reads the reports.",
+      "ADMIN": "Can do everything on the admin pages. Make admin accounts only for trusted people."
+    },
+    "firstPassword": "First password",
+    "passwordHint": "At least 6 letters. Tell it to the person; they can keep it.",
+    "officerUpazila": "Upazila where the officer works",
+    "technicianUpazila": "Upazila where the technician works (optional)",
+    "chooseUpazila": "Choose an upazila",
+    "designation": "Job title",
+    "designationPlaceholder": "e.g. Upazila Agriculture Officer",
+    "skills": "Skills",
+    "skillsPlaceholder": "e.g. Engine, hydraulics, pumps",
+    "optional": "optional",
+    "addButton": "Make the account",
+    "added": "Account made. Tell the person their mobile number and password."
   }
 }

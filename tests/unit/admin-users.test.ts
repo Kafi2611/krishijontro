@@ -1,7 +1,8 @@
-// Unit tests for the admin's Users page: the list filters in the address (lib/list-params.ts)
-// and the suspend / activate form rule (validators/user.ts).
+// Unit tests for the admin's Users page: the list filters in the address (lib/list-params.ts),
+// the suspend / activate form rule (validators/user.ts) and the staff account form (validators/staff.ts).
 import { describe, expect, it } from "vitest";
 import { listHref, readChoice, readPageNumber, readSearchText } from "@/lib/list-params";
+import { staffSchema } from "@/lib/validators/staff";
 import { userStatusSchema } from "@/lib/validators/user";
 
 describe("list filters in the address", () => {
@@ -48,5 +49,43 @@ describe("userStatusSchema", () => {
 
   it("refuses any other status", () => {
     expect(userStatusSchema.safeParse({ status: "DELETED", reason: "x" }).success).toBe(false);
+  });
+});
+
+describe("staffSchema", () => {
+  const officer = {
+    role: "OFFICER" as const,
+    name: "Nasrin Akter",
+    phone: "01750000001",
+    password: "secret12",
+    upazilaId: "upazila-1",
+    designation: "Upazila Agriculture Officer",
+    skills: "",
+  };
+
+  it("accepts a full officer account", () => {
+    expect(staffSchema.safeParse(officer).success).toBe(true);
+  });
+
+  it("needs the upazila of an officer", () => {
+    const result = staffSchema.safeParse({ ...officer, upazilaId: "" });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].path).toEqual(["upazilaId"]);
+    expect(result.error?.issues[0].message).toBe("chooseUpazila");
+  });
+
+  it("does not need an upazila for the other staff roles", () => {
+    expect(staffSchema.safeParse({ ...officer, role: "TECHNICIAN", upazilaId: "" }).success).toBe(true);
+    expect(staffSchema.safeParse({ ...officer, role: "GOVT", upazilaId: "" }).success).toBe(true);
+  });
+
+  it("refuses roles that sign up themselves or are added by a provider", () => {
+    expect(staffSchema.safeParse({ ...officer, role: "FARMER" }).success).toBe(false);
+    expect(staffSchema.safeParse({ ...officer, role: "OPERATOR" }).success).toBe(false);
+  });
+
+  it("checks the mobile number and the password length", () => {
+    expect(staffSchema.safeParse({ ...officer, phone: "0175" }).error?.issues[0].message).toBe("phoneInvalid");
+    expect(staffSchema.safeParse({ ...officer, password: "123" }).error?.issues[0].message).toBe("passwordShort");
   });
 });
