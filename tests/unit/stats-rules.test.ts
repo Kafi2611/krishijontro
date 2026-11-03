@@ -1,6 +1,14 @@
 // Unit tests for src/lib/services/stats-rules.ts: the chart helpers of the dashboards and reports.
 import { describe, expect, it } from "vitest";
-import { heatLevel, heatLevelRanges, lastMonths, niceTicks, sumByKey, sumByMonth } from "@/lib/services/stats-rules";
+import {
+  buildDemandPlaces,
+  heatLevel,
+  heatLevelRanges,
+  lastMonths,
+  niceTicks,
+  sumByKey,
+  sumByMonth,
+} from "@/lib/services/stats-rules";
 
 describe("lastMonths", () => {
   it("ends with this month in Bangladesh, oldest first", () => {
@@ -89,5 +97,28 @@ describe("niceTicks", () => {
 
   it("still draws an axis when everything is 0", () => {
     expect(niceTicks(0)).toEqual([0, 1]);
+  });
+});
+
+describe("buildDemandPlaces", () => {
+  const paba = { name: "Paba", nameBn: "পবা", lat: 24.4, lng: 88.6 };
+  const tanore = { name: "Tanore", nameBn: "তানোর", lat: 24.6, lng: 88.5 };
+
+  it("adds bookings and waiting farmers per upazila, the most demand first", () => {
+    const places = buildDemandPlaces([
+      { kind: "booking", placeId: "t", place: tanore },
+      { kind: "booking", placeId: "p", place: paba },
+      { kind: "booking", placeId: "p", place: paba },
+      { kind: "waiting", placeId: "p", place: paba },
+    ]);
+    expect(places.map((place) => [place.name, place.bookings, place.waiting, place.demand])).toEqual([
+      ["Paba", 2, 1, 3],
+      ["Tanore", 1, 0, 1],
+    ]);
+  });
+
+  it("leaves out upazilas without a centre point (they cannot be drawn)", () => {
+    const places = buildDemandPlaces([{ kind: "booking", placeId: "x", place: { name: "X", nameBn: "X", lat: null, lng: 90 } }]);
+    expect(places).toEqual([]);
   });
 });

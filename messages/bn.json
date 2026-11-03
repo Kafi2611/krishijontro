@@ -257,7 +257,8 @@
     "tickets": "সহায়তা টিকিট",
     "members": "সদস্য",
     "groupBookings": "দলগত বুকিং",
-    "upazilaBookings": "বুকিং ও অভিযোগ"
+    "upazilaBookings": "বুকিং ও অভিযোগ",
+    "reports": "প্রতিবেদন"
   },
   "Dashboard": {
     "welcome": "স্বাগতম, {name}",
@@ -636,7 +637,10 @@
   "GovtDashboard": {
     "typesWithLimit": "দামের সীমা আছে এমন যন্ত্রের ধরন ({total, number}টির মধ্যে)",
     "machinesOutside": "সীমার বাইরে ভাড়া নেওয়া যন্ত্র",
-    "subsidySpent": "খরচ হওয়া ভর্তুকি (টাকা)"
+    "subsidySpent": "খরচ হওয়া ভর্তুকি (টাকা)",
+    "reportsTitle": "প্রতিবেদন ও চাহিদার মানচিত্র",
+    "reportsText": "জেলাভিত্তিক বুকিং, চাহিদা বনাম সরবরাহ, দাম, ভর্তুকি এবং কোথায় কৃষকের যন্ত্র দরকার।",
+    "reportsLink": "প্রতিবেদন খুলুন"
   },
   "GovtPricing": {
     "title": "দামের সীমা",
@@ -1737,5 +1741,34 @@
   "Charts": {
     "showTable": "সংখ্যাগুলো দেখুন",
     "item": "যার জন্য"
+  },
+  "GovtReports": {
+    "title": "প্রতিবেদন",
+    "subtitle": "সারা দেশে কৃষকেরা কীভাবে যন্ত্র ভাড়া নিচ্ছেন।",
+    "totalBookings": "এ পর্যন্ত বুকিং (বাতিল বা প্রত্যাখ্যাত বাদে)",
+    "subsidySpent": "ভর্তুকি খরচ (টাকা)",
+    "placesWithDemand": "চাহিদা থাকা উপজেলা",
+    "mapTitle": "চাহিদার হিটম্যাপ",
+    "mapText": "প্রতিটি বৃত্ত একটি উপজেলা: যত বড় ও গাঢ়, তত বেশি বুকিং আর যন্ত্রের অপেক্ষায় থাকা কৃষক। সংখ্যা দেখতে বৃত্তে চাপুন।",
+    "legendTitle": "বুকিং + অপেক্ষায় থাকা কৃষক",
+    "legendRange": "{from, number} থেকে {to, number}",
+    "placeLabel": "{name}: {bookings, plural, other {#টি বুকিং}}, {waiting, number} জন অপেক্ষায়",
+    "mapTable": "সংখ্যাগুলো দেখুন",
+    "placeNumbers": "{bookings, plural, other {#টি বুকিং}} · {waiting, number} জন অপেক্ষায়",
+    "districtTitle": "জেলাভিত্তিক বুকিং",
+    "districtText": "জমি যে জেলায় (বাতিল বা প্রত্যাখ্যাত বুকিং বাদে)।",
+    "bookings": "বুকিং",
+    "supplyTitle": "চাহিদা বনাম সরবরাহ",
+    "supplyText": "প্রতিটি যন্ত্রের ধরনে: গত {days, number} দিনের বুকিং, আর এখন ভাড়ার জন্য তৈরি যন্ত্র।",
+    "bookingsLately": "বুকিং (গত {days, number} দিন)",
+    "machinesReady": "ভাড়ার জন্য তৈরি যন্ত্র",
+    "priceTitle": "দাম",
+    "priceText": "আজকের সরকারি সীমা, আর গত {days, number} দিনে কৃষকেরা গড়ে কোন দরে বুক করেছেন।",
+    "limit": "সীমা: {min} থেকে {max}",
+    "average": "গড় বুকিং দর: {rate} ({count, plural, other {#টি বুকিং}})",
+    "noRecentBookings": "সম্প্রতি কোনো বুকিং নেই।",
+    "subsidyTitle": "মাসভিত্তিক ভর্তুকি (টাকা)",
+    "subsidyText": "পরিশোধ হওয়া কাজে সরকারের দেওয়া ছাড়, কাজ শেষের মাস অনুযায়ী।",
+    "subsidy": "ভর্তুকি"
   }
 }

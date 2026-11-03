@@ -257,7 +257,8 @@
     "tickets": "Support tickets",
     "members": "Members",
     "groupBookings": "Group bookings",
-    "upazilaBookings": "Bookings and complaints"
+    "upazilaBookings": "Bookings and complaints",
+    "reports": "Reports"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -636,7 +637,10 @@
   "GovtDashboard": {
     "typesWithLimit": "Machine types with a price limit (of {total, number})",
     "machinesOutside": "Machines charging outside the limit",
-    "subsidySpent": "Subsidy spent (Tk)"
+    "subsidySpent": "Subsidy spent (Tk)",
+    "reportsTitle": "Reports and demand map",
+    "reportsText": "Bookings by district, demand vs supply, prices, subsidy and where farmers need machines.",
+    "reportsLink": "Open the reports"
   },
   "GovtPricing": {
     "title": "Price limits",
@@ -1737,5 +1741,34 @@
   "Charts": {
     "showTable": "Show the numbers",
     "item": "For"
+  },
+  "GovtReports": {
+    "title": "Reports",
+    "subtitle": "How farmers use machine rental across the country.",
+    "totalBookings": "Bookings so far (not counting rejected or cancelled)",
+    "subsidySpent": "Subsidy spent (Tk)",
+    "placesWithDemand": "Upazilas with demand",
+    "mapTitle": "Demand heatmap",
+    "mapText": "Each circle is an upazila: the bigger and darker, the more bookings and farmers still waiting for a machine. Touch a circle to see its numbers.",
+    "legendTitle": "Bookings + farmers waiting",
+    "legendRange": "{from, number} to {to, number}",
+    "placeLabel": "{name}: {bookings, plural, one {# booking} other {# bookings}}, {waiting, number} waiting",
+    "mapTable": "Show the numbers",
+    "placeNumbers": "{bookings, plural, one {# booking} other {# bookings}} · {waiting, number} waiting",
+    "districtTitle": "Bookings by district",
+    "districtText": "Where the fields are (not counting rejected or cancelled bookings).",
+    "bookings": "Bookings",
+    "supplyTitle": "Demand vs supply",
+    "supplyText": "For each machine type: bookings in the last {days, number} days, and machines ready to rent now.",
+    "bookingsLately": "Bookings (last {days, number} days)",
+    "machinesReady": "Machines ready to rent",
+    "priceTitle": "Prices",
+    "priceText": "Today's government limit, and the average rate farmers booked in the last {days, number} days.",
+    "limit": "Limit: {min} to {max}",
+    "average": "Average booked: {rate} ({count, plural, one {# booking} other {# bookings}})",
+    "noRecentBookings": "No booking lately.",
+    "subsidyTitle": "Subsidy given per month (Tk)",
+    "subsidyText": "The discount on paid jobs, paid by the government, by the month the work was finished.",
+    "subsidy": "Subsidy"
   }
 }

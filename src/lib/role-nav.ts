@@ -31,7 +31,8 @@ export type NavIconName =
   | "support"
   | "tickets"
   | "members"
-  | "groupBookings";
+  | "groupBookings"
+  | "reports";
 
 /** A key of the "Nav" section in messages/en.json, e.g. "profile". */
 export type NavLabelKey = keyof (typeof messages)["Nav"];
@@ -71,6 +72,7 @@ const ROLE_LINKS: Record<Role, NavItem[]> = {
   GOVT: [
     { href: "/govt/pricing", labelKey: "pricing", icon: "pricing" },
     { href: "/govt/subsidies", labelKey: "subsidyPrograms", icon: "subsidy" },
+    { href: "/govt/reports", labelKey: "reports", icon: "reports" },
   ],
   ADMIN: [
     { href: "/admin/approvals", labelKey: "approvals", icon: "approvals" },

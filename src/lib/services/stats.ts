@@ -6,13 +6,16 @@
  * language (a month name, a role name...).
  *   - getProviderStats(): the provider's earnings per month and jobs per machine
  *   - getAdminStats():    bookings and platform fees per month, and accounts per role
+ *   - getGovtReports():   bookings by district, demand vs supply, prices, subsidy, the demand map
  */
 import type { BookingStatus } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { getProviderShare } from "@/lib/services/booking-rules";
 import { startOfDhakaDay } from "@/lib/services/calendar";
 import { PAID_BOOKING_STATUSES } from "@/lib/services/payment-rules";
-import { lastMonths, sumByKey, sumByMonth, type ChartPoint } from "@/lib/services/stats-rules";
+import { listPricedMachineTypes } from "@/lib/services/pricing-rule";
+import { LISTED_MACHINE } from "@/lib/services/search";
+import { buildDemandPlaces, lastMonths, sumByKey, sumByMonth, type ChartPoint } from "@/lib/services/stats-rules";
 
 /** How many months the "per month" charts show (this month and the 5 before it). */
 export const CHART_MONTHS = 6;
@@ -90,4 +93,107 @@ export async function getAdminStats() {
     roles.map((row) => ({ key: row.role, amount: row._count._all })),
   );
   return { bookingsByMonth, feesByMonth, usersByRole };
+}
+
+// ─────────────────────────── The government's reports ───────────────────────────
+
+/** "Demand" and "average price" look at the bookings made in this many days. */
+export const REPORT_DAYS = 90;
+
+/** A place or a machine type, with its name in both languages. */
+type Named = { name: string; nameBn: string };
+
+/**
+ * Everything the government's Reports page shows:
+ * - totalBookings: bookings that went ahead (not rejected or cancelled), all time
+ * - byDistrict: those bookings by the district of the field, biggest first
+ * - demandVsSupply: per machine type, bookings in the last 90 days vs machines ready to rent
+ * - prices: per machine type, today's allowed range and the average booked rate (last 90 days)
+ * - subsidyByMonth: subsidy money given on paid jobs, per month
+ * - demandMap: per upazila (with its centre point), bookings + farmers still waiting — the heatmap
+ */
+export async function getGovtReports() {
+  const months = lastMonths(CHART_MONTHS);
+  const since = new Date(Date.now() - REPORT_DAYS * 24 * 60 * 60 * 1000);
+  const worked = { status: { notIn: NOT_WORKED_STATUSES } };
+
+  const [bookings, recent, machineTypes, readyMachines, subsidyRows, waiting] = await Promise.all([
+    // Every booking that went ahead, with its field's upazila and district.
+    db.booking.findMany({
+      where: worked,
+      select: {
+        locationId: true,
+        location: { select: { name: true, nameBn: true, lat: true, lng: true, parent: { select: { id: true, name: true, nameBn: true } } } },
+      },
+    }),
+    // The last 90 days: which machine type, and the rate booked.
+    db.booking.findMany({
+      where: { ...worked, createdAt: { gte: since } },
+      select: { rateSnapshot: true, machine: { select: { machineTypeId: true } } },
+    }),
+    listPricedMachineTypes(),
+    db.machine.groupBy({ by: ["machineTypeId"], where: LISTED_MACHINE, _count: { _all: true } }),
+    db.booking.findMany({
+      where: { status: { in: PAID_BOOKING_STATUSES }, subsidyAmount: { gt: 0 }, completedAt: { gte: chartStart(months) } },
+      select: { completedAt: true, subsidyAmount: true },
+    }),
+    // Farmers still waiting for a machine: demand that found no machine.
+    db.waitlistEntry.findMany({
+      where: { status: "WAITING", locationId: { not: null } },
+      select: { locationId: true, location: { select: { name: true, nameBn: true, lat: true, lng: true } } },
+    }),
+  ]);
+
+  // ── Bookings by district ──
+  const districtNames = new Map<string, Named>();
+  const districtRows: { key: string; amount: number }[] = [];
+  for (const booking of bookings) {
+    const district = booking.location.parent;
+    if (district) {
+      districtNames.set(district.id, district);
+      districtRows.push({ key: district.id, amount: 1 });
+    }
+  }
+  const byDistrict = sumByKey(districtRows).map((point) => ({ ...districtNames.get(point.key)!, value: point.value }));
+
+  // ── Demand vs supply, and prices, per machine type ──
+  const machinesByType = new Map(readyMachines.map((row) => [row.machineTypeId, row._count._all]));
+  const demandVsSupply = machineTypes.map((type) => ({
+    name: type.name,
+    nameBn: type.nameBn,
+    bookings: recent.filter((booking) => booking.machine.machineTypeId === type.id).length,
+    machines: machinesByType.get(type.id) ?? 0,
+  }));
+  const prices = machineTypes.map((type) => {
+    const rates = recent.filter((booking) => booking.machine.machineTypeId === type.id).map((booking) => booking.rateSnapshot);
+    let sum = 0;
+    for (const rate of rates) {
+      sum += rate;
+    }
+    return {
+      name: type.name,
+      nameBn: type.nameBn,
+      billingUnit: type.billingUnit,
+      minRate: type.minRate,
+      maxRate: type.maxRate,
+      averageRate: rates.length > 0 ? Math.round(sum / rates.length) : null, // null = no booking lately
+      bookingCount: rates.length,
+    };
+  });
+
+  // ── Subsidy given per month ──
+  const subsidyByMonth = sumByMonth(
+    subsidyRows.map((row) => ({ date: row.completedAt ?? new Date(0), amount: row.subsidyAmount })),
+    months,
+  );
+
+  // ── The demand heatmap: bookings + farmers still waiting, per upazila ──
+  const demandMap = buildDemandPlaces([
+    ...bookings.map((booking) => ({ kind: "booking" as const, placeId: booking.locationId, place: booking.location })),
+    ...waiting
+      .filter((entry) => entry.locationId !== null && entry.location !== null)
+      .map((entry) => ({ kind: "waiting" as const, placeId: entry.locationId!, place: entry.location! })),
+  ]);
+
+  return { totalBookings: bookings.length, byDistrict, demandVsSupply, prices, subsidyByMonth, demandMap };
 }

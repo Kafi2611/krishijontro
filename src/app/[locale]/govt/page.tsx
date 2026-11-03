@@ -1,11 +1,15 @@
 // The Govt dashboard: the first page a GOVT user sees after login.
 // It shows how many machine types have a price limit, how many machines charge outside today's
-// limit, and how much subsidy money has been spent (each box opens its page), plus features.
-import { BadgePercent, CircleAlert, Scale } from "lucide-react";
+// limit, and how much subsidy money has been spent (each box opens its page), a link to the
+// reports (charts and the demand heatmap), plus features.
+import { BadgePercent, ChartColumn, CircleAlert, Scale } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { RoleDashboard } from "@/components/dashboard/role-dashboard";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
+import { Link } from "@/lib/navigation";
 import { countMachinesOutsideLimits, listMachineTypesWithRules } from "@/lib/services/pricing-rule";
 import { getSubsidyTotals } from "@/lib/services/subsidy-program";
 
@@ -43,6 +47,20 @@ export default async function GovtDashboardPage() {
           href="/govt/subsidies"
         />
       </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("reportsTitle")}</CardTitle>
+          <CardDescription>{t("reportsText")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild size="lg">
+            <Link href="/govt/reports">
+              <ChartColumn aria-hidden />
+              {t("reportsLink")}
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
     </RoleDashboard>
   );
 }

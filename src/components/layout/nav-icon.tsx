@@ -8,6 +8,7 @@ import {
   Bell,
   CalendarCheck,
   CalendarRange,
+  ChartColumn,
   FileCheck,
   Hourglass,
   Headset,
@@ -61,6 +62,7 @@ const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   tickets: Headset,
   members: UsersRound,
   groupBookings: CalendarRange,
+  reports: ChartColumn,
 };
 
 export function NavIcon({ name, className }: { name: NavIconName; className?: string }) {

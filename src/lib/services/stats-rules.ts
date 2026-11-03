@@ -8,6 +8,7 @@
  *   4. heatLevel():   which of the 5 colour steps a number gets on the demand heatmap
  *   5. monthMiddle(): a date inside a month, to print the month's name
  *   6. niceTicks():   clean numbers for a chart's value axis (0, 100, 200...)
+ *   7. buildDemandPlaces(): bookings and waiting farmers per upazila, for the demand heatmap
  */
 import { addMonths, toDhakaDay } from "@/lib/services/calendar";
 
@@ -121,4 +122,50 @@ export function niceTicks(max: number, steps = 4): number[] {
     ticks.push(index * step);
   }
   return ticks;
+}
+
+/** One upazila on the demand heatmap. */
+export type DemandPlace = {
+  id: string;
+  name: string;
+  nameBn: string;
+  lat: number;
+  lng: number;
+  bookings: number; // bookings that went ahead for fields here
+  waiting: number; // farmers here still on the waitlist
+  demand: number; // bookings + waiting
+};
+
+/** A booking or a waitlist entry, with the upazila it is in (its centre may be unknown). */
+export type DemandRow = {
+  kind: "booking" | "waiting";
+  placeId: string;
+  place: { name: string; nameBn: string; lat: number | null; lng: number | null };
+};
+
+/**
+ * Groups bookings and waiting farmers by upazila for the heatmap: one entry per upazila with a
+ * centre point (others cannot be drawn), the most demand first.
+ * Example: 2 bookings + 1 waiting farmer in Paba -> { name: "Paba", bookings: 2, waiting: 1, demand: 3 }
+ */
+export function buildDemandPlaces(rows: DemandRow[]): DemandPlace[] {
+  const places = new Map<string, DemandPlace>();
+  for (const row of rows) {
+    const { lat, lng } = row.place;
+    if (lat === null || lng === null) {
+      continue;
+    }
+    let place = places.get(row.placeId);
+    if (!place) {
+      place = { id: row.placeId, name: row.place.name, nameBn: row.place.nameBn, lat, lng, bookings: 0, waiting: 0, demand: 0 };
+      places.set(row.placeId, place);
+    }
+    if (row.kind === "booking") {
+      place.bookings += 1;
+    } else {
+      place.waiting += 1;
+    }
+    place.demand += 1;
+  }
+  return [...places.values()].sort((a, b) => b.demand - a.demand || a.name.localeCompare(b.name));
 }
