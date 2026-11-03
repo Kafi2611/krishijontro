@@ -549,6 +549,7 @@ model Booking {
   totalAmount          Int // what the farmer pays = work + delivery - subsidy
   platformFee          Int
   cancellationFee      Int           @default(0)
+  minimumShare         Int           @default(0) // group booking only: this plot's share of the group's minimum charge (already inside workCharge)
   startOtp             String? // 4 digits, made when the booking is ACCEPTED
   finishOtp            String?
   actualQuantity       Float? // real acres / hours entered by the operator at finish

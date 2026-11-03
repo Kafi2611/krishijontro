@@ -9,7 +9,8 @@
  *                          nothing overlaps the whole time, save one GroupBooking and one normal
  *                          Booking per member (each member is the farmer of their own booking:
  *                          they get their own codes, pay their own bill and can cancel their own
- *                          plot). The delivery is charged once and shared equally.
+ *                          plot). The delivery is charged once and shared equally, and the
+ *                          minimum charge is checked once for all plots together.
  * The provider then accepts or rejects each member's request like any other booking.
  * Every function takes the leader's own id, so a leader only books for THEIR cooperative.
  */
@@ -26,11 +27,11 @@ import { addDays, toDhakaDay, type TimeRange } from "@/lib/services/calendar";
 import { getLeaderCooperative } from "@/lib/services/cooperative";
 import { groupBookedForYouMessage, groupRequestMessage } from "@/lib/services/cooperative-messages";
 import { BANGLADESH_CENTER, distanceInKm } from "@/lib/services/geo";
-import { priceGroupBooking, scheduleBackToBack } from "@/lib/services/group-booking-rules";
+import { priceGroupBooking, scheduleBackToBack, type GroupPlotBill } from "@/lib/services/group-booking-rules";
 import { findNearestUpazilaId } from "@/lib/services/location";
 import { isServiceDue } from "@/lib/services/machine-rules";
 import { createNotification } from "@/lib/services/notification";
-import { getBillingQuantity, isRateAllowed, type Bill } from "@/lib/services/pricing";
+import { getBillingQuantity, isRateAllowed } from "@/lib/services/pricing";
 import { listPricedMachineTypes, type PricedMachineType } from "@/lib/services/pricing-rule";
 import { findBusyMachineIdsBetween, LISTED_MACHINE } from "@/lib/services/search";
 import { getPlatformFeePercent } from "@/lib/services/settings";
@@ -200,7 +201,7 @@ export type GroupPlotPrice = {
   amount: number;
   startAt: Date;
   endAt: Date;
-  bill: Bill;
+  bill: GroupPlotBill; // its work charge already holds its minimum share
 };
 
 /** One machine the leader can choose, with the price of every plot. */
@@ -366,7 +367,8 @@ export async function createGroupBooking(
               locationId: fieldUpazilaId,
               distanceKm,
               rateSnapshot: machine.rate,
-              workCharge: bill.workCharge,
+              workCharge: bill.workCharge, // its own work + its minimum share
+              minimumShare: bill.minimumShare, // saved, so the bill at the finish keeps it
               deliveryCharge: bill.deliveryCharge,
               subsidyAmount: bill.subsidyAmount,
               totalAmount: bill.totalAmount,

@@ -898,7 +898,8 @@
     "providerGetsAdmin": "Provider gets",
     "helpLink": "Ask for help about this booking",
     "groupNote": "Group booking of {name}: the machine does {count, number} plots one after another and the delivery is shared.",
-    "deliveryShareDetail": "Your share of one trip ({km, number} km), shared by {count, number} plots"
+    "deliveryShareDetail": "Your share of one trip ({km, number} km), shared by {count, number} plots",
+    "rateDetailWithMinimum": "Rate: {rate}, plus {share, number} Tk share of the group's minimum charge"
   },
   "Booking": {
     "title": "Book {machine}",
@@ -1704,7 +1705,7 @@
     "startTimeHint": "The machine then goes from plot to plot without a break.",
     "village": "The village",
     "villageHint": "Put the pin in the middle of the plots. The delivery is worked out from the machine to this pin.",
-    "plotsHint": "Tick the members whose plots the machine visits (2 to {max, number}). The machine goes in this order.",
+    "plotsHint": "Tick the members whose plots the machine visits (2 to {max, number}). The machine goes in this order. Small plots are fine: the minimum charge counts all plots together.",
     "amountLabel": "{unit, select, PER_ACRE {Land (decimal)} PER_HOUR {Hours of work} other {Days of work}}",
     "plotNote": "How to find the plot (optional)",
     "plotNotePlaceholder": "e.g. North of the pond",
@@ -1724,7 +1725,8 @@
     "groupTitle": "Group booking",
     "deliveryNote": "One trip to the village: {total, number} Tk, shared equally by {count, plural, one {# plot} other {# plots}}.",
     "plotsTitle": "The plots, in order",
-    "membersFollowNote": "Each member follows their own booking on their phone: the start and finish codes, and the payment."
+    "membersFollowNote": "Each member follows their own booking on their phone: the start and finish codes, and the payment.",
+    "minimumShare": "minimum share {amount, number} Tk"
   },
   "OfficerBookings": {
     "title": "Bookings and complaints",

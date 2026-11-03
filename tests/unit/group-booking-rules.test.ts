@@ -1,7 +1,13 @@
 // Unit tests for src/lib/services/group-booking-rules.ts: sharing the delivery charge,
-// the back-to-back schedule, the price of a group booking and how far a group is.
+// the back-to-back schedule, the group's minimum charge, the price of a group booking and how far a group is.
 import { describe, expect, it } from "vitest";
-import { countGroupProgress, priceGroupBooking, scheduleBackToBack, splitEqually } from "@/lib/services/group-booking-rules";
+import {
+  countGroupProgress,
+  priceGroupBooking,
+  scheduleBackToBack,
+  shareGroupMinimum,
+  splitEqually,
+} from "@/lib/services/group-booking-rules";
 
 describe("splitEqually", () => {
   it("shares whole taka, the first parts get 1 Tk more", () => {
@@ -33,6 +39,34 @@ describe("scheduleBackToBack", () => {
   });
 });
 
+describe("shareGroupMinimum", () => {
+  it("charges nothing extra when all plots together reach the minimum", () => {
+    // 30 + 40 decimal = 0.7 acre, the tractor's minimum is 0.5 acre.
+    expect(shareGroupMinimum([0.3, 0.4], 2400, 0.5)).toEqual([0, 0]);
+    // Exactly the minimum is enough.
+    expect(shareGroupMinimum([0.2, 0.3], 2400, 0.5)).toEqual([0, 0]);
+    // 0.1 + 0.2 + 0.2 gives 0.5000000000000001 in JavaScript; comparing rounded numbers still says "reached".
+    expect(shareGroupMinimum([0.1, 0.2, 0.2], 2400, 0.5)).toEqual([0, 0, 0]);
+  });
+
+  it("shares the missing taka equally when the plots together are below the minimum", () => {
+    // Minimum 0.5 × 2400 = 1200 Tk; own work 240 + 480 = 720 Tk; 480 Tk is missing.
+    expect(shareGroupMinimum([0.1, 0.2], 2400, 0.5)).toEqual([240, 240]);
+  });
+
+  it("shares in whole taka that add up exactly (the first plots get 1 Tk more)", () => {
+    // Minimum 0.5 × 1000 = 500 Tk; own work 100 × 3 = 300 Tk; 200 Tk missing -> 67 + 67 + 66.
+    const shares = shareGroupMinimum([0.1, 0.1, 0.1], 1000, 0.5);
+    expect(shares).toEqual([67, 67, 66]);
+    expect(shares.reduce((sum, share) => sum + share, 0)).toBe(200);
+  });
+
+  it("works for machines rented per hour too (a pump with a 2 hour minimum)", () => {
+    expect(shareGroupMinimum([1.5, 1], 200, 2)).toEqual([0, 0]); // 2.5 hours together
+    expect(shareGroupMinimum([0.5, 1], 200, 2)).toEqual([50, 50]); // 1.5 hours: 100 Tk missing
+  });
+});
+
 describe("priceGroupBooking", () => {
   // The project's price example, three times: 66 decimal at 2400 Tk/acre, 8 km away.
   const input = {
@@ -61,8 +95,24 @@ describe("priceGroupBooking", () => {
     expect(first.subsidyAmount).toBe(317);
     expect(first.totalAmount).toBe(1351); // 1584 + 84 − 317
     expect(second.totalAmount).toBe(1667); // 1584 + 83, no subsidy
-    expect(third.billedQuantity).toBe(0.5); // a tiny plot is billed as the minimum
-    expect(third.workCharge).toBe(1200);
+    // 0.2 acre alone is below the 0.5 acre minimum, but the group has 1.52 acre: it pays only its own land.
+    expect(third.billedQuantity).toBe(0.2);
+    expect(third.minimumShare).toBe(0);
+    expect(third.workCharge).toBe(480);
+  });
+
+  it("shares the missing part of the minimum when all plots together are too small", () => {
+    const small = priceGroupBooking({
+      ...input,
+      plots: [
+        { quantity: 0.1, subsidyPercent: 0 },
+        { quantity: 0.2, subsidyPercent: 0 },
+      ],
+    });
+    // The minimum costs 0.5 × 2400 = 1200; the plots' own work 240 + 480 = 720; 480 is shared.
+    expect(small.bills.map((bill) => bill.minimumShare)).toEqual([240, 240]);
+    expect(small.bills.map((bill) => bill.workCharge)).toEqual([480, 720]);
+    expect(small.bills[0].workCharge + small.bills[1].workCharge).toBe(1200); // together: exactly the minimum
   });
 
   it("charges no delivery when the village is within the free km", () => {

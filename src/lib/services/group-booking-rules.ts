@@ -5,9 +5,10 @@
  * booking form can show the same numbers as the server saves.
  *   1. splitEqually():        the ONE delivery charge shared equally (whole taka, nothing lost)
  *   2. scheduleBackToBack():  plot 1 starts at the chosen time, plot 2 when plot 1 ends, ...
- *   3. priceGroupBooking():   the delivery is worked out once (the machine makes one trip to the
- *                             village), then every plot gets its own bill with its share of it
- *   4. countGroupProgress():  how many plots wait, go ahead, are done or stopped (the history list)
+ *   3. shareGroupMinimum():   the minimum charge is checked ONCE, against all plots together
+ *   4. priceGroupBooking():   the delivery is worked out once (the machine makes one trip to the
+ *                             village), then every plot gets its own bill with its shares
+ *   5. countGroupProgress():  how many plots wait, go ahead, are done or stopped (the history list)
  */
 import type { BookingStatus } from "@/generated/prisma/enums";
 import { calculateBookingPrice, calculateFinalBill, type Bill } from "@/lib/services/pricing";
@@ -50,12 +51,42 @@ export function scheduleBackToBack(startAt: Date, hoursPerPlot: number[]): TimeR
   return ranges;
 }
 
-// ─────────────────────────── 3. The price of the group ───────────────────────────
+// ─────────────────────────── 3. The minimum charge of the group ───────────────────────────
+
+/**
+ * The group's minimum charge, checked ONCE for all plots together. The machine is already in
+ * the village, so a small plot must not cost the whole minimum on its own:
+ * - all plots together reach the minimum -> nobody pays extra (every share is 0), and each
+ *   member pays only for their own land
+ * - together they are below the minimum -> the missing part of the minimum charge is shared
+ *   equally between the members (whole taka, splitEqually)
+ * Returns each plot's extra taka (its "minimum share"), in the same order as the plots.
+ * Example: 0.3 + 0.4 acre at 2400 Tk/acre, minimum 0.5 acre -> [0, 0]        (0.7 acre is enough)
+ *          0.1 + 0.2 acre at 2400 Tk/acre, minimum 0.5 acre -> [240, 240]
+ *          (the minimum costs 0.5 × 2400 = 1200; the plots' own work is 240 + 480 = 720; 480 is missing)
+ */
+export function shareGroupMinimum(quantities: number[], rate: number, minCharge: number): number[] {
+  let totalQuantity = 0;
+  let ownCharges = 0;
+  for (const quantity of quantities) {
+    totalQuantity += quantity;
+    ownCharges += Math.round(quantity * rate);
+  }
+  // Compared at 6 decimal places, because 0.1 + 0.2 gives 0.30000000000000004 in JavaScript.
+  const reachesMinimum = Math.round(totalQuantity * 1e6) >= Math.round(minCharge * 1e6);
+  if (reachesMinimum) {
+    return quantities.map(() => 0);
+  }
+  const missing = Math.max(0, Math.round(minCharge * rate) - ownCharges);
+  return splitEqually(missing, quantities.length);
+}
+
+// ─────────────────────────── 4. The price of the group ───────────────────────────
 
 /** Everything needed to price a group booking on one machine. */
 export type GroupPriceInput = {
   rate: number; // the machine's rate (taka per acre / hour / day)
-  minCharge: number; // the smallest quantity billed for each plot (from the price rule)
+  minCharge: number; // the smallest quantity billed for the WHOLE group (from the price rule)
   distanceKm: number; // machine -> the village pin
   freeKm: number;
   deliveryRatePerKm: number;
@@ -63,19 +94,24 @@ export type GroupPriceInput = {
   plots: { quantity: number; subsidyPercent: number }[]; // each member's work, and their own subsidy %
 };
 
+/** One plot's bill; its work charge already holds its minimum share (0 when the group reaches the minimum). */
+export type GroupPlotBill = Bill & { billedQuantity: number; minimumShare: number };
+
 export type GroupPrice = {
   totalDeliveryCharge: number; // the one trip, before sharing
-  bills: (Bill & { billedQuantity: number })[]; // one bill per plot, in the same order
+  bills: GroupPlotBill[]; // one bill per plot, in the same order
 };
 
 /**
  * Prices a group booking:
  * 1. the delivery charge of ONE trip (the same formula as a single booking, calculateBookingPrice)
  * 2. shared equally between the plots (splitEqually)
- * 3. each plot's bill: its own work charge (with the minimum), its share of the delivery and
- *    its farmer's own subsidy — the same bill as at the finish (calculateFinalBill).
+ * 3. the minimum charge checked once for all plots together (shareGroupMinimum)
+ * 4. each plot's bill: its own work (no minimum of its own) plus its minimum share, its share of
+ *    the delivery and its farmer's own subsidy — the same bill as at the finish (calculateFinalBill).
  * Example: 3 plots of 66 decimal at 2400 Tk/acre, 8 km (3 free, 50 Tk/km), 20% subsidy, 3% fee
  *   -> one trip 250 Tk, shared 84 + 83 + 83; plot 1: work 1584 + delivery 84 − subsidy 317 = 1351 Tk
+ *   A 30 decimal plot in that group pays for 30 decimal (720 Tk work), not for the 50 decimal minimum.
  */
 export function priceGroupBooking(input: GroupPriceInput): GroupPrice {
   const trip = calculateBookingPrice({
@@ -88,22 +124,29 @@ export function priceGroupBooking(input: GroupPriceInput): GroupPrice {
     subsidyPercent: 0,
     platformFeePercent: 0,
   });
-  const shares = splitEqually(trip.deliveryCharge, input.plots.length);
+  const deliveryShares = splitEqually(trip.deliveryCharge, input.plots.length);
+  const minimumShares = shareGroupMinimum(
+    input.plots.map((plot) => plot.quantity),
+    input.rate,
+    input.minCharge,
+  );
 
-  const bills = input.plots.map((plot, index) =>
-    calculateFinalBill({
+  const bills = input.plots.map((plot, index) => {
+    const bill = calculateFinalBill({
       actualQuantity: plot.quantity,
       rate: input.rate,
-      minCharge: input.minCharge,
-      deliveryCharge: shares[index],
+      minCharge: 0, // no minimum per plot: the group's minimum is in the minimum share
+      minimumShare: minimumShares[index],
+      deliveryCharge: deliveryShares[index],
       subsidyPercent: plot.subsidyPercent,
       platformFeePercent: input.platformFeePercent,
-    }),
-  );
+    });
+    return { ...bill, minimumShare: minimumShares[index] };
+  });
   return { totalDeliveryCharge: trip.deliveryCharge, bills };
 }
 
-// ─────────────────────────── 4. How far a group is ───────────────────────────
+// ─────────────────────────── 5. How far a group is ───────────────────────────
 
 /** How many of a group's plots are at each stage, and what the members pay together. */
 export type GroupProgress = {

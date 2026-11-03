@@ -567,7 +567,9 @@ export type BillableBooking = {
   billingUnit: BillingUnit;
   rateSnapshot: number;
   deliveryCharge: number;
+  minimumShare: number; // a group plot's share of the group's minimum charge (0 otherwise)
   parentBookingId: string | null;
+  groupBookingId: string | null;
   createdAt: Date;
   machine: { machineTypeId: string };
   subsidyApplication: { program: { discountPercent: number } } | null;
@@ -578,7 +580,9 @@ export type BillableBooking = {
  * Everything else stays as it was when the farmer booked: the same rate (rateSnapshot), the
  * same delivery charge, the same subsidy %, and the minimum charge of the price rule in force
  * on the booking day (old rules are kept as history). A replacement booking has no minimum:
- * it only finishes another machine's job. Only the platform fee % is read again from the settings.
+ * it only finishes another machine's job. A group plot has no minimum of its own either: the
+ * group's minimum was checked once for all plots, and the plot keeps its saved minimum share.
+ * Only the platform fee % is read again from the settings.
  * actualValue is decimal of land for machines rented per acre, otherwise hours or days.
  * Exported, because the admin's complaint decision (dispute.ts) corrects a bill the same way.
  */
@@ -589,10 +593,12 @@ export async function workOutFinalBill(job: BillableBooking, actualValue: number
   }
   const actualQuantity = getBillingQuantity(job.billingUnit, actualValue, actualValue);
   const isReplacement = job.parentBookingId !== null;
+  const isGroupPlot = job.groupBookingId !== null;
   const price = calculateFinalBill({
     actualQuantity,
     rate: job.rateSnapshot,
-    minCharge: isReplacement ? 0 : rule.minCharge,
+    minCharge: isReplacement || isGroupPlot ? 0 : rule.minCharge,
+    minimumShare: job.minimumShare,
     deliveryCharge: job.deliveryCharge,
     subsidyPercent: job.subsidyApplication?.program.discountPercent ?? 0,
     platformFeePercent: await getPlatformFeePercent(),

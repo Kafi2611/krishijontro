@@ -122,6 +122,10 @@ export function ReceiptDocument({ receipt }: { receipt: ReceiptData }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Bill</Text>
           <Line label={`Work (rate ${taka(receipt.rate)} per ${RATE_UNIT_NAMES[receipt.billingUnit]})`} value={taka(receipt.workCharge)} />
+          {/* A group plot: part of the work charge is its share of the group's minimum charge */}
+          {receipt.minimumShare > 0 && (
+            <Line label="Of which: share of the group's minimum charge" value={taka(receipt.minimumShare)} />
+          )}
           <Line label={`Delivery (${receipt.distanceKm} km)`} value={taka(receipt.deliveryCharge)} />
           {receipt.subsidyAmount > 0 && (
             <Line label="Government subsidy (paid by the government)" value={`- ${taka(receipt.subsidyAmount)}`} />

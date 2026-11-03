@@ -104,6 +104,7 @@ export default async function GroupBookingPage({ params }: GroupBookingPageProps
                       : tView("quantity", { quantity: booking.quantity, unit: booking.billingUnit })}
                     {" · "}
                     {t("deliveryShare", { amount: booking.deliveryCharge })}
+                    {booking.minimumShare > 0 && ` · ${t("minimumShare", { amount: booking.minimumShare })}`}
                   </span>
                   <span className="font-semibold tabular-nums">{tPrice("amount", { amount: booking.totalAmount })}</span>
                 </div>

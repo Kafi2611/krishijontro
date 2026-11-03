@@ -1072,8 +1072,9 @@ async function seedExtras(
 /**
  * One group booking: the Haripur cooperative books the demo provider's tractor for three members'
  * plots, one after another, a week from today. It uses the app's own group booking math
- * (group-booking-rules.ts): ONE trip to the village, its delivery charge shared equally, and each
- * member's own subsidy. Every plot is a normal REQUESTED booking with its own code.
+ * (group-booking-rules.ts): ONE trip to the village, its delivery charge shared equally, the
+ * minimum charge checked once for all plots together, and each member's own subsidy.
+ * Every plot is a normal REQUESTED booking with its own code.
  */
 async function seedGroupBooking(users: Users, machines: Machines, rules: Rules, cooperativeId: string, firstSerial: number) {
   const tractor = machines.get("jamalTractor")!;
@@ -1081,7 +1082,9 @@ async function seedGroupBooking(users: Users, machines: Machines, rules: Rules, 
   const [f1, f2, f3] = users.farmers;
   const plots = [
     { farmerId: f1.id, landDecimal: 60, plotNote: "Next to the school" },
-    { farmerId: f2.id, landDecimal: 45, plotNote: "North of the pond" },
+    // 30 decimal is below the tractor's 50 decimal minimum, but the group has 140 decimal together,
+    // so this member pays only for 30 decimal.
+    { farmerId: f2.id, landDecimal: 30, plotNote: "North of the pond" },
     { farmerId: f3.id, landDecimal: 50, plotNote: "Behind the mosque" },
   ];
   // Only farmer 1 has an approved subsidy application (20%).
@@ -1143,6 +1146,7 @@ async function seedGroupBooking(users: Users, machines: Machines, rules: Rules, 
         distanceKm,
         rateSnapshot: tractor.rate,
         workCharge: bill.workCharge,
+        minimumShare: bill.minimumShare,
         deliveryCharge: bill.deliveryCharge,
         subsidyAmount: bill.subsidyAmount,
         totalAmount: bill.totalAmount,

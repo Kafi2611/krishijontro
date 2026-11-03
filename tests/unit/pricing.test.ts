@@ -251,3 +251,25 @@ describe("calculateFinalBill", () => {
     expect(replacement.totalAmount).toBe(499); // the same as billReplacement in breakdown-rules.ts
   });
 });
+
+describe("calculateFinalBill for a group plot", () => {
+  it("bills the real work with no minimum of its own, plus the saved minimum share", () => {
+    // A 10 decimal plot whose group was below the minimum: its saved share is 240 Tk.
+    const bill = calculateFinalBill({
+      actualQuantity: 0.1,
+      rate: 2400,
+      minCharge: 0,
+      minimumShare: 240,
+      deliveryCharge: 50,
+      subsidyPercent: 0,
+      platformFeePercent: 3,
+    });
+    expect(bill.workCharge).toBe(480); // 240 own work + 240 share
+    expect(bill.totalAmount).toBe(530);
+  });
+
+  it("adds nothing when the share is left out (a normal booking)", () => {
+    const bill = calculateFinalBill({ actualQuantity: 0.66, rate: 2400, minCharge: 0.5, deliveryCharge: 250, subsidyPercent: 20, platformFeePercent: 3 });
+    expect(bill.totalAmount).toBe(1517);
+  });
+});

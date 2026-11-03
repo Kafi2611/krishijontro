@@ -3,7 +3,8 @@
 //   Farmer:   work + delivery − subsidy = You pay
 //   Provider: work + delivery − platform fee = You get   (and what the farmer pays)
 //   Admin:    the provider's side, worded "Provider gets"
-// In a group booking the delivery line says it is this plot's share of the one trip.
+// In a group booking the delivery line says it is this plot's share of the one trip, and the work
+// line shows the plot's share of the group's minimum charge when the plots together were too small.
 // Before the work ends it is an estimate; at the finish the operator enters the real amount of
 // work and the amounts are worked out again (finishWork in lib/services/booking.ts).
 import { useTranslations } from "next-intl";
@@ -15,6 +16,7 @@ import { getProviderShare } from "@/lib/services/booking-rules";
 type BillBooking = {
   workCharge: number;
   deliveryCharge: number;
+  minimumShare: number; // a group plot's share of the group's minimum charge (inside workCharge)
   subsidyAmount: number;
   totalAmount: number;
   platformFee: number;
@@ -43,7 +45,15 @@ export function BookingBill({ booking, view, subsidyPercent, sharedBy = 1 }: Boo
   return (
     <div className="space-y-3">
       <dl className="space-y-3">
-        <PriceLine label={tPrice("work")} detail={t("rateDetail", { rate })} amount={tPrice("amount", { amount: booking.workCharge })} />
+        <PriceLine
+          label={tPrice("work")}
+          detail={
+            booking.minimumShare > 0
+              ? t("rateDetailWithMinimum", { rate, share: booking.minimumShare })
+              : t("rateDetail", { rate })
+          }
+          amount={tPrice("amount", { amount: booking.workCharge })}
+        />
         <PriceLine
           label={tPrice("delivery")}
           detail={

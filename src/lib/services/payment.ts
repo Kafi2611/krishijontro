@@ -313,6 +313,7 @@ export type ReceiptData = {
   billingUnit: BillingUnit;
   rate: number;
   workCharge: number;
+  minimumShare: number; // a group plot's share of the group's minimum charge (inside workCharge)
   deliveryCharge: number;
   distanceKm: number;
   subsidyAmount: number;
@@ -363,6 +364,7 @@ export async function getReceiptData(bookingId: string, farmerId: string): Promi
     billingUnit: booking.billingUnit,
     rate: booking.rateSnapshot,
     workCharge: booking.workCharge,
+    minimumShare: booking.minimumShare,
     deliveryCharge: booking.deliveryCharge,
     distanceKm: booking.distanceKm,
     subsidyAmount: booking.subsidyAmount,

@@ -423,6 +423,7 @@ export function GroupBookingForm({ members, machineTypes, defaultValues, today, 
                           <span className="block text-muted-foreground">
                             {timeText(plot.startAt)}–{timeText(plot.endAt)} ·{" "}
                             {t("deliveryShare", { amount: plot.bill.deliveryCharge })}
+                            {plot.bill.minimumShare > 0 && ` · ${t("minimumShare", { amount: plot.bill.minimumShare })}`}
                           </span>
                         </span>
                         <span className="font-semibold tabular-nums">{tPrice("amount", { amount: plot.bill.totalAmount })}</span>
