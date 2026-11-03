@@ -256,7 +256,8 @@
     "support": "Help",
     "tickets": "Support tickets",
     "members": "Members",
-    "groupBookings": "Group bookings"
+    "groupBookings": "Group bookings",
+    "upazilaBookings": "Bookings and complaints"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -1077,7 +1078,8 @@
   },
   "OfficerDashboard": {
     "farmersToVerify": "Farmers to verify",
-    "applicationsWaiting": "Subsidy applications waiting"
+    "applicationsWaiting": "Subsidy applications waiting",
+    "openComplaints": "Open complaints in your upazila"
   },
   "FarmerSubsidy": {
     "title": "Government subsidy",
@@ -1525,7 +1527,8 @@
     "openText": {
       "farmer": "An admin is checking your complaint and will message you the decision. If you have not paid yet, the payment waits until then.",
       "provider": "An admin is checking this complaint and will message you the decision. The money for this job waits until then.",
-      "admin": "Waiting for a decision."
+      "admin": "Waiting for a decision.",
+      "officer": "An admin will check this complaint and decide."
     },
     "decisionRefundPaid": "{amount, number} Tk given back to the farmer",
     "decisionRefundBill": "Bill lowered by {amount, number} Tk",
@@ -1701,5 +1704,17 @@
     "deliveryNote": "One trip to the village: {total, number} Tk, shared equally by {count, plural, one {# plot} other {# plots}}.",
     "plotsTitle": "The plots, in order",
     "membersFollowNote": "Each member follows their own booking on their phone: the start and finish codes, and the payment."
+  },
+  "OfficerBookings": {
+    "title": "Bookings and complaints",
+    "subtitle": "Machine bookings for fields in {upazila}, and farmers' complaints about them. An admin decides the complaints.",
+    "noUpazila": "Your account has no upazila yet. Please ask an admin.",
+    "complaintsTitle": "Complaints",
+    "noComplaints": "No complaint about a job in your upazila.",
+    "complaintAbout": "{code} · {machine} · {farmer}",
+    "bookingsTitle": "Bookings ({count, number})",
+    "byStatus": "Bookings by status",
+    "noBookings": "No booking for a field in your upazila yet.",
+    "people": "{farmer} · {provider}"
   }
 }

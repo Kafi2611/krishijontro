@@ -256,7 +256,8 @@
     "support": "সাহায্য",
     "tickets": "সহায়তা টিকিট",
     "members": "সদস্য",
-    "groupBookings": "দলগত বুকিং"
+    "groupBookings": "দলগত বুকিং",
+    "upazilaBookings": "বুকিং ও অভিযোগ"
   },
   "Dashboard": {
     "welcome": "স্বাগতম, {name}",
@@ -1077,7 +1078,8 @@
   },
   "OfficerDashboard": {
     "farmersToVerify": "যাচাইয়ের অপেক্ষায় কৃষক",
-    "applicationsWaiting": "অপেক্ষমাণ ভর্তুকি আবেদন"
+    "applicationsWaiting": "অপেক্ষমাণ ভর্তুকি আবেদন",
+    "openComplaints": "আপনার উপজেলায় খোলা অভিযোগ"
   },
   "FarmerSubsidy": {
     "title": "সরকারি ভর্তুকি",
@@ -1525,7 +1527,8 @@
     "openText": {
       "farmer": "একজন অ্যাডমিন আপনার অভিযোগ দেখছেন এবং সিদ্ধান্ত বার্তায় জানাবেন। টাকা না দিয়ে থাকলে ততক্ষণ পেমেন্ট অপেক্ষায় থাকবে।",
       "provider": "একজন অ্যাডমিন এই অভিযোগ দেখছেন এবং সিদ্ধান্ত বার্তায় জানাবেন। ততক্ষণ এই কাজের টাকা অপেক্ষায় থাকবে।",
-      "admin": "সিদ্ধান্তের অপেক্ষায়।"
+      "admin": "সিদ্ধান্তের অপেক্ষায়।",
+      "officer": "একজন অ্যাডমিন এই অভিযোগ দেখে সিদ্ধান্ত দেবেন।"
     },
     "decisionRefundPaid": "কৃষককে {amount, number} টাকা ফেরত দেওয়া হয়েছে",
     "decisionRefundBill": "বিল {amount, number} টাকা কমানো হয়েছে",
@@ -1701,5 +1704,17 @@
     "deliveryNote": "গ্রামে একবার আসা: {total, number} টাকা, {count, plural, other {#টি জমিতে}} সমান ভাগে।",
     "plotsTitle": "জমিগুলো, ক্রম অনুযায়ী",
     "membersFollowNote": "প্রত্যেক সদস্য নিজের ফোনে নিজের বুকিং দেখবেন: শুরু ও শেষের কোড আর পেমেন্ট।"
+  },
+  "OfficerBookings": {
+    "title": "বুকিং ও অভিযোগ",
+    "subtitle": "{upazila}-এর জমির জন্য যন্ত্র বুকিং, আর সেগুলো নিয়ে কৃষকদের অভিযোগ। অভিযোগের সিদ্ধান্ত দেন অ্যাডমিন।",
+    "noUpazila": "আপনার অ্যাকাউন্টে এখনো কোনো উপজেলা নেই। অনুগ্রহ করে অ্যাডমিনকে বলুন।",
+    "complaintsTitle": "অভিযোগ",
+    "noComplaints": "আপনার উপজেলার কোনো কাজ নিয়ে অভিযোগ নেই।",
+    "complaintAbout": "{code} · {machine} · {farmer}",
+    "bookingsTitle": "বুকিং ({count, number}টি)",
+    "byStatus": "অবস্থা অনুযায়ী বুকিং",
+    "noBookings": "আপনার উপজেলার কোনো জমির জন্য এখনো বুকিং নেই।",
+    "people": "{farmer} · {provider}"
   }
 }

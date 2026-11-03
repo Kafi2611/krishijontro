@@ -1,6 +1,7 @@
 // A card for one booking in a list: the machine's icon and name, the booking code, when the
 // work starts, the status and (if given) one more line and an amount.
-// The whole card is a link to the booking's page. Used by the farmer, provider and operator lists.
+// The whole card is a link to the booking's page (without `href`, e.g. for the officer, who has no
+// booking page, it is a plain card). Used by the farmer, provider, operator, admin and officer lists.
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { MachineTypeIcon } from "@/components/machine-type-icon";
 import { StatusBadge } from "@/components/status-badge";
@@ -10,7 +11,7 @@ import { localizeDigits } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 
 type BookingCardProps = {
-  href: string;
+  href?: string; // the booking's page; leave out for a card that is not a link
   code: string;
   machineName: string;
   icon: string; // the machine type's icon name
@@ -25,30 +26,37 @@ export function BookingCard({ href, code, machineName, icon, startAt, status, de
   const format = useFormatter(); // Bangla digits and month names on Bangla pages
   const locale = useLocale();
 
+  const card = (
+    <Card className={href ? "transition-shadow hover:shadow-md" : undefined}>
+      <CardContent className="flex items-start gap-3">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-accent text-primary">
+          <MachineTypeIcon icon={icon} className="size-6" />
+        </span>
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="font-semibold">{machineName}</p>
+            <StatusBadge status={status} />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {localizeDigits(code, locale)} · {format.dateTime(startAt, { dateStyle: "medium", timeStyle: "short" })}
+          </p>
+          {(detail || amount !== undefined) && (
+            <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+              <span>{detail}</span>
+              {amount !== undefined && <span className="font-semibold">{tPrice("amount", { amount })}</span>}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  if (!href) {
+    return card;
+  }
   return (
     <Link href={href} className="block rounded-xl focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none">
-      <Card className="transition-shadow hover:shadow-md">
-        <CardContent className="flex items-start gap-3">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-accent text-primary">
-            <MachineTypeIcon icon={icon} className="size-6" />
-          </span>
-          <div className="min-w-0 flex-1 space-y-1">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="font-semibold">{machineName}</p>
-              <StatusBadge status={status} />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {localizeDigits(code, locale)} · {format.dateTime(startAt, { dateStyle: "medium", timeStyle: "short" })}
-            </p>
-            {(detail || amount !== undefined) && (
-              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                <span>{detail}</span>
-                {amount !== undefined && <span className="font-semibold">{tPrice("amount", { amount })}</span>}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      {card}
     </Link>
   );
 }

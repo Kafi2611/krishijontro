@@ -1,5 +1,6 @@
-// The complaint box on a booking's page (farmer, provider and admin): the farmer's reason and
-// words, and either "an admin is checking it" or the admin's decision with their note.
+// The complaint box on a booking's page (farmer, provider and admin) and on the officer's list:
+// the farmer's reason and words, and either "an admin is checking it" or the admin's decision
+// with their note.
 // The decision line depends on whether the farmer had paid before complaining:
 //   paid:     "120 Tk given back to the farmer"
 //   not paid: "Bill lowered by 120 Tk" (the farmer then pays the new bill)
@@ -28,7 +29,7 @@ export type CardDispute = {
 
 type DisputeCardProps = {
   dispute: CardDispute;
-  view: "farmer" | "provider" | "admin";
+  view: "farmer" | "provider" | "admin" | "officer";
 };
 
 /** True if the saved reason is one of our reason codes (old rows may hold plain text). */
