@@ -18,12 +18,15 @@ import {
   type WorkType,
 } from "../src/generated/prisma/client";
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from "../src/lib/demo-accounts";
+import type { DisputeReason } from "../src/lib/services/dispute-rules";
 import { hashPassword } from "../src/lib/password";
 import { estimateWorkHours, formatBookingCode, generateOtp, getBookingYear } from "../src/lib/services/booking-rules";
 import { DEFAULT_CANCELLATION_FEE_PERCENT } from "../src/lib/services/cancellation-rules";
 import { distanceInKm } from "../src/lib/services/geo";
 import { makeTransactionId } from "../src/lib/services/payment-rules";
 import { calculateBookingPrice, getBillingQuantity } from "../src/lib/services/pricing";
+import { priceGroupBooking, scheduleBackToBack } from "../src/lib/services/group-booking-rules";
+import { DEFAULT_PLATFORM_SETTINGS, PLATFORM_SETTING_KEYS, SETTING_DESCRIPTIONS } from "../src/lib/services/settings-rules";
 import { calculateTrustScore, getCancellationWindowStart } from "../src/lib/services/trust-rules";
 
 const db = new PrismaClient({
@@ -60,15 +63,14 @@ async function emptyDatabase() {
 
 // ─────────────────────────── 2. Settings ───────────────────────────
 
+/** The five platform settings with their default values (the admin changes them on Settings). */
 async function seedSettings() {
   await db.setting.createMany({
-    data: [
-      { key: "platformFeePercent", value: "3", description: "Platform fee taken from each booking (%)" },
-      { key: "cancellationFeePercent", value: "10", description: "Late cancellation fee (% of work charge)" },
-      { key: "freeCancellationHours", value: "24", description: "Farmer can cancel for free until this many hours before start" },
-      { key: "replacementRadiusKm", value: "15", description: "Search radius for an emergency replacement machine" },
-      { key: "replacementTimeoutHours", value: "2", description: "Hours to wait for a replacement before refunding" },
-    ],
+    data: PLATFORM_SETTING_KEYS.map((key) => ({
+      key,
+      value: String(DEFAULT_PLATFORM_SETTINGS[key]),
+      description: SETTING_DESCRIPTIONS[key],
+    })),
   });
 }
 
@@ -600,6 +602,8 @@ type BookingSeed = {
   fieldAddress: string;
   review?: SeedReview; // stars for REVIEWED bookings (default: machine 5, operator 4)
   cancel?: { by: "farmer" | "provider"; late?: boolean; reason?: string }; // for CANCELLED bookings
+  disputedAfterPaying?: boolean; // a DISPUTED booking the farmer had paid before complaining
+  complaint?: { reason: DisputeReason; description: string }; // the farmer's complaint (DISPUTED bookings)
 };
 
 type SeedReview = { machineStars: number; operatorStars: number; machineComment: string; operatorComment: string };
@@ -652,7 +656,8 @@ async function createSeedBooking(
   const endAt = addHours(startAt, estimateWorkHours(rule.billingUnit, quantity));
   // Booked 3 days before the start, but never in the future
   const createdAt = new Date(Math.min(addHours(startAt, -72).getTime(), addHours(new Date(), -3).getTime()));
-  const path = STATUS_PATHS[seed.status];
+  // A complaint after paying goes PAID -> DISPUTED; the usual DISPUTED path is COMPLETED -> DISPUTED.
+  const path: BookingStatus[] = seed.disputedAfterPaying ? [...STATUS_PATHS.PAID, "DISPUTED"] : STATUS_PATHS[seed.status];
   const wasAccepted = path.includes("ACCEPTED");
   const workStarted = path.includes("WORKING");
   const workFinished = path.includes("COMPLETED");
@@ -712,13 +717,19 @@ async function createSeedBooking(
     if (["ON_THE_WAY", "WORKING", "COMPLETED", "BREAKDOWN"].includes(status)) return seed.operatorId;
     return seed.farmerId; // REQUESTED, CANCELLED, PAID, REVIEWED, DISPUTED
   };
+  // The note on a history step: the reason of a cancellation, the farmer's words of a complaint.
+  const noteFor = (status: BookingStatus): string | null => {
+    if (status === "CANCELLED") return seed.cancel?.reason ?? null;
+    if (status === "DISPUTED") return seed.complaint?.description ?? null;
+    return null;
+  };
   await db.bookingStatusLog.createMany({
     data: path.map((status, index) => ({
       bookingId: booking.id,
       fromStatus: index === 0 ? null : path[index - 1],
       toStatus: status,
       actorId: actorFor(status),
-      note: status === "CANCELLED" ? (seed.cancel?.reason ?? null) : null,
+      note: noteFor(status),
       createdAt: timeFor(status),
     })),
   });
@@ -736,6 +747,19 @@ async function createSeedBooking(
         // The gateway's own id for the payment (SSLCommerz's bank_tran_id); cash has none.
         gatewayRef: seed.paymentMethod === "CASH" ? null : `BANK-${serial}${Date.now() % 100000}`,
         paidAt: addHours(endAt, 1),
+      },
+    });
+  }
+
+  // The farmer's complaint, still waiting for an admin's decision
+  if (seed.status === "DISPUTED" && seed.complaint) {
+    await db.dispute.create({
+      data: {
+        bookingId: booking.id,
+        raisedById: seed.farmerId,
+        reason: seed.complaint.reason,
+        description: seed.complaint.description,
+        createdAt: timeFor("DISPUTED"),
       },
     });
   }
@@ -779,7 +803,7 @@ async function seedBookings(users: Users, machines: Machines, rules: Rules, subs
     [{ status: "COMPLETED", farmerId: f8.id, machineKey: "kamrulTractor", operatorId: babul.id, startDay: -1, landDecimal: 75, fieldOffsetKm: 3, fieldAddress: "Tetuljhora" }, kamrul],
     [{ status: "PAID", farmerId: users.demoFarmer.id, machineKey: "jamalTiller", operatorId: users.demoOperator.id, startDay: -10, landDecimal: 50, fieldOffsetKm: 4, subsidyApplicationId, paymentMethod: "CASH", fieldAddress: "Haripur north field" }, jamal],
     [{ status: "REVIEWED", farmerId: users.demoFarmer.id, machineKey: "jamalTractor", operatorId: users.demoOperator.id, startDay: -20, landDecimal: 100, fieldOffsetKm: 5, subsidyApplicationId, paymentMethod: "SSLCOMMERZ", fieldAddress: "Haripur south field" }, jamal],
-    [{ status: "DISPUTED", farmerId: f9.id, machineKey: "barindTransplanter", operatorId: sumon.id, startDay: -7, landDecimal: 80, fieldOffsetKm: 7, fieldAddress: "Kushura" }, barind],
+    [{ status: "DISPUTED", farmerId: f9.id, machineKey: "barindTransplanter", operatorId: sumon.id, startDay: -7, landDecimal: 80, fieldOffsetKm: 7, fieldAddress: "Kushura", complaint: { reason: "WRONG_AMOUNT", description: "The operator wrote 0.8 acre but only about 0.6 acre was planted." } }, barind],
     // The demo farmer's finished job that still waits for payment (the price example again: pay 1517 Tk).
     [{ status: "COMPLETED", farmerId: users.demoFarmer.id, machineKey: "jamalTractor", operatorId: users.demoOperator.id, startDay: -2, landDecimal: 66, fieldOffsetKm: 8, subsidyApplicationId, fieldAddress: "Haripur east field" }, jamal],
   ];
@@ -801,6 +825,8 @@ async function seedBookings(users: Users, machines: Machines, rules: Rules, subs
     // demo farmer's accepted pump booking that starts in 10 hours (cancelling it now costs a late fee).
     [{ status: "CANCELLED", farmerId: f2.id, machineKey: "jamalTiller", startDay: -3, landDecimal: 60, fieldOffsetKm: 2, fieldAddress: "Damkura", cancel: { by: "farmer", late: true } }, jamal],
     [{ status: "ACCEPTED", farmerId: users.demoFarmer.id, machineKey: "jamalPump", startInHours: 10, landDecimal: 50, hoursOrDays: 3, fieldOffsetKm: 4, subsidyApplicationId, fieldAddress: "Haripur west field" }, jamal],
+    // A complaint AFTER paying (PAID -> DISPUTED): the admin can give money back, fine the provider or do nothing.
+    [{ status: "DISPUTED", farmerId: f3.id, machineKey: "kamrulReaper", operatorId: babul.id, startDay: -4, landDecimal: 80, fieldOffsetKm: 3, paymentMethod: "MOCK", fieldAddress: "Haripur pond side", disputedAfterPaying: true, complaint: { reason: "BAD_WORK", description: "Some lines near the pond were left uncut, and I had to cut them by hand." } }, kamrul],
   ];
 
   const created = [];
@@ -821,7 +847,7 @@ async function seedExtras(
   bookings: Awaited<ReturnType<typeof seedBookings>>,
 ) {
   const [f1, f2, f3, f4] = users.farmers;
-  const [requested, , , , , onTheWay, , breakdown, completed, paid, reviewed, disputed] = bookings;
+  const [requested, , , , , onTheWay, , breakdown, completed, paid, reviewed] = bookings;
 
   // A cooperative in Haripur village with 5 members
   const cooperative = await db.cooperative.create({
@@ -868,16 +894,6 @@ async function seedExtras(
   // Subsidy money already used by the paid bookings
   const usedSubsidy = paid.subsidyAmount + reviewed.subsidyAmount;
   await db.subsidyProgram.updateMany({ data: { usedAmount: usedSubsidy } });
-
-  // A dispute about booking 12
-  await db.dispute.create({
-    data: {
-      bookingId: disputed.id,
-      raisedById: users.farmers[8].id,
-      reason: "Area mismatch",
-      description: "Operator wrote 0.8 acre but only about 0.6 acre was planted.",
-    },
-  });
 
   // A payout already sent to the demo provider for the reviewed booking.
   // Provider gets: work charge + delivery charge - platform fee.
@@ -970,6 +986,53 @@ async function seedExtras(
     ],
   });
 
+  // A provider's question still waiting for an admin (OPEN), and an old one that is CLOSED.
+  const waitingTicket = await db.supportTicket.create({
+    data: { userId: users.demoProvider.id, subject: "How do I change my bKash number?", status: "OPEN", updatedAt: daysFromNow(-1, 11) },
+  });
+  const closedTicket = await db.supportTicket.create({
+    data: { userId: users.farmers[4].id, subject: "Cannot see my subsidy", status: "CLOSED", updatedAt: daysFromNow(-30, 12) },
+  });
+  await db.ticketMessage.createMany({
+    data: [
+      { ticketId: waitingTicket.id, senderId: users.demoProvider.id, body: "I got a new bKash number. Where do I change it so my payouts go there?", createdAt: daysFromNow(-1, 11) },
+      { ticketId: closedTicket.id, senderId: users.farmers[4].id, body: "I applied for the subsidy but the price shows no discount.", createdAt: daysFromNow(-31, 10) },
+      { ticketId: closedTicket.id, senderId: users.admin.id, body: "Your application waits for the agriculture officer. The discount shows after approval.", createdAt: daysFromNow(-31, 15) },
+      { ticketId: closedTicket.id, senderId: users.farmers[4].id, body: "Thank you, now it is approved.", createdAt: daysFromNow(-30, 12) },
+    ],
+  });
+
+  // A complaint the admin already decided: the reaper left part of the field, so the provider was
+  // fined 300 Tk (it comes off their next payout). The booking went PAID -> DISPUTED -> PAID.
+  const finedBooking = bookings.find((booking) => booking.farmerId === f2.id && booking.status === "PAID")!;
+  const complainedAt = addHours(finedBooking.startAt, 30);
+  const decidedAt = addHours(finedBooking.startAt, 54);
+  const fineNote = "The operator left the field early. Provider fined 300 Tk.";
+  await db.bookingStatusLog.createMany({
+    data: [
+      { bookingId: finedBooking.id, fromStatus: "PAID", toStatus: "DISPUTED", actorId: f2.id, note: "The reaper left one corner of the field uncut.", createdAt: complainedAt },
+      { bookingId: finedBooking.id, fromStatus: "DISPUTED", toStatus: "PAID", actorId: users.admin.id, note: fineNote, createdAt: decidedAt },
+    ],
+  });
+  const decidedDispute = await db.dispute.create({
+    data: {
+      bookingId: finedBooking.id,
+      raisedById: f2.id,
+      reason: "BAD_WORK",
+      description: "The reaper left one corner of the field uncut.",
+      status: "RESOLVED",
+      decision: "PENALTY",
+      penaltyAmount: 300,
+      adminNote: fineNote,
+      resolvedById: users.admin.id,
+      resolvedAt: decidedAt,
+      createdAt: complainedAt,
+    },
+  });
+
+  // A group booking of the Haripur cooperative, waiting for the demo provider to accept.
+  await seedGroupBooking(users, machines, rules, cooperative.id, bookings.length + 1);
+
   // Notifications (some as simulated SMS), in English and Bangla.
   // `link` is the page a tap on the message opens.
   await db.notification.createMany({
@@ -999,7 +1062,116 @@ async function seedExtras(
       { actorId: users.demoOfficer.id, action: "SUBSIDY_APPROVED", entityType: "SubsidyApplication", details: "Approved Abdul Karim for Small Farmer Mechanization Support 2026", createdAt: daysFromNow(-40) },
       { actorId: users.admin.id, action: "REFUND_PROCESSED", entityType: "Refund", details: "Refunded 200 Tk: The field was smaller than measured", createdAt: daysFromNow(-70) },
       { actorId: users.admin.id, action: "USER_SUSPENDED", entityType: "User", entityId: users.farmers[6].id, details: "Fake NID reported by officer", createdAt: daysFromNow(-5) },
+      { actorId: users.admin.id, action: "DISPUTE_DECIDED", entityType: "Dispute", entityId: decidedDispute.id, details: `${finedBooking.code}: PENALTY 300 Tk — ${fineNote}`, createdAt: decidedAt },
+      { actorId: users.admin.id, action: "STAFF_CREATED", entityType: "User", entityId: users.coopLeader.id, details: "Made a COOP_LEADER account for the Haripur cooperative leader", createdAt: daysFromNow(-120) },
+      { actorId: users.admin.id, action: "SETTINGS_CHANGED", entityType: "Setting", details: "freeCancellationHours: 12 -> 24", createdAt: daysFromNow(-80) },
     ],
+  });
+}
+
+/**
+ * One group booking: the Haripur cooperative books the demo provider's tractor for three members'
+ * plots, one after another, a week from today. It uses the app's own group booking math
+ * (group-booking-rules.ts): ONE trip to the village, its delivery charge shared equally, and each
+ * member's own subsidy. Every plot is a normal REQUESTED booking with its own code.
+ */
+async function seedGroupBooking(users: Users, machines: Machines, rules: Rules, cooperativeId: string, firstSerial: number) {
+  const tractor = machines.get("jamalTractor")!;
+  const rule = rules.get(tractor.type)!;
+  const [f1, f2, f3] = users.farmers;
+  const plots = [
+    { farmerId: f1.id, landDecimal: 60, plotNote: "Next to the school" },
+    { farmerId: f2.id, landDecimal: 45, plotNote: "North of the pond" },
+    { farmerId: f3.id, landDecimal: 50, plotNote: "Behind the mosque" },
+  ];
+  // Only farmer 1 has an approved subsidy application (20%).
+  const subsidy = await db.subsidyApplication.findFirst({ where: { farmerId: f1.id, status: "APPROVED" } });
+
+  // The village pin is 6 km north of the tractor, so the one trip costs (6 − 3 free km) × 50 = 150 Tk.
+  const field = { lat: tractor.lat + 6 * 0.008993, lng: tractor.lng };
+  const distanceKm = distanceInKm(tractor, field);
+  const quantities = plots.map((plot) => getBillingQuantity(rule.billingUnit, plot.landDecimal, plot.landDecimal));
+  const times = scheduleBackToBack(
+    daysFromNow(7, 8),
+    quantities.map((quantity) => estimateWorkHours(rule.billingUnit, quantity)),
+  );
+  const price = priceGroupBooking({
+    rate: tractor.rate,
+    minCharge: rule.minCharge,
+    distanceKm,
+    freeKm: rule.freeKm,
+    deliveryRatePerKm: rule.deliveryRatePerKm,
+    platformFeePercent: PLATFORM_FEE_PERCENT,
+    plots: plots.map((plot, index) => ({
+      quantity: quantities[index],
+      subsidyPercent: plot.farmerId === f1.id && subsidy ? 20 : 0,
+    })),
+  });
+
+  const group = await db.groupBooking.create({
+    data: {
+      cooperativeId,
+      leaderId: users.coopLeader.id,
+      machineId: tractor.id,
+      locationId: tractor.locationId,
+      village: "Haripur",
+      workType: "TILLING",
+      startAt: times[0].startAt,
+      totalDeliveryCharge: price.totalDeliveryCharge,
+      createdAt: daysFromNow(-1, 17),
+    },
+  });
+  for (const [index, plot] of plots.entries()) {
+    const bill = price.bills[index];
+    const booking = await db.booking.create({
+      data: {
+        code: formatBookingCode(getBookingYear(), firstSerial + index),
+        farmerId: plot.farmerId,
+        machineId: tractor.id,
+        groupBookingId: group.id,
+        subsidyApplicationId: plot.farmerId === f1.id ? (subsidy?.id ?? null) : null,
+        workType: "TILLING",
+        landDecimal: plot.landDecimal,
+        billingUnit: rule.billingUnit,
+        quantity: quantities[index],
+        startAt: times[index].startAt,
+        endAt: times[index].endAt,
+        fieldLat: field.lat,
+        fieldLng: field.lng,
+        fieldAddress: plot.plotNote,
+        locationId: tractor.locationId,
+        distanceKm,
+        rateSnapshot: tractor.rate,
+        workCharge: bill.workCharge,
+        deliveryCharge: bill.deliveryCharge,
+        subsidyAmount: bill.subsidyAmount,
+        totalAmount: bill.totalAmount,
+        platformFee: bill.platformFee,
+        status: "REQUESTED",
+        createdAt: daysFromNow(-1, 17),
+      },
+    });
+    await db.bookingStatusLog.create({
+      data: {
+        bookingId: booking.id,
+        fromStatus: null,
+        toStatus: "REQUESTED",
+        actorId: users.coopLeader.id,
+        note: "Group booking: Haripur Krishi Samabay Samity",
+        createdAt: daysFromNow(-1, 17),
+      },
+    });
+  }
+  await db.notification.create({
+    data: {
+      userId: users.demoProvider.id,
+      channel: "SMS",
+      title: "Group booking request",
+      titleBn: "দলগত বুকিংয়ের অনুরোধ",
+      body: "Haripur Krishi Samabay Samity asks for your Mahindra 575 DI for 3 plots, one after another, next week. Please accept or reject each request.",
+      bodyBn: "হরিপুর কৃষি সমবায় সমিতি আগামী সপ্তাহে পরপর ৩টি জমির জন্য আপনার Mahindra 575 DI চেয়েছে। অনুগ্রহ করে প্রতিটি অনুরোধ গ্রহণ বা বাতিল করুন।",
+      link: "/provider/bookings",
+    },
   });
 }
 
