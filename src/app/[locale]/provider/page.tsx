@@ -2,31 +2,38 @@
 // It shows the account's approval note, the bookings waiting for the provider (new requests,
 // and accepted ones that need an operator), the money waiting to be sent to them, machine and
 // operator counts, machines that need a service (each box opens its page), the trust score
-// farmers see, and the list of provider features.
+// farmers see, two charts (earnings per month, jobs per machine), and the list of provider features.
 import { CircleCheck, Clock, Inbox, ShieldCheck, Tractor, UserRound, Users, Wallet, Wrench } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { getFormatter, getTranslations } from "next-intl/server";
+import { BarChart } from "@/components/charts/bar-chart";
+import { ChartCard } from "@/components/charts/chart-card";
 import { RoleDashboard } from "@/components/dashboard/role-dashboard";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { ProviderApprovalNote } from "@/components/provider/provider-approval-note";
 import { requireRole } from "@/lib/auth";
+import { CHART_COLORS } from "@/lib/chart-colors";
 import { countProviderBookingsToHandle } from "@/lib/services/booking-queries";
 import { countProviderMachines } from "@/lib/services/machine";
 import { listProviderServiceAlerts } from "@/lib/services/maintenance";
 import { countProviderOperators } from "@/lib/services/operator";
 import { getProviderWaitingTotal } from "@/lib/services/payout";
 import { getProviderProfile } from "@/lib/services/provider";
+import { getProviderStats } from "@/lib/services/stats";
+import { monthMiddle } from "@/lib/services/stats-rules";
 
 export default async function ProviderDashboardPage() {
   const provider = await requireRole("PROVIDER");
-  const [profile, machines, operatorCount, toHandle, waitingPayout, serviceAlerts] = await Promise.all([
+  const [profile, machines, operatorCount, toHandle, waitingPayout, serviceAlerts, stats] = await Promise.all([
     getProviderProfile(provider.id),
     countProviderMachines(provider.id),
     countProviderOperators(provider.id),
     countProviderBookingsToHandle(provider.id),
     getProviderWaitingTotal(provider.id),
     listProviderServiceAlerts(provider.id),
+    getProviderStats(provider.id),
   ]);
   const t = await getTranslations("ProviderDashboard");
+  const format = await getFormatter();
 
   return (
     <RoleDashboard role="PROVIDER">
@@ -92,6 +99,30 @@ export default async function ProviderDashboardPage() {
           icon={<Users className="size-5" aria-hidden />}
           href="/provider/operators"
         />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ChartCard title={t("earnedChart")} description={t("earnedChartText")}>
+          <BarChart
+            caption={t("earnedChart")}
+            labels={stats.earnedByMonth.map((point) => format.dateTime(monthMiddle(point.key), { month: "short" }))}
+            series={[{ name: t("earned"), color: CHART_COLORS.brand, values: stats.earnedByMonth.map((point) => point.value) }]}
+            valueKind="money"
+          />
+        </ChartCard>
+        <ChartCard title={t("jobsChart")} description={t("jobsChartText")}>
+          {stats.jobsByMachine.length === 0 ? (
+            <p className="text-muted-foreground">{t("noJobsYet")}</p>
+          ) : (
+            <BarChart
+              caption={t("jobsChart")}
+              labels={stats.jobsByMachine.map((point) => point.key)}
+              series={[{ name: t("jobs"), color: CHART_COLORS.brand, values: stats.jobsByMachine.map((point) => point.value) }]}
+              valueKind="count"
+              layout="rows"
+            />
+          )}
+        </ChartCard>
       </div>
     </RoleDashboard>
   );

@@ -1,6 +1,6 @@
 // The dashboard frame every role sees: a welcome line, the role's own widgets
 // (passed in as children, e.g. the admin's "waiting for approval" boxes) and a list
-// of what this role will be able to do. Later phases add more real widgets.
+// of what this role can do.
 import { CircleDashed } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

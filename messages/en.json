@@ -262,8 +262,8 @@
   "Dashboard": {
     "welcome": "Welcome, {name}",
     "loggedInAs": "You are logged in as {role}.",
-    "featuresTitle": "What you will do here",
-    "featuresNote": "These features are being added step by step."
+    "featuresTitle": "What you can do here",
+    "featuresNote": "Open each page from the menu."
   },
   "Features": {
     "FARMER": [
@@ -603,7 +603,17 @@
     "problemsTitle": "Problems",
     "breakdownsOpen": "Breakdowns waiting for a replacement",
     "disputesOpen": "Complaints waiting for a decision",
-    "ticketsOpen": "Help requests waiting for an answer"
+    "ticketsOpen": "Help requests waiting for an answer",
+    "chartsTitle": "How KrishiJontro is doing",
+    "bookingsChart": "New bookings per month",
+    "bookingsChartText": "Every booking made, by the month it was made.",
+    "bookings": "Bookings",
+    "feesChart": "Platform fees per month (Tk)",
+    "feesChartText": "KrishiJontro's fee from the paid jobs, by the month the work was finished.",
+    "fees": "Fees",
+    "usersChart": "Accounts per role",
+    "usersChartText": "Everyone who can log in, active or suspended.",
+    "accounts": "Accounts"
   },
   "ProviderDashboard": {
     "machines": "My machines",
@@ -614,7 +624,14 @@
     "needOperator": "Need an operator",
     "waitingPayout": "Waiting to be sent to you (Tk)",
     "serviceAlerts": "Machines that need a service",
-    "trustScore": "Trust score (out of 100)"
+    "trustScore": "Trust score (out of 100)",
+    "earnedChart": "Earnings per month (Tk)",
+    "earnedChartText": "Your share of the paid jobs, by the month the work was finished.",
+    "earned": "Earned",
+    "jobsChart": "Jobs per machine",
+    "jobsChartText": "How many jobs each machine has had (not counting rejected or cancelled).",
+    "jobs": "Jobs",
+    "noJobsYet": "No jobs yet."
   },
   "GovtDashboard": {
     "typesWithLimit": "Machine types with a price limit (of {total, number})",
@@ -1716,5 +1733,9 @@
     "byStatus": "Bookings by status",
     "noBookings": "No booking for a field in your upazila yet.",
     "people": "{farmer} · {provider}"
+  },
+  "Charts": {
+    "showTable": "Show the numbers",
+    "item": "For"
   }
 }
