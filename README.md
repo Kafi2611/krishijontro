@@ -71,7 +71,8 @@ presses **Cash received**). Online payment goes through a payment gateway:
 ## Platform settings
 
 Some business rules read their numbers from the `Setting` table, so they can change without new code.
-`npm run db:seed` adds them; until the admin settings page exists, change them with `npx prisma studio`.
+`npm run db:seed` adds them; the admin changes them on **Settings** (`/admin/settings`), and every change is
+written to the audit log.
 
 | Setting | Default | Used for |
 | --- | --- | --- |

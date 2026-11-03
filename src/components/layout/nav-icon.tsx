@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   Scale,
   Search,
+  Settings,
   Shapes,
   Store,
   Tractor,
@@ -45,6 +46,7 @@ const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   breakdowns: TriangleAlert,
   repairs: Wrench,
   waitlist: Hourglass,
+  settings: Settings,
 };
 
 export function NavIcon({ name, className }: { name: NavIconName; className?: string }) {

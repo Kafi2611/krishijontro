@@ -158,7 +158,8 @@
     "alreadyRequested": "A request of this kind for this machine is still open.",
     "alreadyWaiting": "You are already on the waitlist for this machine on this day.",
     "ratingRequired": "Please choose 1 to 5 stars.",
-    "cannotCancel": "This booking cannot be cancelled any more."
+    "cannotCancel": "This booking cannot be cancelled any more.",
+    "settingOutOfRange": "Enter a whole number inside the range shown below the box"
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",
@@ -222,7 +223,8 @@
     "subsidyPrograms": "Subsidy programs",
     "breakdowns": "Breakdowns",
     "repairRequests": "Repair requests",
-    "waitlist": "Waitlist"
+    "waitlist": "Waitlist",
+    "settings": "Settings"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -1328,5 +1330,41 @@
     "joinButton": "Join the waitlist",
     "joined": "You are on the waitlist. We will send you a message.",
     "seeList": "See my waitlist"
+  },
+  "AdminSettings": {
+    "title": "Settings",
+    "subtitle": "Rules that every new booking follows. Bookings already made keep their amounts.",
+    "moneyTitle": "Money",
+    "cancelTitle": "Cancelling a booking",
+    "breakdownTitle": "Breakdowns",
+    "fields": {
+      "platformFeePercent": {
+        "label": "Platform fee (%)",
+        "hint": "Taken from the provider's share of work + delivery."
+      },
+      "freeCancellationHours": {
+        "label": "Free cancelling until (hours before the start)",
+        "hint": "Before this, a farmer cancels an accepted booking for free."
+      },
+      "cancellationFeePercent": {
+        "label": "Late cancelling fee (% of the work charge)",
+        "hint": "Paid by a farmer who cancels later than that."
+      },
+      "replacementRadiusKm": {
+        "label": "Search for a replacement machine within (km)",
+        "hint": "Owners of a free machine this close to the field get the emergency message."
+      },
+      "replacementTimeoutHours": {
+        "label": "Wait for a replacement (hours)",
+        "hint": "After this, an admin may close the search with \"No replacement found\"."
+      }
+    },
+    "range": "From {min} to {max}.",
+    "auditNote": "Every change is saved in the audit log with your name.",
+    "saveButton": "Save settings",
+    "saved": "Settings saved",
+    "machineTypesTitle": "Machine types",
+    "machineTypesText": "Add a machine type or change its name, icon or work.",
+    "machineTypesLink": "Open machine types"
   }
 }
