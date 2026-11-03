@@ -19,6 +19,7 @@ import { FarmerCancelCard } from "@/components/booking/farmer-cancel-card";
 import { BreakdownCard } from "@/components/booking/breakdown-card";
 import { DisputeCard } from "@/components/booking/dispute-card";
 import { ContactLine } from "@/components/booking/contact-line";
+import { HelpLink } from "@/components/booking/help-link";
 import { OtpCard } from "@/components/booking/otp-card";
 import { RelatedBookings } from "@/components/booking/related-bookings";
 import { ReviewForm } from "@/components/booking/review-form";
@@ -191,6 +192,8 @@ export default async function FarmerBookingPage({ params }: FarmerBookingPagePro
           rules={cancelRules}
         />
       )}
+
+      <HelpLink bookingId={booking.id} />
 
       <Card>
         <CardHeader>

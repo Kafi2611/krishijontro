@@ -9,7 +9,9 @@ import {
   CalendarCheck,
   FileCheck,
   Hourglass,
+  Headset,
   LayoutDashboard,
+  LifeBuoy,
   MessageSquareWarning,
   Scale,
   ScrollText,
@@ -53,6 +55,8 @@ const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   users: UserCog,
   audit: ScrollText,
   disputes: MessageSquareWarning,
+  support: LifeBuoy,
+  tickets: Headset,
 };
 
 export function NavIcon({ name, className }: { name: NavIconName; className?: string }) {

@@ -37,6 +37,7 @@ describe("isAccountPath", () => {
   it("knows the pages every logged-in user has", () => {
     expect(isAccountPath("/profile")).toBe(true);
     expect(isAccountPath("/notifications")).toBe(true);
+    expect(isAccountPath("/support/abc")).toBe(true);
     expect(isAccountPath("/profiles")).toBe(false);
     expect(isAccountPath("/farmer")).toBe(false);
   });

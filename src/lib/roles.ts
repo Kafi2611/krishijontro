@@ -24,7 +24,7 @@ export const ALL_ROLES = Object.keys(ROLE_HOME_PATH) as Role[];
 export const SELF_REGISTER_ROLES = ["FARMER", "PROVIDER"] as const;
 
 /** Pages every logged-in user can open, whatever their role. */
-export const ACCOUNT_PATHS = ["/dashboard", "/profile", "/notifications"];
+export const ACCOUNT_PATHS = ["/dashboard", "/profile", "/notifications", "/support"];
 
 /**
  * Returns the dashboard path for a role.

@@ -167,7 +167,10 @@
     "cannotComplain": "You can complain only about finished work (before or after paying, not after the review).",
     "amountRequired": "Enter the amount",
     "billNotLower": "The right amount of work must give a lower bill than now. To keep the bill, choose \"No action\".",
-    "fineTooBig": "The fine must be at least 1 Tk and not more than the provider's share of this job."
+    "fineTooBig": "The fine must be at least 1 Tk and not more than the provider's share of this job.",
+    "subjectRequired": "Write a short subject (at least 3 letters)",
+    "messageRequired": "Write your message",
+    "ticketClosed": "This ticket is closed, so nobody can write in it. Open a new one if you need help."
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",
@@ -240,7 +243,9 @@
     "users": "Users",
     "audit": "Audit log",
     "allBookings": "All bookings",
-    "disputes": "Complaints"
+    "disputes": "Complaints",
+    "support": "Help",
+    "tickets": "Support tickets"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -585,7 +590,8 @@
     "providersToPay": "Providers waiting for their money",
     "problemsTitle": "Problems",
     "breakdownsOpen": "Breakdowns waiting for a replacement",
-    "disputesOpen": "Complaints waiting for a decision"
+    "disputesOpen": "Complaints waiting for a decision",
+    "ticketsOpen": "Help requests waiting for an answer"
   },
   "ProviderDashboard": {
     "machines": "My machines",
@@ -856,7 +862,8 @@
     "otpStartText": "Give this code to the operator only when the machine is at your field and the work begins. Never tell it on the phone.",
     "otpFinishTitle": "Your finish code",
     "otpFinishText": "Give this code to the operator only when the work is finished and you agree with the area or hours. Never tell it on the phone.",
-    "providerGetsAdmin": "Provider gets"
+    "providerGetsAdmin": "Provider gets",
+    "helpLink": "Ask for help about this booking"
   },
   "Booking": {
     "title": "Book {machine}",
@@ -1554,5 +1561,55 @@
     "notePlaceholder": "e.g. We measured the field: 60 decimal.",
     "saveDecision": "Save the decision",
     "decided": "Decision saved. Both sides were told."
+  },
+  "Support": {
+    "title": "Help",
+    "subtitle": "Ask the KrishiJontro team for help. We answer here, and you get a message.",
+    "newTicket": "Ask for help",
+    "newSubtitle": "Tell us what you need. If it is about a booking, choose it.",
+    "back": "My help requests",
+    "empty": "You have not asked for help yet.",
+    "messageCount": "{count, plural, one {# message} other {# messages}}",
+    "subject": "Subject",
+    "subjectPlaceholder": "e.g. The operator came late",
+    "booking": "About a booking (optional)",
+    "noBooking": "Not about a booking",
+    "bookingHint": "Your latest bookings.",
+    "message": "Your message",
+    "messagePlaceholder": "Tell us what happened and how we can help.",
+    "sendTicket": "Send",
+    "aboutBooking": "About booking {code}",
+    "statusHint": {
+      "OPEN": "Waiting for the KrishiJontro team to answer.",
+      "IN_PROGRESS": "The team answered. Write again if you need more help, or close the ticket.",
+      "CLOSED": "This ticket is closed."
+    },
+    "supportTeam": "KrishiJontro support",
+    "you": "You",
+    "writeTitle": "Write again",
+    "replyLabel": "Your message",
+    "answerLabel": "Your answer",
+    "send": "Send",
+    "close": "Close the ticket",
+    "closeTitle": "Close this ticket?",
+    "closeText": "Nobody can write in a closed ticket. If you need help later, open a new one.",
+    "closeYes": "Yes, close it",
+    "closed": "Ticket closed",
+    "closedNote": "This ticket is closed. Open a new one if you need more help."
+  },
+  "AdminTickets": {
+    "title": "Support tickets",
+    "subtitle": "Help requests from every role. Answer them here; the person gets a message.",
+    "filterLabel": "Show tickets that are",
+    "filters": {
+      "OPEN": "Waiting for us",
+      "IN_PROGRESS": "Answered",
+      "CLOSED": "Closed",
+      "all": "All"
+    },
+    "empty": "No ticket here.",
+    "back": "Support tickets",
+    "answerTitle": "Answer",
+    "closedNote": "This ticket is closed."
   }
 }

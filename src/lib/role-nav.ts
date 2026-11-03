@@ -27,7 +27,9 @@ export type NavIconName =
   | "settings"
   | "users"
   | "audit"
-  | "disputes";
+  | "disputes"
+  | "support"
+  | "tickets";
 
 /** A key of the "Nav" section in messages/en.json, e.g. "profile". */
 export type NavLabelKey = keyof (typeof messages)["Nav"];
@@ -70,6 +72,7 @@ const ROLE_LINKS: Record<Role, NavItem[]> = {
     { href: "/admin/disputes", labelKey: "disputes", icon: "disputes" },
     { href: "/admin/breakdowns", labelKey: "breakdowns", icon: "breakdowns" },
     { href: "/admin/payments", labelKey: "payments", icon: "payments" },
+    { href: "/admin/tickets", labelKey: "tickets", icon: "tickets" },
     { href: "/admin/users", labelKey: "users", icon: "users" },
     { href: "/admin/settings", labelKey: "settings", icon: "settings" },
     { href: "/admin/audit", labelKey: "audit", icon: "audit" },
@@ -80,12 +83,14 @@ const ROLE_LINKS: Record<Role, NavItem[]> = {
 /** Links every logged-in user has, shown at the bottom of the sidebar. */
 const COMMON_LINKS: NavItem[] = [
   { href: "/notifications", labelKey: "notifications", icon: "bell" },
+  { href: "/support", labelKey: "support", icon: "support" },
   { href: "/profile", labelKey: "profile", icon: "user" },
 ];
 
 /**
  * Returns the full list of sidebar links for a role:
  * the dashboard first, then the role's own links, then the common links.
+ * Admins answer the help requests (Support tickets), so they do not get the "Help" link.
  */
 export function getNavItemsForRole(role: Role): NavItem[] {
   const dashboardLink: NavItem = {
@@ -93,5 +98,6 @@ export function getNavItemsForRole(role: Role): NavItem[] {
     labelKey: "dashboard",
     icon: "dashboard",
   };
-  return [dashboardLink, ...ROLE_LINKS[role], ...COMMON_LINKS];
+  const commonLinks = role === "ADMIN" ? COMMON_LINKS.filter((link) => link.href !== "/support") : COMMON_LINKS;
+  return [dashboardLink, ...ROLE_LINKS[role], ...commonLinks];
 }

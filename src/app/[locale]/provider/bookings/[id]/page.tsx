@@ -17,6 +17,7 @@ import { BookingTimeline } from "@/components/booking/booking-timeline";
 import { BreakdownCard } from "@/components/booking/breakdown-card";
 import { DisputeCard } from "@/components/booking/dispute-card";
 import { ContactLine } from "@/components/booking/contact-line";
+import { HelpLink } from "@/components/booking/help-link";
 import { RelatedBookings } from "@/components/booking/related-bookings";
 import { MapPicker } from "@/components/map/map-picker";
 import { CollectPaymentCard } from "@/components/payment/collect-payment-card";
@@ -167,6 +168,8 @@ export default async function ProviderBookingPage({ params }: ProviderBookingPag
           </Card>
         </div>
       </div>
+
+      <HelpLink bookingId={booking.id} />
 
       <Card>
         <CardHeader>
