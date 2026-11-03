@@ -10,6 +10,7 @@ import {
   FileCheck,
   Hourglass,
   LayoutDashboard,
+  MessageSquareWarning,
   Scale,
   ScrollText,
   Search,
@@ -51,6 +52,7 @@ const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   settings: Settings,
   users: UserCog,
   audit: ScrollText,
+  disputes: MessageSquareWarning,
 };
 
 export function NavIcon({ name, className }: { name: NavIconName; className?: string }) {

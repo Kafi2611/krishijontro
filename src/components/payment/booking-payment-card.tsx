@@ -1,5 +1,6 @@
 // The payment box on the farmer's booking page.
 // - Work done, not paid yet: "Pay online" (the gateway) or pay cash to the operator.
+//   (Not while a complaint is open: the bill may still change.)
 // - Paid: how much, how and when, the PDF receipt, and any money given back (refunds).
 // The amounts come from the saved Booking and Payment rows (see lib/services/payment.ts).
 import { CircleCheckBig, Download, HandCoins, Wallet } from "lucide-react";
@@ -23,11 +24,12 @@ type CardPayment = {
 
 type BookingPaymentCardProps = {
   booking: { id: string; status: BookingStatus; totalAmount: number };
+  hasOpenDispute: boolean; // an open complaint: nobody can pay until the admin decides
   payments: CardPayment[]; // newest first
   onlineMethod: PaymentMethod; // the gateway new payments use (MOCK or SSLCOMMERZ)
 };
 
-export function BookingPaymentCard({ booking, payments, onlineMethod }: BookingPaymentCardProps) {
+export function BookingPaymentCard({ booking, hasOpenDispute, payments, onlineMethod }: BookingPaymentCardProps) {
   const t = useTranslations("Payment");
   const tMethod = useTranslations("PaymentMethods");
   const format = useFormatter();
@@ -78,8 +80,8 @@ export function BookingPaymentCard({ booking, payments, onlineMethod }: BookingP
     );
   }
 
-  if (!canPayBooking(booking.status)) {
-    return null; // the work is not done yet: nothing to pay
+  if (!canPayBooking(booking.status, hasOpenDispute)) {
+    return null; // the work is not done yet (or a complaint is open): nothing to pay now
   }
 
   // The latest try, if it did not go through, so the farmer knows why they are asked again.

@@ -1,6 +1,6 @@
 // Admin page: one booking (/admin/bookings/<id>), to check what happened, e.g. for a complaint.
 // It shows the status, the linked bookings (breakdown replacement, group booking), the payments
-// with their refunds, the steps so far (timeline), the people to call, the job, the farmer's
+// with their refunds, the complaint (if any), the steps so far (timeline), the people to call, the job, the farmer's
 // bill and the provider's share, and the field on the map. The admin only reads here: every
 // change goes through its own page (Payments, Breakdowns, Disputes).
 import type { Metadata } from "next";
@@ -11,6 +11,7 @@ import { BookingFacts } from "@/components/booking/booking-facts";
 import { BookingHeader } from "@/components/booking/booking-header";
 import { BookingTimeline } from "@/components/booking/booking-timeline";
 import { ContactLine } from "@/components/booking/contact-line";
+import { DisputeCard } from "@/components/booking/dispute-card";
 import { RelatedBookings } from "@/components/booking/related-bookings";
 import { DetailRow } from "@/components/detail-row";
 import { MapPicker } from "@/components/map/map-picker";
@@ -18,7 +19,9 @@ import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
 import { pickByLocale } from "@/lib/i18n";
+import { Link } from "@/lib/navigation";
 import { getAdminBooking } from "@/lib/services/booking-queries";
+import { getBookingDispute } from "@/lib/services/dispute";
 import { listBookingPayments } from "@/lib/services/payment";
 
 type AdminBookingPageProps = {
@@ -38,7 +41,7 @@ export default async function AdminBookingPage({ params }: AdminBookingPageProps
     notFound();
   }
   const { booking, timeline } = details;
-  const payments = await listBookingPayments(booking.id);
+  const [payments, dispute] = await Promise.all([listBookingPayments(booking.id), getBookingDispute(booking.id)]);
   const provider = booking.machine.provider;
   const field = { lat: booking.fieldLat, lng: booking.fieldLng };
   const subsidyPercent = booking.subsidyApplication?.program.discountPercent ?? 0;
@@ -62,6 +65,17 @@ export default async function AdminBookingPage({ params }: AdminBookingPageProps
       <RelatedBookings parent={booking.parentBooking} replacements={booking.replacementBookings} hrefBase="/admin/bookings/" />
       {booking.groupBooking && (
         <p className="rounded-lg bg-accent p-3 text-sm">{t("groupNote", { name: booking.groupBooking.cooperative.name })}</p>
+      )}
+
+      {dispute && (
+        <div className="space-y-2">
+          <DisputeCard dispute={dispute} view="admin" />
+          {dispute.status === "OPEN" && (
+            <Link href="/admin/disputes" className="text-sm font-semibold text-primary underline-offset-4 hover:underline">
+              {t("decideLink")}
+            </Link>
+          )}
+        </div>
       )}
 
       <Card>

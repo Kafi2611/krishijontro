@@ -1,9 +1,10 @@
 // Farmer page: one booking (/farmer/bookings/<id>). It shows the status, the secret start or
 // finish code when the operator will need it, the breakdown box if the machine broke down (with
 // links between the broken booking and its replacement), the payment box (pay when the work is
-// done; the receipt once paid), the review form once paid (or the review given), the steps so
-// far (timeline), the people to call, the job, the bill, the field on the map, and "Cancel the
-// booking" (with what it costs now) until the operator sets off.
+// done; the receipt once paid), the review form once paid (or the review given), the complaint
+// ("Report a problem" once the work is done, then the complaint and the admin's decision), the
+// steps so far (timeline), the people to call, the job, the bill, the field on the map, and
+// "Cancel the booking" (with what it costs now) until the operator sets off.
 // Only the farmer who booked can open it.
 import { Star } from "lucide-react";
 import type { Metadata } from "next";
@@ -16,10 +17,12 @@ import { BookingReviews } from "@/components/booking/booking-reviews";
 import { BookingTimeline } from "@/components/booking/booking-timeline";
 import { FarmerCancelCard } from "@/components/booking/farmer-cancel-card";
 import { BreakdownCard } from "@/components/booking/breakdown-card";
+import { DisputeCard } from "@/components/booking/dispute-card";
 import { ContactLine } from "@/components/booking/contact-line";
 import { OtpCard } from "@/components/booking/otp-card";
 import { RelatedBookings } from "@/components/booking/related-bookings";
 import { ReviewForm } from "@/components/booking/review-form";
+import { ComplaintForm } from "@/components/farmer/complaint-form";
 import { MapPicker } from "@/components/map/map-picker";
 import { BookingPaymentCard } from "@/components/payment/booking-payment-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +30,8 @@ import { requireRole } from "@/lib/auth";
 import { getFarmerBooking } from "@/lib/services/booking-queries";
 import { getBookingBreakdown } from "@/lib/services/breakdown";
 import { canFarmerCancel, getCancellationFee, getFreeCancellationEnd } from "@/lib/services/cancellation-rules";
+import { getBookingDispute } from "@/lib/services/dispute";
+import { canRaiseDispute } from "@/lib/services/dispute-rules";
 import { listBookingPayments } from "@/lib/services/payment";
 import { getOnlineGateway } from "@/lib/services/payment-gateway";
 import { listBookingReviews } from "@/lib/services/review";
@@ -49,12 +54,13 @@ export default async function FarmerBookingPage({ params }: FarmerBookingPagePro
     notFound(); // no such booking, or it is someone else's
   }
   const { booking, timeline, otp } = details;
-  const [payments, breakdown, radiusKm, reviews, cancelRules] = await Promise.all([
+  const [payments, breakdown, radiusKm, reviews, cancelRules, dispute] = await Promise.all([
     listBookingPayments(booking.id),
     getBookingBreakdown(booking.id),
     getReplacementRadiusKm(),
     listBookingReviews(booking.id),
     getCancellationRules(),
+    getBookingDispute(booking.id),
   ]);
   const provider = booking.machine.provider;
   const field = { lat: booking.fieldLat, lng: booking.fieldLng };
@@ -83,7 +89,14 @@ export default async function FarmerBookingPage({ params }: FarmerBookingPagePro
 
       {breakdown && <BreakdownCard report={breakdown} billingUnit={booking.billingUnit} view="farmer" radiusKm={radiusKm} />}
 
-      <BookingPaymentCard booking={booking} payments={payments} onlineMethod={getOnlineGateway().method} />
+      {dispute && <DisputeCard dispute={dispute} view="farmer" />}
+
+      <BookingPaymentCard
+        booking={booking}
+        hasOpenDispute={dispute?.status === "OPEN"}
+        payments={payments}
+        onlineMethod={getOnlineGateway().method}
+      />
 
       {/* Paid: the farmer rates the machine and the operator (once) */}
       {booking.status === "PAID" && (
@@ -113,6 +126,11 @@ export default async function FarmerBookingPage({ params }: FarmerBookingPagePro
             <BookingReviews reviews={reviews} />
           </CardContent>
         </Card>
+      )}
+
+      {/* Work done (paid or not): the farmer may report a problem, once */}
+      {canRaiseDispute(booking.status, dispute !== null) && (
+        <ComplaintForm bookingId={booking.id} isPaid={booking.status === "PAID"} />
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">

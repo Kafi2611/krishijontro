@@ -92,7 +92,7 @@ export default async function ProviderEarningsPage() {
                       </TableCell>
                       <TableCell className="text-right tabular-nums">{format.number(booking.money.share)}</TableCell>
                       <TableCell className="text-right tabular-nums">{format.number(booking.money.cashTaken)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{format.number(booking.money.refunded)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{format.number(booking.money.refunded + booking.money.fined)}</TableCell>
                       <TableCell className="text-right font-semibold tabular-nums">{format.number(booking.money.owed)}</TableCell>
                     </TableRow>
                   ))}

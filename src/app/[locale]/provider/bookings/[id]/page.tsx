@@ -15,6 +15,7 @@ import { BookingHeader } from "@/components/booking/booking-header";
 import { BookingReviews } from "@/components/booking/booking-reviews";
 import { BookingTimeline } from "@/components/booking/booking-timeline";
 import { BreakdownCard } from "@/components/booking/breakdown-card";
+import { DisputeCard } from "@/components/booking/dispute-card";
 import { ContactLine } from "@/components/booking/contact-line";
 import { RelatedBookings } from "@/components/booking/related-bookings";
 import { MapPicker } from "@/components/map/map-picker";
@@ -27,6 +28,7 @@ import { requireRole } from "@/lib/auth";
 import { getProviderBooking, listOperatorChoices } from "@/lib/services/booking-queries";
 import { getBookingBreakdown } from "@/lib/services/breakdown";
 import { canProviderCancel } from "@/lib/services/cancellation-rules";
+import { getBookingDispute } from "@/lib/services/dispute";
 import { canPayBooking } from "@/lib/services/payment-rules";
 import { listBookingReviews } from "@/lib/services/review";
 import { getReplacementRadiusKm } from "@/lib/services/settings";
@@ -51,10 +53,11 @@ export default async function ProviderBookingPage({ params }: ProviderBookingPag
   const field = { lat: booking.fieldLat, lng: booking.fieldLng };
   // Only an accepted booking needs an operator, so only then we load the choices.
   const operators = booking.status === "ACCEPTED" ? await listOperatorChoices(provider.id, booking) : [];
-  const [breakdown, radiusKm, reviews] = await Promise.all([
+  const [breakdown, radiusKm, reviews, dispute] = await Promise.all([
     getBookingBreakdown(booking.id),
     getReplacementRadiusKm(),
     listBookingReviews(booking.id),
+    getBookingDispute(booking.id),
   ]);
 
   const t = await getTranslations("BookingView");
@@ -106,7 +109,11 @@ export default async function ProviderBookingPage({ params }: ProviderBookingPag
         </Card>
       )}
 
-      {canPayBooking(booking.status) && <CollectPaymentCard bookingId={booking.id} amount={booking.totalAmount} />}
+      {dispute && <DisputeCard dispute={dispute} view="provider" />}
+
+      {canPayBooking(booking.status, dispute?.status === "OPEN") && (
+        <CollectPaymentCard bookingId={booking.id} amount={booking.totalAmount} />
+      )}
 
       {reviews.length > 0 && (
         <Card>

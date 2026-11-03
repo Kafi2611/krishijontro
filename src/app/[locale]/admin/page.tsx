@@ -1,22 +1,24 @@
 // The Admin dashboard: the first page an ADMIN user sees after login.
 // It shows how many providers, machines and operators wait for approval, how many breakdowns
-// still wait for a replacement machine, and how many providers wait for their money (each box
-// opens that list), and the list of admin features.
-import { Building2, Tractor, TriangleAlert, Users, Wallet } from "lucide-react";
+// still wait for a replacement machine and how many complaints wait for a decision, and how many
+// providers wait for their money (each box opens that list), and the list of admin features.
+import { Building2, MessageSquareWarning, Tractor, TriangleAlert, Users, Wallet } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { RoleDashboard } from "@/components/dashboard/role-dashboard";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { requireRole } from "@/lib/auth";
 import { countPendingApprovals } from "@/lib/services/approval";
+import { countOpenDisputes } from "@/lib/services/dispute";
 import { countProvidersToPay } from "@/lib/services/payout";
 import { countOpenBreakdowns } from "@/lib/services/replacement";
 
 export default async function AdminDashboardPage() {
   await requireRole("ADMIN");
-  const [pending, providersToPay, openBreakdowns] = await Promise.all([
+  const [pending, providersToPay, openBreakdowns, openDisputes] = await Promise.all([
     countPendingApprovals(),
     countProvidersToPay(),
     countOpenBreakdowns(),
+    countOpenDisputes(),
   ]);
   const t = await getTranslations("AdminDashboard");
 
@@ -57,6 +59,13 @@ export default async function AdminDashboardPage() {
             icon={<TriangleAlert className="size-5" aria-hidden />}
             href="/admin/breakdowns"
             highlight={openBreakdowns > 0}
+          />
+          <StatCard
+            label={t("disputesOpen")}
+            value={openDisputes}
+            icon={<MessageSquareWarning className="size-5" aria-hidden />}
+            href="/admin/disputes"
+            highlight={openDisputes > 0}
           />
         </div>
       </section>

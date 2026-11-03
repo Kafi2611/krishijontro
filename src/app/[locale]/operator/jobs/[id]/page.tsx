@@ -25,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
 import { getOperatorJob } from "@/lib/services/booking-queries";
 import { getBookingBreakdown } from "@/lib/services/breakdown";
+import { getBookingDispute } from "@/lib/services/dispute";
 import { canPayBooking } from "@/lib/services/payment-rules";
 import { listBookingReviews } from "@/lib/services/review";
 import { getReplacementRadiusKm } from "@/lib/services/settings";
@@ -46,10 +47,11 @@ export default async function OperatorJobPage({ params }: OperatorJobPageProps) 
     notFound(); // no such job, or it belongs to another operator
   }
   const { job, timeline, nextStep, bookedAmount } = details;
-  const [breakdown, radiusKm, reviews] = await Promise.all([
+  const [breakdown, radiusKm, reviews, dispute] = await Promise.all([
     getBookingBreakdown(job.id),
     getReplacementRadiusKm(),
     listBookingReviews(job.id),
+    getBookingDispute(job.id),
   ]);
   const field = { lat: job.fieldLat, lng: job.fieldLng };
   // OpenStreetMap with a pin on the field; on a phone it can be opened in a map app.
@@ -90,7 +92,10 @@ export default async function OperatorJobPage({ params }: OperatorJobPageProps) 
         </Card>
       )}
 
-      {canPayBooking(job.status) && <CollectPaymentCard bookingId={job.id} amount={job.totalAmount} />}
+      {/* Cash is taken only when nothing blocks the payment (an open complaint does) */}
+      {canPayBooking(job.status, dispute?.status === "OPEN") && (
+        <CollectPaymentCard bookingId={job.id} amount={job.totalAmount} />
+      )}
 
       {reviews.length > 0 && (
         <Card>

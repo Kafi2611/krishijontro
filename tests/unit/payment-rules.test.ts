@@ -26,10 +26,15 @@ describe("makeTransactionId", () => {
 
 describe("canPayBooking", () => {
   it("lets the farmer pay only when the work is done", () => {
-    expect(canPayBooking("COMPLETED")).toBe(true);
-    expect(canPayBooking("WORKING")).toBe(false); // not finished yet
-    expect(canPayBooking("PAID")).toBe(false); // already paid
-    expect(canPayBooking("REQUESTED")).toBe(false);
+    expect(canPayBooking("COMPLETED", false)).toBe(true);
+    expect(canPayBooking("WORKING", false)).toBe(false); // not finished yet
+    expect(canPayBooking("PAID", false)).toBe(false); // already paid
+    expect(canPayBooking("REQUESTED", false)).toBe(false);
+  });
+
+  it("waits while a complaint is open, and allows paying once the admin has decided", () => {
+    expect(canPayBooking("DISPUTED", true)).toBe(false);
+    expect(canPayBooking("DISPUTED", false)).toBe(true);
   });
 });
 
@@ -58,11 +63,12 @@ describe("getBookingMoney", () => {
     platformFee: 55,
     payments: [],
     refunds: [],
+    disputes: [],
   };
 
   it("owes the whole share when the farmer paid online", () => {
     const money = getBookingMoney({ ...example, payments: [{ method: "SSLCOMMERZ", status: "SUCCESS", amount: 1517 }] });
-    expect(money).toEqual({ share: 1779, cashTaken: 0, refunded: 0, owed: 1779 });
+    expect(money).toEqual({ share: 1779, cashTaken: 0, refunded: 0, fined: 0, owed: 1779 });
   });
 
   it("owes only the rest after a cash payment (the subsidy minus our fee)", () => {
@@ -84,6 +90,16 @@ describe("getBookingMoney", () => {
     });
     expect(money.refunded).toBe(200);
     expect(money.owed).toBe(1579);
+  });
+
+  it("takes a complaint's fine out of the provider's share", () => {
+    const money = getBookingMoney({
+      ...example,
+      payments: [{ method: "SSLCOMMERZ", status: "SUCCESS", amount: 1517 }],
+      disputes: [{ penaltyAmount: 300 }],
+    });
+    expect(money.fined).toBe(300);
+    expect(money.owed).toBe(1479);
   });
 
   it("does not count failed tries as cash", () => {

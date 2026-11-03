@@ -26,7 +26,8 @@ export type NavIconName =
   | "waitlist"
   | "settings"
   | "users"
-  | "audit";
+  | "audit"
+  | "disputes";
 
 /** A key of the "Nav" section in messages/en.json, e.g. "profile". */
 export type NavLabelKey = keyof (typeof messages)["Nav"];
@@ -66,6 +67,7 @@ const ROLE_LINKS: Record<Role, NavItem[]> = {
   ADMIN: [
     { href: "/admin/approvals", labelKey: "approvals", icon: "approvals" },
     { href: "/admin/bookings", labelKey: "allBookings", icon: "bookings" },
+    { href: "/admin/disputes", labelKey: "disputes", icon: "disputes" },
     { href: "/admin/breakdowns", labelKey: "breakdowns", icon: "breakdowns" },
     { href: "/admin/payments", labelKey: "payments", icon: "payments" },
     { href: "/admin/users", labelKey: "users", icon: "users" },

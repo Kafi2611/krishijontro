@@ -161,7 +161,13 @@
     "cannotCancel": "This booking cannot be cancelled any more.",
     "settingOutOfRange": "Enter a whole number inside the range shown below the box",
     "cannotChangeOwnAccount": "You cannot suspend or activate your own account.",
-    "chooseUpazila": "Choose the upazila"
+    "chooseUpazila": "Choose the upazila",
+    "chooseReason": "Choose what went wrong",
+    "alreadyComplained": "You have already complained about this booking.",
+    "cannotComplain": "You can complain only about finished work (before or after paying, not after the review).",
+    "amountRequired": "Enter the amount",
+    "billNotLower": "The right amount of work must give a lower bill than now. To keep the bill, choose \"No action\".",
+    "fineTooBig": "The fine must be at least 1 Tk and not more than the provider's share of this job."
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",
@@ -201,7 +207,11 @@
     "FIXED": "Fixed",
     "WAITING": "Waiting",
     "NOTIFIED": "Told: machine free",
-    "BOOKED": "Booked"
+    "BOOKED": "Booked",
+    "OPEN": "Open",
+    "RESOLVED": "Decided",
+    "IN_PROGRESS": "Being answered",
+    "CLOSED": "Closed"
   },
   "Nav": {
     "dashboard": "Dashboard",
@@ -229,7 +239,8 @@
     "settings": "Settings",
     "users": "Users",
     "audit": "Audit log",
-    "allBookings": "All bookings"
+    "allBookings": "All bookings",
+    "disputes": "Complaints"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -573,7 +584,8 @@
     "moneyTitle": "Money",
     "providersToPay": "Providers waiting for their money",
     "problemsTitle": "Problems",
-    "breakdownsOpen": "Breakdowns waiting for a replacement"
+    "breakdownsOpen": "Breakdowns waiting for a replacement",
+    "disputesOpen": "Complaints waiting for a decision"
   },
   "ProviderDashboard": {
     "machines": "My machines",
@@ -998,12 +1010,12 @@
     "account": "We send your money to: {account}",
     "noAccount": "Add your bKash or bank account in Business details, so the admin can send your money.",
     "waitingTitle": "Paid jobs not sent yet",
-    "howText": "Your share = work + delivery − platform fee. For a cash job you already have the farmer's cash, so only the rest is sent. It can be below 0: then you hold our fee, and it is taken from your next payout.",
+    "howText": "Your share = work + delivery − platform fee. For a cash job you already have the farmer's cash, so only the rest is sent. Money given back to a farmer, and a fine after a complaint, come off your share. It can be below 0: then you hold our fee, and it is taken from your next payout.",
     "waitingEmpty": "Nothing is waiting. New paid jobs show up here.",
     "booking": "Booking",
     "share": "Your share",
     "cash": "Cash you took",
-    "refunded": "Refunded",
+    "refunded": "Refunds and fines",
     "owed": "To send",
     "total": "Total to send",
     "payoutsTitle": "Payouts sent to you",
@@ -1476,6 +1488,71 @@
     "refundLine": "Given back {amount, number} Tk: {reason}",
     "upazila": "Upazila",
     "farmerBill": "Farmer's bill",
-    "providerBill": "Provider's share"
+    "providerBill": "Provider's share",
+    "decideLink": "Decide this complaint"
+  },
+  "Disputes": {
+    "cardTitle": "Complaint",
+    "reasons": {
+      "WRONG_AMOUNT": "Wrong area or hours",
+      "BAD_WORK": "The work was badly done",
+      "LATE": "The machine came very late",
+      "OPERATOR_BEHAVIOUR": "The operator behaved badly",
+      "DAMAGE": "Damage to my field or crop",
+      "OTHER": "Something else"
+    },
+    "raisedOn": "Sent on {date}",
+    "openText": {
+      "farmer": "An admin is checking your complaint and will message you the decision. If you have not paid yet, the payment waits until then.",
+      "provider": "An admin is checking this complaint and will message you the decision. The money for this job waits until then.",
+      "admin": "Waiting for a decision."
+    },
+    "decisionRefundPaid": "{amount, number} Tk given back to the farmer",
+    "decisionRefundBill": "Bill lowered by {amount, number} Tk",
+    "decisionPenalty": "Provider fined {amount, number} Tk",
+    "decisionNone": "No action taken",
+    "adminNote": "Admin's note: {note}",
+    "decidedOn": "Decided by {name} on {date}",
+    "formTitle": "Report a problem",
+    "formTextUnpaid": "Is the area or the hours wrong, or was something else wrong with this job? Tell us before you pay: the payment waits until an admin decides.",
+    "formTextPaid": "Was something wrong with this job? Tell us. An admin checks it and may give money back.",
+    "openForm": "Report a problem",
+    "reasonLabel": "What went wrong?",
+    "descriptionLabel": "What happened?",
+    "descriptionPlaceholder": "e.g. The operator wrote 0.8 acre, but only about 0.6 acre was planted.",
+    "send": "Send the complaint",
+    "sent": "Complaint sent. An admin will check it."
+  },
+  "AdminDisputes": {
+    "title": "Complaints",
+    "subtitle": "Farmers' complaints about finished jobs. Call both sides if needed, then decide.",
+    "openTitle": "Waiting for a decision",
+    "noneOpen": "No complaint is waiting.",
+    "decidedTitle": "Decided lately",
+    "booking": "Booking {code}",
+    "farmer": "Farmer",
+    "provider": "Provider",
+    "billNow": "Bill now",
+    "paidQuestion": "Paid before the complaint?",
+    "paidYes": "Yes",
+    "paidNo": "No, the payment waits",
+    "paidOutNote": "This booking was already paid out to the provider, so a refund or a fine cannot come off a later payout. Collect it from the provider by hand.",
+    "decisionLabel": "Your decision",
+    "refundPaid": "Give money back",
+    "refundBill": "Correct the bill",
+    "decisions": {
+      "PENALTY": "Fine the provider",
+      "NO_ACTION": "No action"
+    },
+    "fineAmount": "Fine (Tk)",
+    "refundAmount": "Money to give back (Tk)",
+    "fineLimit": "At most {amount, number} Tk (the provider's share of this job).",
+    "refundLimit": "At most {amount, number} Tk (what is left of the payment).",
+    "correctedWork": "Right amount of work ({unit, select, PER_ACRE {decimal of land} PER_HOUR {hours} other {days}})",
+    "correctedWorkHint": "The bill now counts {amount, number} {unit, select, PER_ACRE {decimal} PER_HOUR {hours} other {days}}. The new bill uses the same price formula as at the finish.",
+    "note": "Note for the farmer and the provider",
+    "notePlaceholder": "e.g. We measured the field: 60 decimal.",
+    "saveDecision": "Save the decision",
+    "decided": "Decision saved. Both sides were told."
   }
 }

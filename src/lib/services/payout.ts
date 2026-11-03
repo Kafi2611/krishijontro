@@ -7,7 +7,7 @@
  * has the farmer's cash, so the provider owes us our platform fee.
  *
  * For every paid booking that is not in a payout yet, getBookingMoney (payment-rules.ts) works
- * out what we still owe: the provider's share − cash already taken − refunds.
+ * out what we still owe: the provider's share − cash already taken − refunds − fines.
  * createPayout() puts ALL those bookings of one provider into ONE Payout row and sets their
  * Booking.payoutId, so a booking can never be paid out twice.
  */
@@ -23,6 +23,7 @@ import type { ActionResult } from "@/lib/validators/types";
 const MONEY_FIELDS = {
   payments: { select: { method: true, status: true, amount: true } },
   refunds: { where: { status: "PROCESSED" }, select: { amount: true } },
+  disputes: { where: { status: "RESOLVED" }, select: { penaltyAmount: true } }, // fines from complaints
   machine: { select: { brand: true, model: true, providerId: true } },
 } satisfies Prisma.BookingInclude;
 

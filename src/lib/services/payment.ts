@@ -1,7 +1,9 @@
 /**
  * Payment service — the farmer pays for a finished job.
  *
- * A booking waits for payment when its work is done (status COMPLETED). Two ways to pay:
+ * A booking waits for payment when its work is done (status COMPLETED), or when the farmer
+ * complained before paying and the admin has decided (canPayBooking in payment-rules.ts).
+ * Two ways to pay:
  *   1. Online: startOnlinePayment() saves a PENDING Payment and sends the farmer to the gateway
  *      (payment-gateway.ts). When the gateway says "paid", confirmOnlinePayment() asks the
  *      gateway again to be sure, then marks the payment SUCCESS and the booking PAID.
@@ -15,7 +17,7 @@
  * The farmer always pays booking.totalAmount (work + delivery − subsidy).
  */
 import type { Prisma } from "@/generated/prisma/client";
-import type { BillingUnit, PaymentMethod, WorkType } from "@/generated/prisma/enums";
+import type { BillingUnit, BookingStatus, PaymentMethod, WorkType } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { BookingProblem, changeBookingStatus, messageInfo, runBookingStep } from "@/lib/services/booking";
 import { getProviderShare } from "@/lib/services/booking-rules";
@@ -28,11 +30,20 @@ import type { ActionResult, ValidationKey } from "@/lib/validators/types";
 
 // ─────────────────────────── Shared parts ───────────────────────────
 
-/** The booking fields a payment needs: amounts, people, machine name, subsidy program. */
+/**
+ * The booking fields a payment needs: amounts, people, machine name, subsidy program, and any
+ * complaint still open (then nobody may pay, because the bill may still change).
+ */
 const BOOKING_FOR_PAYMENT = {
   machine: { select: { brand: true, model: true, providerId: true } },
   subsidyApplication: { select: { programId: true } },
+  disputes: { where: { status: "OPEN" }, select: { id: true } },
 } satisfies Prisma.BookingInclude;
+
+/** True if the farmer can pay this booking now (canPayBooking, with its open complaints). */
+function isWaitingForPayment(booking: { status: BookingStatus; disputes: { id: string }[] }): boolean {
+  return canPayBooking(booking.status, booking.disputes.length > 0);
+}
 
 type BookingForPayment = Prisma.BookingGetPayload<{ include: typeof BOOKING_FOR_PAYMENT }>;
 
@@ -87,12 +98,15 @@ export async function startOnlinePayment(
 ): Promise<StartPaymentResult> {
   const booking = await db.booking.findFirst({
     where: { id: bookingId, farmerId: farmer.id },
-    include: { machine: { select: { machineType: { select: { name: true } } } } },
+    include: {
+      machine: { select: { machineType: { select: { name: true } } } },
+      disputes: { where: { status: "OPEN" }, select: { id: true } },
+    },
   });
   if (!booking) {
     return { ok: false, error: "notFound" };
   }
-  if (!canPayBooking(booking.status)) {
+  if (!isWaitingForPayment(booking)) {
     return { ok: false, error: "notWaitingForPayment" };
   }
 
@@ -166,7 +180,7 @@ export async function confirmOnlinePayment(transactionId: string, validationId: 
     }
 
     const booking = await tx.booking.findUniqueOrThrow({ where: { id: payment.bookingId }, include: BOOKING_FOR_PAYMENT });
-    if (canPayBooking(booking.status)) {
+    if (isWaitingForPayment(booking)) {
       await markBookingPaid(tx, booking, payment.payerId, payment);
     } else {
       // The money came in, but the booking was already paid (for example cash was recorded while
@@ -224,7 +238,7 @@ export async function recordCashPayment(bookingId: string, receiverId: string): 
     if (!booking) {
       throw new BookingProblem("notFound");
     }
-    if (!canPayBooking(booking.status)) {
+    if (!isWaitingForPayment(booking)) {
       throw new BookingProblem("notWaitingForPayment");
     }
 
