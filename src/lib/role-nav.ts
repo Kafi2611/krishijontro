@@ -65,6 +65,7 @@ const ROLE_LINKS: Record<Role, NavItem[]> = {
   ],
   ADMIN: [
     { href: "/admin/approvals", labelKey: "approvals", icon: "approvals" },
+    { href: "/admin/bookings", labelKey: "allBookings", icon: "bookings" },
     { href: "/admin/breakdowns", labelKey: "breakdowns", icon: "breakdowns" },
     { href: "/admin/payments", labelKey: "payments", icon: "payments" },
     { href: "/admin/users", labelKey: "users", icon: "users" },

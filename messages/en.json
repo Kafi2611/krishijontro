@@ -228,7 +228,8 @@
     "waitlist": "Waitlist",
     "settings": "Settings",
     "users": "Users",
-    "audit": "Audit log"
+    "audit": "Audit log",
+    "allBookings": "All bookings"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -842,7 +843,8 @@
     "otpStartTitle": "Your start code",
     "otpStartText": "Give this code to the operator only when the machine is at your field and the work begins. Never tell it on the phone.",
     "otpFinishTitle": "Your finish code",
-    "otpFinishText": "Give this code to the operator only when the work is finished and you agree with the area or hours. Never tell it on the phone."
+    "otpFinishText": "Give this code to the operator only when the work is finished and you agree with the area or hours. Never tell it on the phone.",
+    "providerGetsAdmin": "Provider gets"
   },
   "Booking": {
     "title": "Book {machine}",
@@ -1457,5 +1459,23 @@
     "USER_ACTIVATED": "Account activated",
     "STAFF_CREATED": "Staff account made",
     "DISPUTE_DECIDED": "Complaint decided"
+  },
+  "AdminBookings": {
+    "title": "All bookings",
+    "subtitle": "Every booking on KrishiJontro, newest first. Open one to see its history, payments and bill.",
+    "filterLabel": "Show bookings that are",
+    "allStatuses": "All",
+    "searchPlaceholder": "Booking code, farmer's name or mobile",
+    "found": "{count, plural, =0 {No bookings} one {# booking} other {# bookings}}",
+    "empty": "No booking matches.",
+    "people": "{farmer} · {provider}",
+    "back": "All bookings",
+    "groupNote": "Part of a group booking of {name}.",
+    "paymentsTitle": "Payments",
+    "noPayments": "No payment yet.",
+    "refundLine": "Given back {amount, number} Tk: {reason}",
+    "upazila": "Upazila",
+    "farmerBill": "Farmer's bill",
+    "providerBill": "Provider's share"
   }
 }

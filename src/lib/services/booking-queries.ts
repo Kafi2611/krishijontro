@@ -4,6 +4,7 @@
  * Safety:
  * - Every function takes the user's id and only finds THAT user's bookings: the farmer's
  *   own bookings, the bookings of the provider's machines, the operator's own jobs.
+ *   Only the admin's functions read every booking, and only admin pages call them.
  * - The two OTP codes are secret: only the farmer's booking page reads them. Every other
  *   query leaves them out with Prisma's "omit" (SECRET_CODES), so they can never reach the
  *   provider's or the operator's screen.
@@ -249,6 +250,95 @@ export async function getOperatorJob(bookingId: string, operatorId: string) {
     // The finish and breakdown forms start from what was booked: decimal of land, or the hours / days.
     bookedAmount: getBookedAmount(job),
   };
+}
+
+// ─────────────────────────── The admin ───────────────────────────
+
+/** How many bookings one page of the admin's list shows. */
+export const ADMIN_BOOKINGS_PER_PAGE = 30;
+
+/** The admin's filters: one status (or all), words to find, the page number. */
+export type AdminBookingFilter = {
+  status: BookingStatus | null;
+  query: string; // part of a booking code, or the farmer's name or mobile number
+  page: number;
+};
+
+/**
+ * One page of every booking, newest first, for the admin (the OTP codes are left out).
+ * Returns the bookings, how many match in total, and how many pages that makes.
+ */
+export async function listBookingsForAdmin(filter: AdminBookingFilter) {
+  const where: Prisma.BookingWhereInput = {};
+  if (filter.status) {
+    where.status = filter.status;
+  }
+  if (filter.query !== "") {
+    where.OR = [
+      { code: { contains: filter.query, mode: "insensitive" } },
+      { farmer: { name: { contains: filter.query, mode: "insensitive" } } },
+      { farmer: { phone: { contains: filter.query } } },
+    ];
+  }
+
+  const [bookings, total] = await Promise.all([
+    db.booking.findMany({
+      where,
+      include: {
+        machine: { select: { ...MACHINE_FOR_CARD.select, provider: { select: { name: true } } } },
+        farmer: { select: { name: true } },
+      },
+      omit: SECRET_CODES,
+      orderBy: { createdAt: "desc" },
+      skip: (filter.page - 1) * ADMIN_BOOKINGS_PER_PAGE,
+      take: ADMIN_BOOKINGS_PER_PAGE,
+    }),
+    db.booking.count({ where }),
+  ]);
+  return { bookings, total, pageCount: Math.max(1, Math.ceil(total / ADMIN_BOOKINGS_PER_PAGE)) };
+}
+
+/** How many bookings have each status, e.g. { REQUESTED: 3, PAID: 7, ... }. For the filter buttons. */
+export async function countBookingsByStatus(): Promise<Partial<Record<BookingStatus, number>>> {
+  const groups = await db.booking.groupBy({ by: ["status"], _count: { _all: true } });
+  const counts: Partial<Record<BookingStatus, number>> = {};
+  for (const group of groups) {
+    counts[group.status] = group._count._all;
+  }
+  return counts;
+}
+
+/**
+ * Any booking with everything the admin's booking page shows: the people (with phones), the
+ * machine, the field's upazila and district, the history and the linked bookings.
+ * The OTP codes are left out: only the farmer ever sees them. Null if there is no such booking.
+ */
+export async function getAdminBooking(bookingId: string) {
+  const booking = await db.booking.findUnique({
+    where: { id: bookingId },
+    omit: SECRET_CODES,
+    include: {
+      machine: {
+        select: {
+          brand: true,
+          model: true,
+          machineType: { select: { name: true, nameBn: true, icon: true } },
+          provider: { select: { name: true, phone: true, providerProfile: { select: { businessName: true } } } },
+        },
+      },
+      farmer: { select: { name: true, phone: true } },
+      operator: { select: { name: true, phone: true } },
+      location: { select: { name: true, nameBn: true, parent: { select: { name: true, nameBn: true } } } },
+      subsidyApplication: { select: { program: { select: { discountPercent: true } } } },
+      groupBooking: { select: { cooperative: { select: { name: true } } } },
+      statusLogs: STATUS_LOGS,
+      ...RELATED_BOOKINGS,
+    },
+  });
+  if (!booking) {
+    return null;
+  }
+  return { booking, timeline: timelineOf(booking) };
 }
 
 // ─────────────────────────── The booking form ───────────────────────────

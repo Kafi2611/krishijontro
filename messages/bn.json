@@ -228,7 +228,8 @@
     "waitlist": "অপেক্ষার তালিকা",
     "settings": "সেটিংস",
     "users": "ব্যবহারকারী",
-    "audit": "অডিট লগ"
+    "audit": "অডিট লগ",
+    "allBookings": "সব বুকিং"
   },
   "Dashboard": {
     "welcome": "স্বাগতম, {name}",
@@ -842,7 +843,8 @@
     "otpStartTitle": "আপনার শুরুর কোড",
     "otpStartText": "যন্ত্র আপনার জমিতে এসে কাজ শুরু হলে তবেই চালককে এই কোড দিন। ফোনে কাউকে বলবেন না।",
     "otpFinishTitle": "আপনার শেষের কোড",
-    "otpFinishText": "কাজ শেষ হলে এবং জমি বা ঘণ্টার হিসাব ঠিক থাকলে তবেই চালককে এই কোড দিন। ফোনে কাউকে বলবেন না।"
+    "otpFinishText": "কাজ শেষ হলে এবং জমি বা ঘণ্টার হিসাব ঠিক থাকলে তবেই চালককে এই কোড দিন। ফোনে কাউকে বলবেন না।",
+    "providerGetsAdmin": "যন্ত্র মালিক পাবেন"
   },
   "Booking": {
     "title": "{machine} বুক করুন",
@@ -1457,5 +1459,23 @@
     "USER_ACTIVATED": "অ্যাকাউন্ট চালু",
     "STAFF_CREATED": "কর্মী অ্যাকাউন্ট খোলা",
     "DISPUTE_DECIDED": "অভিযোগের সিদ্ধান্ত"
+  },
+  "AdminBookings": {
+    "title": "সব বুকিং",
+    "subtitle": "কৃষিযন্ত্রের সব বুকিং, নতুনগুলো আগে। ইতিহাস, পেমেন্ট ও বিল দেখতে একটি খুলুন।",
+    "filterLabel": "যে অবস্থার বুকিং দেখাবে",
+    "allStatuses": "সব",
+    "searchPlaceholder": "বুকিং কোড, কৃষকের নাম বা মোবাইল",
+    "found": "{count, plural, =0 {কোনো বুকিং নেই} other {#টি বুকিং}}",
+    "empty": "কোনো বুকিং মেলেনি।",
+    "people": "{farmer} · {provider}",
+    "back": "সব বুকিং",
+    "groupNote": "{name}-এর দলগত বুকিংয়ের অংশ।",
+    "paymentsTitle": "পেমেন্ট",
+    "noPayments": "এখনো কোনো পেমেন্ট হয়নি।",
+    "refundLine": "ফেরত দেওয়া হয়েছে {amount, number} টাকা: {reason}",
+    "upazila": "উপজেলা",
+    "farmerBill": "কৃষকের বিল",
+    "providerBill": "যন্ত্র মালিকের অংশ"
   }
 }
