@@ -23,7 +23,8 @@ It is built for the course **CSE 3200 – Software Development Project II**.
 
 Next.js (App Router) + TypeScript, Tailwind CSS + shadcn/ui, PostgreSQL (Neon) + Prisma,
 Auth.js, next-intl (English / বাংলা), Zod + React Hook Form, Leaflet + OpenStreetMap
-(maps, no API key), SSLCommerz sandbox (online payment), @react-pdf/renderer (receipts), Vitest.
+(maps and the demand heatmap, no API key), Recharts (dashboard charts), SSLCommerz sandbox (online
+payment), @react-pdf/renderer (receipts), Vitest.
 
 ## Run it on your computer
 
