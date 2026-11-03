@@ -3,6 +3,7 @@
 //   Farmer:   work + delivery − subsidy = You pay
 //   Provider: work + delivery − platform fee = You get   (and what the farmer pays)
 //   Admin:    the provider's side, worded "Provider gets"
+// In a group booking the delivery line says it is this plot's share of the one trip.
 // Before the work ends it is an estimate; at the finish the operator enters the real amount of
 // work and the amounts are worked out again (finishWork in lib/services/booking.ts).
 import { useTranslations } from "next-intl";
@@ -27,9 +28,10 @@ type BookingBillProps = {
   booking: BillBooking;
   view: "farmer" | "provider" | "admin";
   subsidyPercent: number; // only for the subsidy line's label, e.g. 20
+  sharedBy?: number; // a group booking: how many plots share the one delivery charge
 };
 
-export function BookingBill({ booking, view, subsidyPercent }: BookingBillProps) {
+export function BookingBill({ booking, view, subsidyPercent, sharedBy = 1 }: BookingBillProps) {
   const t = useTranslations("BookingView");
   const tPrice = useTranslations("Price");
   const tMoney = useTranslations("Money");
@@ -44,7 +46,11 @@ export function BookingBill({ booking, view, subsidyPercent }: BookingBillProps)
         <PriceLine label={tPrice("work")} detail={t("rateDetail", { rate })} amount={tPrice("amount", { amount: booking.workCharge })} />
         <PriceLine
           label={tPrice("delivery")}
-          detail={t("deliveryDetail", { km: booking.distanceKm })}
+          detail={
+            sharedBy > 1
+              ? t("deliveryShareDetail", { km: booking.distanceKm, count: sharedBy })
+              : t("deliveryDetail", { km: booking.distanceKm })
+          }
           amount={tPrice("amount", { amount: booking.deliveryCharge })}
         />
         {view === "farmer" && booking.subsidyAmount > 0 && (

@@ -155,7 +155,7 @@ export default async function AdminBookingPage({ params }: AdminBookingPageProps
             <CardTitle>{t("farmerBill")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <BookingBill booking={booking} view="farmer" subsidyPercent={subsidyPercent} />
+            <BookingBill booking={booking} view="farmer" subsidyPercent={subsidyPercent} sharedBy={booking.groupBooking?._count.bookings} />
           </CardContent>
         </Card>
         <Card>
@@ -163,7 +163,7 @@ export default async function AdminBookingPage({ params }: AdminBookingPageProps
             <CardTitle>{t("providerBill")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <BookingBill booking={booking} view="admin" subsidyPercent={subsidyPercent} />
+            <BookingBill booking={booking} view="admin" subsidyPercent={subsidyPercent} sharedBy={booking.groupBooking?._count.bookings} />
           </CardContent>
         </Card>
       </div>

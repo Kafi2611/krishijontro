@@ -7,6 +7,7 @@ import {
   Banknote,
   Bell,
   CalendarCheck,
+  CalendarRange,
   FileCheck,
   Hourglass,
   Headset,
@@ -59,6 +60,7 @@ const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   support: LifeBuoy,
   tickets: Headset,
   members: UsersRound,
+  groupBookings: CalendarRange,
 };
 
 export function NavIcon({ name, className }: { name: NavIconName; className?: string }) {

@@ -69,6 +69,7 @@ export default async function CooperativeDashboardPage() {
           label={t("statGroupBookings")}
           value={cooperative._count.groupBookings}
           icon={<CalendarRange className="size-5" aria-hidden />}
+          href="/cooperative/group-bookings"
         />
       </div>
     </RoleDashboard>

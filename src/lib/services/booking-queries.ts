@@ -41,12 +41,14 @@ const MACHINE_FOR_CARD = {
 } satisfies Prisma.MachineDefaultArgs;
 
 /**
- * The bookings linked by a breakdown: the broken booking this one replaces (parentBooking),
- * and the replacement booking(s) that finish this one's work. Only their id and code.
+ * The bookings linked to this one: the broken booking it replaces (parentBooking), the
+ * replacement booking(s) that finish its work (only their id and code), and its group booking.
  */
 const RELATED_BOOKINGS = {
   parentBooking: { select: { id: true, code: true } },
   replacementBookings: { select: { id: true, code: true }, orderBy: { createdAt: "asc" } },
+  // A group booking: the cooperative, and how many plots share the one delivery charge.
+  groupBooking: { select: { cooperative: { select: { name: true } }, _count: { select: { bookings: true } } } },
 } satisfies Prisma.BookingInclude;
 
 /** A booking's history rows, oldest first, with the name of the person who made each change. */
@@ -330,7 +332,6 @@ export async function getAdminBooking(bookingId: string) {
       operator: { select: { name: true, phone: true } },
       location: { select: { name: true, nameBn: true, parent: { select: { name: true, nameBn: true } } } },
       subsidyApplication: { select: { program: { select: { discountPercent: true } } } },
-      groupBooking: { select: { cooperative: { select: { name: true } } } },
       statusLogs: STATUS_LOGS,
       ...RELATED_BOOKINGS,
     },

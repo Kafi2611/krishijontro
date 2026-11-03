@@ -173,7 +173,13 @@
     "ticketClosed": "This ticket is closed, so nobody can write in it. Open a new one if you need help.",
     "createCooperativeFirst": "Make your cooperative first (Cooperative details).",
     "farmerNotFound": "No farmer account has this mobile number. Ask the farmer to register first.",
-    "alreadyMember": "This farmer is already a member."
+    "alreadyMember": "This farmer is already a member.",
+    "chooseMachineType": "Choose the machine",
+    "chooseTwoMembers": "Choose at least 2 members",
+    "tooManyPlots": "At most 12 plots in one group booking",
+    "memberTwice": "Each member can have only one plot in a group booking",
+    "notAMember": "Every farmer must be an active member of your cooperative.",
+    "chooseMachine": "Choose a machine from the list"
   },
   "ProviderTypes": {
     "INDIVIDUAL": "Individual",
@@ -249,7 +255,8 @@
     "disputes": "Complaints",
     "support": "Help",
     "tickets": "Support tickets",
-    "members": "Members"
+    "members": "Members",
+    "groupBookings": "Group bookings"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -867,7 +874,9 @@
     "otpFinishTitle": "Your finish code",
     "otpFinishText": "Give this code to the operator only when the work is finished and you agree with the area or hours. Never tell it on the phone.",
     "providerGetsAdmin": "Provider gets",
-    "helpLink": "Ask for help about this booking"
+    "helpLink": "Ask for help about this booking",
+    "groupNote": "Group booking of {name}: the machine does {count, number} plots one after another and the delivery is shared.",
+    "deliveryShareDetail": "Your share of one trip ({km, number} km), shared by {count, number} plots"
   },
   "Booking": {
     "title": "Book {machine}",
@@ -1651,5 +1660,46 @@
     "removeText": "They leave the cooperative. Their bookings stay as they are.",
     "removeYes": "Yes, remove",
     "memberRemoved": "Member removed"
+  },
+  "GroupBooking": {
+    "historyTitle": "Group bookings",
+    "historySubtitle": "One machine for many members' plots, one after another. The delivery is paid once and shared equally.",
+    "historyEmpty": "No group booking yet.",
+    "newTitle": "New group booking",
+    "newSubtitle": "Book one machine for the plots of {name}'s members.",
+    "back": "Group bookings",
+    "needCooperative": "Make your cooperative first.",
+    "makeCooperative": "Make your cooperative",
+    "needMembers": "A group booking needs at least 2 members. Add the farmers of your village first.",
+    "addMembers": "Add members",
+    "stepJob": "The job",
+    "stepPlots": "The plots",
+    "stepMachine": "The machine",
+    "stepOf": "Step {step, number} of {total, number}",
+    "startTime": "The first plot starts at",
+    "startTimeHint": "The machine then goes from plot to plot without a break.",
+    "village": "The village",
+    "villageHint": "Put the pin in the middle of the plots. The delivery is worked out from the machine to this pin.",
+    "plotsHint": "Tick the members whose plots the machine visits (2 to {max, number}). The machine goes in this order.",
+    "amountLabel": "{unit, select, PER_ACRE {Land (decimal)} PER_HOUR {Hours of work} other {Days of work}}",
+    "plotNote": "How to find the plot (optional)",
+    "plotNotePlaceholder": "e.g. North of the pond",
+    "searching": "Looking for machines that are free for the whole time...",
+    "noMachines": "No machine is free for the whole time.",
+    "noMachinesHint": "{busy, plural, =0 {Try another day, a later start or a longer distance.} one {# machine is busy then. Try another day, a later start or a longer distance.} other {# machines are busy then. Try another day, a later start or a longer distance.}}",
+    "chooseMachine": "Choose a machine",
+    "machineFacts": "{provider} · {km, number} km · one trip {delivery, number} Tk for {count, number} plots",
+    "summaryTitle": "What each member pays",
+    "deliveryShare": "delivery share {amount, number} Tk",
+    "payNote": "Every member gets their own booking: their own codes and their own bill, paid after the work. The provider accepts each plot.",
+    "previous": "Back",
+    "next": "Next",
+    "bookButton": "Book for {count, plural, one {# member} other {# members}}",
+    "booked": "Group booking sent. Every member got a message.",
+    "progress": "{plots, plural, one {# plot} other {# plots}}: {waiting, number} waiting, {going, number} accepted, {done, number} done, {stopped, number} stopped",
+    "groupTitle": "Group booking",
+    "deliveryNote": "One trip to the village: {total, number} Tk, shared equally by {count, plural, one {# plot} other {# plots}}.",
+    "plotsTitle": "The plots, in order",
+    "membersFollowNote": "Each member follows their own booking on their phone: the start and finish codes, and the payment."
   }
 }

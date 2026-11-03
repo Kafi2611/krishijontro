@@ -79,6 +79,11 @@ export default async function FarmerBookingPage({ params }: FarmerBookingPagePro
         replacements={booking.replacementBookings}
         hrefBase="/farmer/bookings/"
       />
+      {booking.groupBooking && (
+        <p className="rounded-lg bg-accent p-3 text-sm">
+          {t("groupNote", { name: booking.groupBooking.cooperative.name, count: booking.groupBooking._count.bookings })}
+        </p>
+      )}
 
       {otp && <OtpCard kind={otp.kind} code={otp.code} />}
 
@@ -177,6 +182,7 @@ export default async function FarmerBookingPage({ params }: FarmerBookingPagePro
                 booking={booking}
                 view="farmer"
                 subsidyPercent={booking.subsidyApplication?.program.discountPercent ?? 0}
+                sharedBy={booking.groupBooking?._count.bookings}
               />
             </CardContent>
           </Card>

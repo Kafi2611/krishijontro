@@ -71,6 +71,11 @@ export default async function ProviderBookingPage({ params }: ProviderBookingPag
     <div className="space-y-6">
       <BookingHeader backHref="/provider/bookings" backLabel={t("back")} booking={booking} />
       <RelatedBookings parent={booking.parentBooking} replacements={booking.replacementBookings} />
+      {booking.groupBooking && (
+        <p className="rounded-lg bg-accent p-3 text-sm">
+          {t("groupNote", { name: booking.groupBooking.cooperative.name, count: booking.groupBooking._count.bookings })}
+        </p>
+      )}
 
       {breakdown && <BreakdownCard report={breakdown} billingUnit={booking.billingUnit} view="provider" radiusKm={radiusKm} />}
 
@@ -163,7 +168,7 @@ export default async function ProviderBookingPage({ params }: ProviderBookingPag
             </CardHeader>
             <CardContent>
               {/* The provider's view: no subsidy line, so the percent is not needed */}
-              <BookingBill booking={booking} view="provider" subsidyPercent={0} />
+              <BookingBill booking={booking} view="provider" subsidyPercent={0} sharedBy={booking.groupBooking?._count.bookings} />
             </CardContent>
           </Card>
         </div>
