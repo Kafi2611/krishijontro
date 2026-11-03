@@ -11,6 +11,7 @@ import {
   Hourglass,
   LayoutDashboard,
   Scale,
+  ScrollText,
   Search,
   Settings,
   Shapes,
@@ -49,6 +50,7 @@ const NAV_ICONS: Record<NavIconName, LucideIcon> = {
   waitlist: Hourglass,
   settings: Settings,
   users: UserCog,
+  audit: ScrollText,
 };
 
 export function NavIcon({ name, className }: { name: NavIconName; className?: string }) {

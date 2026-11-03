@@ -227,7 +227,8 @@
     "repairRequests": "Repair requests",
     "waitlist": "Waitlist",
     "settings": "Settings",
-    "users": "Users"
+    "users": "Users",
+    "audit": "Audit log"
   },
   "Dashboard": {
     "welcome": "Welcome, {name}",
@@ -1421,5 +1422,40 @@
     "optional": "optional",
     "addButton": "Make the account",
     "added": "Account made. Tell the person their mobile number and password."
+  },
+  "AdminAudit": {
+    "title": "Audit log",
+    "subtitle": "Every important admin, officer and government action: who did what, and when. Rows can never be changed.",
+    "filterLabel": "Show actions",
+    "allActions": "All",
+    "empty": "Nothing in the log yet.",
+    "by": "By {name}",
+    "bySystem": "By the system"
+  },
+  "AuditActions": {
+    "PROVIDER_APPROVED": "Provider approved",
+    "PROVIDER_REJECTED": "Provider rejected",
+    "MACHINE_APPROVED": "Machine approved",
+    "MACHINE_REJECTED": "Machine rejected",
+    "OPERATOR_APPROVED": "Operator approved",
+    "OPERATOR_REJECTED": "Operator rejected",
+    "MACHINE_TYPE_CREATED": "Machine type added",
+    "MACHINE_TYPE_UPDATED": "Machine type changed",
+    "PRICING_RULE_CREATED": "Price limit set",
+    "PRICING_RULE_UPDATED": "Price limit changed",
+    "SUBSIDY_PROGRAM_CREATED": "Subsidy program created",
+    "SUBSIDY_PROGRAM_UPDATED": "Subsidy program changed",
+    "FARMER_VERIFIED": "Farmer verified",
+    "FARMER_VERIFICATION_REJECTED": "Farmer check failed",
+    "SUBSIDY_APPROVED": "Subsidy approved",
+    "SUBSIDY_REJECTED": "Subsidy rejected",
+    "REFUND_PROCESSED": "Money given back",
+    "PAYOUT_SENT": "Payout sent",
+    "NO_REPLACEMENT": "No replacement found",
+    "SETTINGS_CHANGED": "Settings changed",
+    "USER_SUSPENDED": "Account suspended",
+    "USER_ACTIVATED": "Account activated",
+    "STAFF_CREATED": "Staff account made",
+    "DISPUTE_DECIDED": "Complaint decided"
   }
 }

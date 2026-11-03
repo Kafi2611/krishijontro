@@ -227,7 +227,8 @@
     "repairRequests": "মেরামতের অনুরোধ",
     "waitlist": "অপেক্ষার তালিকা",
     "settings": "সেটিংস",
-    "users": "ব্যবহারকারী"
+    "users": "ব্যবহারকারী",
+    "audit": "অডিট লগ"
   },
   "Dashboard": {
     "welcome": "স্বাগতম, {name}",
@@ -1421,5 +1422,40 @@
     "optional": "ঐচ্ছিক",
     "addButton": "অ্যাকাউন্ট খুলুন",
     "added": "অ্যাকাউন্ট খোলা হয়েছে। মানুষটিকে তাঁর মোবাইল নম্বর ও পাসওয়ার্ড জানিয়ে দিন।"
+  },
+  "AdminAudit": {
+    "title": "অডিট লগ",
+    "subtitle": "অ্যাডমিন, কর্মকর্তা ও সরকারি কর্তৃপক্ষের প্রতিটি গুরুত্বপূর্ণ কাজ: কে কী করেছেন এবং কখন। কোনো লাইন কখনো বদলানো যায় না।",
+    "filterLabel": "যে কাজগুলো দেখাবে",
+    "allActions": "সব",
+    "empty": "লগে এখনো কিছু নেই।",
+    "by": "করেছেন {name}",
+    "bySystem": "সিস্টেম করেছে"
+  },
+  "AuditActions": {
+    "PROVIDER_APPROVED": "যন্ত্র মালিক অনুমোদিত",
+    "PROVIDER_REJECTED": "যন্ত্র মালিক বাতিল",
+    "MACHINE_APPROVED": "যন্ত্র অনুমোদিত",
+    "MACHINE_REJECTED": "যন্ত্র বাতিল",
+    "OPERATOR_APPROVED": "চালক অনুমোদিত",
+    "OPERATOR_REJECTED": "চালক বাতিল",
+    "MACHINE_TYPE_CREATED": "যন্ত্রের ধরন যোগ",
+    "MACHINE_TYPE_UPDATED": "যন্ত্রের ধরন বদল",
+    "PRICING_RULE_CREATED": "দামের সীমা নির্ধারণ",
+    "PRICING_RULE_UPDATED": "দামের সীমা বদল",
+    "SUBSIDY_PROGRAM_CREATED": "ভর্তুকি কর্মসূচি তৈরি",
+    "SUBSIDY_PROGRAM_UPDATED": "ভর্তুকি কর্মসূচি বদল",
+    "FARMER_VERIFIED": "কৃষক যাচাই হয়েছে",
+    "FARMER_VERIFICATION_REJECTED": "কৃষক যাচাই হয়নি",
+    "SUBSIDY_APPROVED": "ভর্তুকি অনুমোদিত",
+    "SUBSIDY_REJECTED": "ভর্তুকি বাতিল",
+    "REFUND_PROCESSED": "টাকা ফেরত",
+    "PAYOUT_SENT": "যন্ত্র মালিককে টাকা পাঠানো",
+    "NO_REPLACEMENT": "বিকল্প যন্ত্র পাওয়া যায়নি",
+    "SETTINGS_CHANGED": "সেটিংস বদল",
+    "USER_SUSPENDED": "অ্যাকাউন্ট স্থগিত",
+    "USER_ACTIVATED": "অ্যাকাউন্ট চালু",
+    "STAFF_CREATED": "কর্মী অ্যাকাউন্ট খোলা",
+    "DISPUTE_DECIDED": "অভিযোগের সিদ্ধান্ত"
   }
 }
