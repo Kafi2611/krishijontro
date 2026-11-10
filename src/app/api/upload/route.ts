@@ -3,7 +3,7 @@
 // preview before saving the form. The form then sends only the photo's address.
 // Answers with { url: "<the photo's address>" } or { error: "<message key>" }.
 // Where the photo is kept (public/uploads or Vercel Blob) is decided in lib/services/upload.ts.
-import { auth } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import type { Role } from "@/generated/prisma/enums";
 import { saveUploadedImage } from "@/lib/services/upload";
 import { MAX_IMAGE_BYTES } from "@/lib/validators/upload";
@@ -16,9 +16,9 @@ const MAX_REQUEST_BYTES = MAX_IMAGE_BYTES + 100 * 1024;
 
 export async function POST(request: Request) {
   // 1. Who is asking? Only logged-in providers and operators may upload.
-  const session = await auth();
-  const role = session?.user?.role;
-  if (!role || !UPLOAD_ROLES.includes(role)) {
+  // getCurrentUser() also gives null for a suspended account (not only for "not logged in").
+  const user = await getCurrentUser();
+  if (!user || !UPLOAD_ROLES.includes(user.role)) {
     return Response.json({ error: "notAllowed" }, { status: 403 });
   }
 
