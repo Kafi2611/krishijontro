@@ -138,7 +138,7 @@
     "paymentCheckFailed": "We could not reach the payment gateway to check the payment. Please wait a minute and reload.",
     "paymentNotRefundable": "Only a successful payment can be refunded.",
     "refundTooMuch": "This is more than what is left to refund.",
-    "refundFailed": "The payment gateway did not accept the refund. Please try again later.",
+    "refundFailed": "The payment gateway did not send the money back, so nothing was refunded. This try is saved as Failed. Please try again later.",
     "referenceRequired": "Enter the bKash or bank transfer number (at least 4 letters)",
     "nothingToPay": "There is nothing to send to this provider right now.",
     "alreadyVerified": "Your details are already verified. Ask your agriculture officer to change them.",

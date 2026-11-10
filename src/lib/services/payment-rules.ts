@@ -9,7 +9,7 @@
  *   3. getRefundableAmount(): how much of a payment can still be given back
  *   4. getBookingMoney(): for one paid booking, what KrishiJontro still owes the provider
  */
-import type { BookingStatus, PaymentMethod, PaymentStatus } from "@/generated/prisma/enums";
+import type { BookingStatus, PaymentMethod, PaymentStatus, RefundStatus } from "@/generated/prisma/enums";
 import { getProviderShare } from "@/lib/services/booking-rules";
 
 // ─────────────────────────── 1. Transaction id ───────────────────────────
@@ -60,10 +60,13 @@ export function sumAmounts(items: { amount: number }[]): number {
 
 /**
  * How much of a payment can still be given back: what was paid − what was already refunded.
+ * A FAILED refund gave nothing back (the gateway did not send the money), so it is not counted.
+ * A PENDING one is counted, so the same money can never be given back twice.
  * Never below 0. Example: paid 1517, refunded 200 before -> 1317 can still be refunded.
  */
-export function getRefundableAmount(paidAmount: number, refunds: { amount: number }[]): number {
-  return Math.max(0, paidAmount - sumAmounts(refunds));
+export function getRefundableAmount(paidAmount: number, refunds: { amount: number; status: RefundStatus }[]): number {
+  const countedRefunds = refunds.filter((refund) => refund.status !== "FAILED");
+  return Math.max(0, paidAmount - sumAmounts(countedRefunds));
 }
 
 // ─────────────────────────── 4. What we owe the provider ───────────────────────────

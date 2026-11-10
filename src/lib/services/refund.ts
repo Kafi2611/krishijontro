@@ -9,13 +9,15 @@
  *   2. Online payment: ask the same gateway to send the money back.
  *      Cash payment: there is no gateway; the admin gives the money back by hand (bKash or cash).
  *   3. It worked -> the refund becomes PROCESSED, with an audit log row and a message to the farmer.
- *      The gateway said no -> the PENDING refund is removed again, so nothing has changed.
+ *      The gateway said no, or could not be reached at all (for example its keys are missing
+ *      from .env) -> the refund becomes FAILED. No money moved, a FAILED refund is never counted
+ *      as "given back", and the admin can simply try again later.
  * Refunds come out of the provider's share (see getBookingMoney in payment-rules.ts).
  */
 import { db } from "@/lib/db";
 import { writeAuditLog } from "@/lib/services/audit";
 import { createNotification } from "@/lib/services/notification";
-import { getGateway } from "@/lib/services/payment-gateway";
+import { getGateway, type OnlineMethod } from "@/lib/services/payment-gateway";
 import { refundMessage } from "@/lib/services/payment-messages";
 import { getRefundableAmount } from "@/lib/services/payment-rules";
 import type { RefundInput } from "@/lib/validators/payment";
@@ -42,7 +44,7 @@ async function savePendingRefund(paymentId: string, input: RefundInput) {
     if (payment.status !== "SUCCESS") {
       return { ok: false, error: "paymentNotRefundable" } as const;
     }
-    // PENDING refunds count too, so the same money cannot be given back twice.
+    // PENDING refunds count too, so the same money cannot be given back twice (FAILED ones do not).
     if (input.amount > getRefundableAmount(payment.amount, payment.refunds)) {
       return { ok: false, error: "refundTooMuch" } as const;
     }
@@ -52,6 +54,32 @@ async function savePendingRefund(paymentId: string, input: RefundInput) {
     });
     return { ok: true, refund, payment } as const;
   });
+}
+
+/**
+ * Step 2 for an online payment: asks the payment's own gateway to send the money back.
+ * Returns true if the gateway accepted the refund. Returns false if it said no, AND ALSO if
+ * asking it threw an error (no internet, or SSLCommerz is not set up in .env). Without the
+ * try/catch such an error would stop the code right here, and the refund saved in step 1 would
+ * stay PENDING forever.
+ */
+async function sendRefundToGateway(
+  method: OnlineMethod,
+  refund: { id: string; amount: number; reason: string },
+  gatewayRef: string | null,
+): Promise<boolean> {
+  try {
+    const result = await getGateway(method).refund({
+      refundId: refund.id,
+      gatewayRef,
+      amount: refund.amount,
+      reason: refund.reason,
+    });
+    return result.ok;
+  } catch (error) {
+    console.error("The payment gateway could not be asked for a refund", error);
+    return false;
+  }
 }
 
 /**
@@ -68,14 +96,10 @@ export async function refundPayment(paymentId: string, adminId: string, input: R
 
   // 2. Online: the gateway sends the money back. Cash: the admin hands it back.
   if (payment.method !== "CASH") {
-    const result = await getGateway(payment.method).refund({
-      refundId: refund.id,
-      gatewayRef: payment.gatewayRef,
-      amount: refund.amount,
-      reason: refund.reason,
-    });
-    if (!result.ok) {
-      await db.refund.delete({ where: { id: refund.id } });
+    const wasSent = await sendRefundToGateway(payment.method, refund, payment.gatewayRef);
+    if (!wasSent) {
+      // No money moved. Mark the try FAILED (it is kept, so the admin sees what happened).
+      await db.refund.update({ where: { id: refund.id }, data: { status: "FAILED" } });
       return { ok: false, error: "refundFailed" };
     }
   }

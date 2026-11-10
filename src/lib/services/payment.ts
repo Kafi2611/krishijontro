@@ -24,7 +24,7 @@ import { getProviderShare } from "@/lib/services/booking-rules";
 import { createNotification, notifyAllAdmins } from "@/lib/services/notification";
 import { getGateway, getOnlineGateway } from "@/lib/services/payment-gateway";
 import { bookingPaidMessage, paidTwiceMessage, paymentReceivedMessage } from "@/lib/services/payment-messages";
-import { canPayBooking, getRefundableAmount, makeTransactionId } from "@/lib/services/payment-rules";
+import { canPayBooking, getRefundableAmount, makeTransactionId, sumAmounts } from "@/lib/services/payment-rules";
 import { spendSubsidy } from "@/lib/services/subsidy";
 import type { ActionResult, ValidationKey } from "@/lib/validators/types";
 
@@ -369,6 +369,7 @@ export async function getReceiptData(bookingId: string, farmerId: string): Promi
     distanceKm: booking.distanceKm,
     subsidyAmount: booking.subsidyAmount,
     totalAmount: payment.amount,
-    refunded: payment.amount - getRefundableAmount(payment.amount, payment.refunds),
+    // Only refunds that really went back to the farmer (PROCESSED) are printed on the receipt.
+    refunded: sumAmounts(payment.refunds.filter((refund) => refund.status === "PROCESSED")),
   };
 }

@@ -130,6 +130,7 @@ enum PaymentStatus {
 enum RefundStatus {
   PENDING
   PROCESSED
+  FAILED // the payment gateway did not send the money back; nothing was refunded
 }
 
 enum PayoutStatus {

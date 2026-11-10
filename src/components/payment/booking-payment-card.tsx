@@ -39,6 +39,8 @@ export function BookingPaymentCard({ booking, hasOpenDispute, payments, onlineMe
   const paid = payments.findLast((payment) => payment.status === "SUCCESS");
 
   if (paid) {
+    // A FAILED refund gave no money back, so the farmer is not shown it (the admin tries again).
+    const refunds = paid.refunds.filter((refund) => refund.status !== "FAILED");
     return (
       <Card className="border-green-300 bg-green-50">
         <CardHeader>
@@ -62,11 +64,11 @@ export function BookingPaymentCard({ booking, hasOpenDispute, payments, onlineMe
               {t("receipt")}
             </a>
           </Button>
-          {paid.refunds.length > 0 && (
+          {refunds.length > 0 && (
             <div className="space-y-2 border-t border-green-200 pt-3">
               <p className="font-semibold">{t("refundsTitle")}</p>
               <ul className="space-y-1 text-sm">
-                {paid.refunds.map((refund) => (
+                {refunds.map((refund) => (
                   <li key={refund.id} className="flex flex-wrap items-center justify-between gap-2">
                     <span>{t("refundLine", { amount: refund.amount, reason: refund.reason })}</span>
                     <StatusBadge status={refund.status} />

@@ -46,12 +46,31 @@ describe("refund amounts", () => {
 
   it("can give back what was paid minus what was already refunded", () => {
     expect(getRefundableAmount(1517, [])).toBe(1517);
-    expect(getRefundableAmount(1517, [{ amount: 200 }])).toBe(1317);
-    expect(getRefundableAmount(1517, [{ amount: 1000 }, { amount: 517 }])).toBe(0);
+    expect(getRefundableAmount(1517, [{ amount: 200, status: "PROCESSED" }])).toBe(1317);
+    expect(
+      getRefundableAmount(1517, [
+        { amount: 1000, status: "PROCESSED" },
+        { amount: 517, status: "PROCESSED" },
+      ]),
+    ).toBe(0);
+  });
+
+  it("counts a refund that is still pending, so the same money is not given back twice", () => {
+    expect(getRefundableAmount(1517, [{ amount: 300, status: "PENDING" }])).toBe(1217);
+  });
+
+  it("does not count a failed refund: that money never went back", () => {
+    expect(getRefundableAmount(1517, [{ amount: 300, status: "FAILED" }])).toBe(1517);
+    expect(
+      getRefundableAmount(1517, [
+        { amount: 300, status: "FAILED" },
+        { amount: 200, status: "PROCESSED" },
+      ]),
+    ).toBe(1317);
   });
 
   it("never goes below 0", () => {
-    expect(getRefundableAmount(100, [{ amount: 150 }])).toBe(0);
+    expect(getRefundableAmount(100, [{ amount: 150, status: "PROCESSED" }])).toBe(0);
   });
 });
 
