@@ -53,9 +53,19 @@ test("a big phone photo is made smaller and uploaded", async ({ page }) => {
   expect(saved.length).toBeLessThan(FOUR_MB);
   expect([saved[0], saved[1], saved[2]]).toEqual([0xff, 0xd8, 0xff]); // the first bytes of every JPEG
 
+  // The site really shows the new photo (also on a production build, see src/app/uploads/[file]/route.ts).
+  const shown = await page.request.get(url);
+  expect(shown.status()).toBe(200);
+  expect(shown.headers()["content-type"]).toBe("image/jpeg");
+
   // The upload worked: the preview is shown and no error message appears.
   await expect(page.getByRole("img", { name: "Photo 1" })).toBeVisible();
   await expect(page.getByText("too big")).toBeHidden();
+});
+
+test("the photo address only gives uploaded photos", async ({ request }) => {
+  expect((await request.get("/uploads/..%2F.env")).status()).toBe(404);
+  expect((await request.get("/uploads/0123456789abcdef0123456789abcdef.jpg")).status()).toBe(404); // no such photo
 });
 
 test("a file that is too big and is not a photo gets a clear message", async ({ page }) => {
