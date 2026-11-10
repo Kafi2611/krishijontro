@@ -11,11 +11,18 @@ import { db } from "@/lib/db";
 import { redirect } from "@/lib/navigation";
 import { verifyPassword } from "@/lib/password";
 import { getHomePathForRole } from "@/lib/roles";
+import { clearFailedLogins, isLoginAllowed, recordFailedLogin } from "@/lib/services/login-guard";
+import { readClientIp } from "@/lib/services/login-rules";
 import { loginSchema } from "@/lib/validators/auth";
 
 /** Thrown when the password is right but an admin has suspended the account. */
 class AccountSuspendedError extends CredentialsSignin {
   code = "suspended";
+}
+
+/** Thrown when this mobile number (or this connection) is locked by too many wrong logins. */
+class TooManyTriesError extends CredentialsSignin {
+  code = "tooManyTries";
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -38,23 +45,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       /**
        * Checks the phone + password typed on the login page.
        * Returns the user (login OK) or null (wrong phone or password).
+       * Too many wrong tries lock the number (or the connection) for 15 minutes first
+       * (login-rules.ts): then even the right password is refused with "tooManyTries".
        */
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) {
           return null;
         }
+        const { phone, password } = parsed.data;
+        const ip = readClientIp(request.headers);
 
-        const user = await db.user.findUnique({ where: { phone: parsed.data.phone } });
-        if (!user) {
+        // Checked BEFORE the password, so a locked number cannot go on guessing.
+        if (!(await isLoginAllowed(phone, ip))) {
+          throw new TooManyTriesError();
+        }
+
+        const user = await db.user.findUnique({ where: { phone } });
+        // A number without an account counts as a wrong try too (the same answer for both,
+        // so nobody can find out which numbers have an account).
+        const passwordIsCorrect = user ? await verifyPassword(password, user.passwordHash) : false;
+        if (!user || !passwordIsCorrect) {
+          await recordFailedLogin(phone, ip);
           return null;
         }
 
-        const passwordIsCorrect = await verifyPassword(parsed.data.password, user.passwordHash);
-        if (!passwordIsCorrect) {
-          return null;
-        }
-
+        await clearFailedLogins(phone);
         if (user.status === "SUSPENDED") {
           throw new AccountSuspendedError();
         }

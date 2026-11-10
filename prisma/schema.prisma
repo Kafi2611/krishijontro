@@ -838,6 +838,18 @@ model AuditLog {
   @@index([createdAt])
 }
 
+// One wrong login try (a wrong password, or a mobile number with no account). Too many of them
+// lock that mobile number, or that connection, for a while (lib/services/login-guard.ts).
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  phone     String // the mobile number that was typed
+  ip        String? // the address of the connection the try came from (null if unknown)
+  createdAt DateTime @default(now())
+
+  @@index([phone, createdAt])
+  @@index([ip, createdAt])
+}
+
 // Platform settings that admin can change, e.g. platformFeePercent = "3".
 model Setting {
   key         String   @id

@@ -52,6 +52,9 @@ export async function loginAction(
     if (error instanceof CredentialsSignin && error.code === "suspended") {
       return { error: "accountSuspended" };
     }
+    if (error instanceof CredentialsSignin && error.code === "tooManyTries") {
+      return { error: "tooManyLoginTries" }; // locked for 15 minutes (lib/services/login-rules.ts)
+    }
     if (error instanceof AuthError) {
       return { error: "invalidCredentials" };
     }

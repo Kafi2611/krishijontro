@@ -84,6 +84,7 @@
     "passwordsDontMatch": "Passwords do not match",
     "invalidCredentials": "Wrong mobile number or password",
     "accountSuspended": "This account is suspended. Please contact support.",
+    "tooManyLoginTries": "Too many wrong tries. To keep accounts safe, logging in with this number is stopped for 15 minutes. Please try again later.",
     "phoneTaken": "This mobile number is already registered",
     "somethingWrong": "Something went wrong. Please try again.",
     "tooLong": "This is too long",
