@@ -55,8 +55,11 @@ export function OtpCard({ bookingId, kind, code, wrongTries }: OtpCardProps) {
             </p>
           )}
         </div>
-        {/* tracking-[0.3em]: wide gaps between the digits, so they are easy to read out */}
-        <p className="font-mono text-4xl font-bold tracking-[0.3em] text-primary">{localizeDigits(code, locale)}</p>
+        {/* tracking-[0.3em]: wide gaps between the digits, so they are easy to read out.
+            data-testid lets the end-to-end test find the code (tests/e2e/main-flow.spec.ts). */}
+        <p data-testid="otp-code" className="font-mono text-4xl font-bold tracking-[0.3em] text-primary">
+          {localizeDigits(code, locale)}
+        </p>
       </CardContent>
     </Card>
   );
