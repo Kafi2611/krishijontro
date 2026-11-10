@@ -208,6 +208,7 @@
     "REVIEWED": "রিভিউ দেওয়া হয়েছে",
     "CANCELLED": "বাতিল হয়েছে",
     "DISPUTED": "অভিযোগ চলছে",
+    "PAYMENT_DUE": "টাকা দেওয়া বাকি",
     "SUCCESS": "সফল",
     "FAILED": "ব্যর্থ",
     "PROCESSED": "ফেরত দেওয়া হয়েছে",
@@ -1532,7 +1533,8 @@
     "USER_SUSPENDED": "অ্যাকাউন্ট স্থগিত",
     "USER_ACTIVATED": "অ্যাকাউন্ট চালু",
     "STAFF_CREATED": "কর্মী অ্যাকাউন্ট খোলা",
-    "DISPUTE_DECIDED": "অভিযোগের সিদ্ধান্ত"
+    "DISPUTE_DECIDED": "অভিযোগের সিদ্ধান্ত",
+    "BILL_CORRECTED": "বিল সংশোধন করা হয়েছে"
   },
   "AdminBookings": {
     "title": "সব বুকিং",

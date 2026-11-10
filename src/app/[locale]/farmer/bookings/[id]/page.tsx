@@ -73,7 +73,7 @@ export default async function FarmerBookingPage({ params }: FarmerBookingPagePro
 
   return (
     <div className="space-y-6">
-      <BookingHeader backHref="/farmer/bookings" backLabel={t("back")} booking={booking} />
+      <BookingHeader backHref="/farmer/bookings" backLabel={t("back")} booking={booking} hasOpenDispute={dispute?.status === "OPEN"} />
       <RelatedBookings
         parent={booking.parentBooking}
         replacements={booking.replacementBookings}

@@ -43,6 +43,24 @@ export function canRaiseDispute(status: BookingStatus, hasEarlierDispute: boolea
   return DISPUTE_FROM_STATUSES.includes(status) && !hasEarlierDispute;
 }
 
+/** What a booking's status badge can say: a booking status, or "the bill waits to be paid". */
+export type BookingBadge = BookingStatus | "PAYMENT_DUE";
+
+/**
+ * The status word to show on a booking's badge. It is the booking's own status, except in one
+ * case: a booking the farmer complained about BEFORE paying stays DISPUTED after the admin has
+ * decided (for example after a bill correction), until the farmer pays. "Complaint open" would
+ * be wrong then, because nothing is open any more, so the badge says "Waiting for payment".
+ * Example: getBookingBadge("DISPUTED", true) -> "DISPUTED" (complaint open)
+ *          getBookingBadge("DISPUTED", false) -> "PAYMENT_DUE" (decided, the bill waits)
+ */
+export function getBookingBadge(status: BookingStatus, hasOpenDispute: boolean): BookingBadge {
+  if (status === "DISPUTED" && !hasOpenDispute) {
+    return "PAYMENT_DUE";
+  }
+  return status;
+}
+
 /**
  * True if a fine is allowed: at least 1 Tk, and not more than the provider's share of the
  * booking (we cannot take more than they earned from it).

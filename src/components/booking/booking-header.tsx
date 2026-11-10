@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import type { BookingStatus } from "@/generated/prisma/enums";
 import { localizeDigits, pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
+import { getBookingBadge } from "@/lib/services/dispute-rules";
 
 type BookingHeaderProps = {
   backHref: string;
@@ -17,9 +18,10 @@ type BookingHeaderProps = {
     status: BookingStatus;
     machine: { brand: string; model: string; machineType: { name: string; nameBn: string; icon: string } };
   };
+  hasOpenDispute: boolean; // a complaint still waits for the admin (decides the badge of a DISPUTED booking)
 };
 
-export function BookingHeader({ backHref, backLabel, booking }: BookingHeaderProps) {
+export function BookingHeader({ backHref, backLabel, booking, hasOpenDispute }: BookingHeaderProps) {
   const t = useTranslations("BookingView");
   const locale = useLocale();
   const { machine } = booking;
@@ -43,7 +45,7 @@ export function BookingHeader({ backHref, backLabel, booking }: BookingHeaderPro
           <p className="flex flex-wrap items-center gap-2 text-muted-foreground">
             {pickByLocale(machine.machineType.name, machine.machineType.nameBn, locale)} ·{" "}
             {t("code", { code: localizeDigits(booking.code, locale) })}
-            <StatusBadge status={booking.status} />
+            <StatusBadge status={getBookingBadge(booking.status, hasOpenDispute)} />
           </p>
         </div>
       </div>

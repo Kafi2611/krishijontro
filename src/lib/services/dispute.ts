@@ -13,7 +13,8 @@
  *      farmer then pays the new, lower bill (DISPUTED -> PAID).
  *    - PENALTY: the provider is fined; getBookingMoney (payment-rules.ts) takes it off their payout.
  *    - NO_ACTION: nothing changes.
- *    Every decision writes the audit log ("DISPUTE_DECIDED") and tells the farmer and the provider.
+ *    Every decision writes the audit log ("DISPUTE_DECIDED", or "BILL_CORRECTED" for a lower bill
+ *    before paying) and tells the farmer and the provider.
  * Two admins deciding at the same moment: the complaint is marked decided only "where it is still
  * OPEN", so only the first one wins; the second gets "alreadyDecided".
  */
@@ -299,16 +300,17 @@ async function finishDecision(
   }
 
   const amount = plan.refundAmount || plan.penaltyAmount;
-  await writeAuditLog(
-    {
-      actorId: adminId,
-      action: "DISPUTE_DECIDED",
-      entityType: "Dispute",
-      entityId: dispute.id,
-      details: `${booking.code}: ${input.decision}${amount > 0 ? ` ${amount} Tk` : ""} — ${input.note}`,
-    },
-    tx,
-  );
+  // A bill correction (before paying) gives no money back, so the audit log must not call it a
+  // refund: it gets its own kind of row, with the old and the new bill.
+  let action = "DISPUTE_DECIDED";
+  let details = `${booking.code}: ${input.decision}${amount > 0 ? ` ${amount} Tk` : ""} — ${input.note}`;
+  if (plan.newBill) {
+    action = "BILL_CORRECTED";
+    details =
+      `${booking.code}: bill corrected from ${booking.totalAmount} Tk to ${plan.newBill.totalAmount} Tk ` +
+      `(${plan.refundAmount} Tk less) — ${input.note}`;
+  }
+  await writeAuditLog({ actorId: adminId, action, entityType: "Dispute", entityId: dispute.id, details }, tx);
 
   const info = messageInfo(booking);
   const newTotal = plan.newBill ? plan.newBill.totalAmount : booking.totalAmount;

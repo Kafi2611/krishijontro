@@ -17,6 +17,7 @@ import { getFormatter } from "@/lib/format-server";
 import { localizeDigits, pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 import { getAmountDue } from "@/lib/services/booking-rules";
+import { getBookingBadge } from "@/lib/services/dispute-rules";
 import { getGroupBooking } from "@/lib/services/group-booking";
 import { countGroupProgress } from "@/lib/services/group-booking-rules";
 
@@ -93,7 +94,7 @@ export default async function GroupBookingPage({ params }: GroupBookingPageProps
                   <p className="font-semibold">
                     {format.number(index + 1)}. {booking.farmer.name}
                   </p>
-                  <StatusBadge status={booking.status} />
+                  <StatusBadge status={getBookingBadge(booking.status, booking.disputes.length > 0)} />
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {localizeDigits(booking.code, locale)} · {timeText(booking.startAt)}–{timeText(booking.endAt)}

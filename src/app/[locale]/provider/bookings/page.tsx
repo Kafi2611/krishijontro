@@ -67,6 +67,7 @@ export default async function ProviderBookingsPage() {
                       icon={booking.machine.machineType.icon}
                       startAt={booking.startAt}
                       status={booking.status}
+                      hasOpenDispute={booking.disputes.length > 0}
                       detail={booking.farmer.name}
                       amount={getAmountDue(booking, getProviderShare(booking))}
                     />

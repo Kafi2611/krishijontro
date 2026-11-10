@@ -10,6 +10,7 @@ import type { BookingStatus } from "@/generated/prisma/enums";
 import { useFormatter } from "@/lib/format";
 import { localizeDigits } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
+import { getBookingBadge } from "@/lib/services/dispute-rules";
 
 type BookingCardProps = {
   href?: string; // the booking's page; leave out for a card that is not a link
@@ -18,11 +19,12 @@ type BookingCardProps = {
   icon: string; // the machine type's icon name
   startAt: Date;
   status: BookingStatus;
+  hasOpenDispute: boolean; // a complaint still waits for the admin (decides the badge of a DISPUTED booking)
   detail?: string; // one more line, e.g. the farmer's name on the provider's list
   amount?: number; // e.g. what the farmer pays
 };
 
-export function BookingCard({ href, code, machineName, icon, startAt, status, detail, amount }: BookingCardProps) {
+export function BookingCard({ href, code, machineName, icon, startAt, status, hasOpenDispute, detail, amount }: BookingCardProps) {
   const tPrice = useTranslations("Price");
   const format = useFormatter(); // Bangla digits and month names on Bangla pages
   const locale = useLocale();
@@ -36,7 +38,7 @@ export function BookingCard({ href, code, machineName, icon, startAt, status, de
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-semibold">{machineName}</p>
-            <StatusBadge status={status} />
+            <StatusBadge status={getBookingBadge(status, hasOpenDispute)} />
           </div>
           <p className="text-sm text-muted-foreground">
             {localizeDigits(code, locale)} · {format.dateTime(startAt, { dateStyle: "medium", timeStyle: "short" })}

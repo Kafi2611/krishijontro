@@ -15,6 +15,7 @@ type JobForList = {
   fieldAddress: string | null;
   machine: { brand: string; model: string; machineType: { icon: string } };
   farmer: { name: string };
+  disputes: { id: string }[]; // the complaint still open, if any (for the status badge)
 };
 
 type OperatorJobListProps = {
@@ -59,6 +60,7 @@ export function OperatorJobList({ sections, emptyIcon, emptyText }: OperatorJobL
                     icon={job.machine.machineType.icon}
                     startAt={job.startAt}
                     status={job.status}
+                    hasOpenDispute={job.disputes.length > 0}
                     detail={job.fieldAddress ? `${job.farmer.name} · ${job.fieldAddress}` : job.farmer.name}
                   />
                 </li>

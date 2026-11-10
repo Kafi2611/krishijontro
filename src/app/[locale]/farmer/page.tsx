@@ -81,6 +81,7 @@ export default async function FarmerDashboardPage() {
                   icon={booking.machine.machineType.icon}
                   startAt={booking.startAt}
                   status={booking.status}
+                  hasOpenDispute={booking.disputes.length > 0}
                   detail={pickByLocale(booking.machine.machineType.name, booking.machine.machineType.nameBn, locale)}
                   amount={booking.totalAmount}
                 />

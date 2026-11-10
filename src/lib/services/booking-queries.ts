@@ -35,6 +35,13 @@ import type { MachineSearchInput } from "@/lib/validators/search";
 /** Leaves the two OTP codes out of a query's result (Prisma "omit"). */
 const SECRET_CODES = { startOtp: true, finishOtp: true } satisfies Prisma.BookingOmit;
 
+/**
+ * A booking's complaint that still waits for the admin (no row, or one). The lists read it so
+ * the status badge can tell "Complaint open" from "decided, waiting for payment"
+ * (getBookingBadge in dispute-rules.ts). Exported for the other services that list bookings.
+ */
+export const OPEN_DISPUTES = { where: { status: "OPEN" }, select: { id: true } } satisfies Prisma.Booking$disputesArgs;
+
 /** The machine fields a booking card shows: its name and its type's icon. */
 const MACHINE_FOR_CARD = {
   select: { brand: true, model: true, machineType: { select: { name: true, nameBn: true, icon: true } } },
@@ -81,7 +88,7 @@ function timelineOf(booking: BookingWithLogs) {
 export async function listFarmerBookings(farmerId: string) {
   const bookings = await db.booking.findMany({
     where: { farmerId },
-    include: { machine: MACHINE_FOR_CARD },
+    include: { machine: MACHINE_FOR_CARD, disputes: OPEN_DISPUTES },
     omit: SECRET_CODES, // the list does not show the codes
   });
   return splitFarmerBookings(bookings);
@@ -141,7 +148,7 @@ const EARLIER_TO_SHOW = 30;
 export async function listProviderBookings(providerId: string) {
   const bookings = await db.booking.findMany({
     where: { machine: { providerId } },
-    include: { machine: MACHINE_FOR_CARD, farmer: { select: { name: true } } },
+    include: { machine: MACHINE_FOR_CARD, farmer: { select: { name: true } }, disputes: OPEN_DISPUTES },
     omit: SECRET_CODES,
   });
   const groups = groupProviderBookings(bookings);
@@ -221,7 +228,7 @@ export async function listOperatorChoices(
 export async function listOperatorJobs(operatorId: string) {
   const jobs = await db.booking.findMany({
     where: { operatorId },
-    include: { machine: MACHINE_FOR_CARD, farmer: { select: { name: true } } },
+    include: { machine: MACHINE_FOR_CARD, farmer: { select: { name: true } }, disputes: OPEN_DISPUTES },
     omit: SECRET_CODES,
   });
   const groups = groupOperatorJobs(jobs, toDhakaDay(new Date()));
@@ -290,6 +297,7 @@ export async function listBookingsForAdmin(filter: AdminBookingFilter) {
       include: {
         machine: { select: { ...MACHINE_FOR_CARD.select, provider: { select: { name: true } } } },
         farmer: { select: { name: true } },
+        disputes: OPEN_DISPUTES,
       },
       omit: SECRET_CODES,
       orderBy: { createdAt: "desc" },

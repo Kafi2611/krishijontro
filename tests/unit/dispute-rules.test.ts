@@ -1,7 +1,7 @@
 // Unit tests for complaints: who may complain (dispute-rules.ts), the biggest fine, the work on
 // the bill in the operator's unit, and the two forms (validators/dispute.ts).
 import { describe, expect, it } from "vitest";
-import { canRaiseDispute, getBilledWork, isFineAllowed } from "@/lib/services/dispute-rules";
+import { canRaiseDispute, getBilledWork, getBookingBadge, isFineAllowed } from "@/lib/services/dispute-rules";
 import { complaintSchema, decisionSchema } from "@/lib/validators/dispute";
 
 describe("canRaiseDispute", () => {
@@ -15,6 +15,22 @@ describe("canRaiseDispute", () => {
     expect(canRaiseDispute("REVIEWED", false)).toBe(false);
     expect(canRaiseDispute("DISPUTED", false)).toBe(false);
     expect(canRaiseDispute("PAID", true)).toBe(false);
+  });
+});
+
+describe("getBookingBadge", () => {
+  it("says 'complaint open' only while the complaint really waits for a decision", () => {
+    expect(getBookingBadge("DISPUTED", true)).toBe("DISPUTED");
+  });
+
+  it("says 'waiting for payment' once the admin has decided and the bill is still unpaid", () => {
+    expect(getBookingBadge("DISPUTED", false)).toBe("PAYMENT_DUE");
+  });
+
+  it("shows every other status as it is", () => {
+    expect(getBookingBadge("COMPLETED", false)).toBe("COMPLETED");
+    expect(getBookingBadge("PAID", false)).toBe("PAID");
+    expect(getBookingBadge("WORKING", false)).toBe("WORKING");
   });
 });
 

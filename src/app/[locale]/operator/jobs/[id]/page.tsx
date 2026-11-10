@@ -65,7 +65,7 @@ export default async function OperatorJobPage({ params }: OperatorJobPageProps) 
 
   return (
     <div className="space-y-6">
-      <BookingHeader backHref="/operator/jobs" backLabel={tJobs("back")} booking={job} />
+      <BookingHeader backHref="/operator/jobs" backLabel={tJobs("back")} booking={job} hasOpenDispute={dispute?.status === "OPEN"} />
       <RelatedBookings parent={job.parentBooking} replacements={job.replacementBookings} />
 
       {breakdown && <BreakdownCard report={breakdown} billingUnit={job.billingUnit} view="operator" radiusKm={radiusKm} />}

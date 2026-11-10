@@ -102,6 +102,7 @@ export default async function OfficerBookingsPage() {
                     icon={booking.machine.machineType.icon}
                     startAt={booking.startAt}
                     status={booking.status}
+                    hasOpenDispute={booking.disputes.length > 0}
                     detail={t("people", { farmer: booking.farmer.name, provider: provider.providerProfile?.businessName ?? provider.name })}
                     amount={getAmountDue(booking, booking.totalAmount)}
                   />

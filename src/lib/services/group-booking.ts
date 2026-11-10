@@ -22,6 +22,7 @@ import {
   insertNewBooking,
   retryIfCodeTaken,
 } from "@/lib/services/booking";
+import { OPEN_DISPUTES } from "@/lib/services/booking-queries";
 import { estimateWorkHours, getJobStartAt } from "@/lib/services/booking-rules";
 import { addDays, toDhakaDay, type TimeRange } from "@/lib/services/calendar";
 import { getLeaderCooperative } from "@/lib/services/cooperative";
@@ -440,7 +441,7 @@ export async function getGroupBooking(groupBookingId: string, leaderId: string) 
       },
       bookings: {
         omit: { startOtp: true, finishOtp: true },
-        include: { farmer: { select: { name: true, phone: true } } },
+        include: { farmer: { select: { name: true, phone: true } }, disputes: OPEN_DISPUTES },
         orderBy: { startAt: "asc" },
       },
     },

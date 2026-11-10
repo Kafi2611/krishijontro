@@ -32,6 +32,8 @@ const STATUS_COLORS: Record<StatusKey, string> = {
   REVIEWED: "bg-green-100 text-green-800",
   CANCELLED: "bg-muted text-muted-foreground",
   DISPUTED: "bg-red-100 text-red-800",
+  // The complaint is decided, the bill waits to be paid (getBookingBadge in dispute-rules.ts)
+  PAYMENT_DUE: "bg-amber-100 text-amber-900",
   // Payment and refund statuses
   SUCCESS: "bg-green-100 text-green-800",
   FAILED: "bg-red-100 text-red-800",

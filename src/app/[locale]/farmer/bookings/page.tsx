@@ -36,6 +36,7 @@ export default async function FarmerBookingsPage() {
           icon={machine.machineType.icon}
           startAt={booking.startAt}
           status={booking.status}
+          hasOpenDispute={booking.disputes.length > 0}
           detail={pickByLocale(machine.machineType.name, machine.machineType.nameBn, locale)}
           amount={getAmountDue(booking, booking.totalAmount)} // 0 for a cancelled booking (or its late fee)
         />

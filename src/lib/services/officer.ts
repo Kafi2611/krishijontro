@@ -9,6 +9,7 @@
  */
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { OPEN_DISPUTES } from "@/lib/services/booking-queries";
 import type { NewNotification } from "@/lib/services/notification";
 
 /** The officer's upazila (id and names), or null if the officer has no profile. */
@@ -60,6 +61,7 @@ export async function listUpazilaBookings(officerId: string) {
       omit: { startOtp: true, finishOtp: true },
       include: {
         farmer: { select: { name: true } },
+        disputes: OPEN_DISPUTES, // for the status badge
         machine: {
           select: {
             brand: true,

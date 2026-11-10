@@ -208,6 +208,7 @@
     "REVIEWED": "Reviewed",
     "CANCELLED": "Cancelled",
     "DISPUTED": "Complaint open",
+    "PAYMENT_DUE": "Waiting for payment",
     "SUCCESS": "Successful",
     "FAILED": "Failed",
     "PROCESSED": "Refunded",
@@ -1532,7 +1533,8 @@
     "USER_SUSPENDED": "Account suspended",
     "USER_ACTIVATED": "Account activated",
     "STAFF_CREATED": "Staff account made",
-    "DISPUTE_DECIDED": "Complaint decided"
+    "DISPUTE_DECIDED": "Complaint decided",
+    "BILL_CORRECTED": "Bill corrected"
   },
   "AdminBookings": {
     "title": "All bookings",

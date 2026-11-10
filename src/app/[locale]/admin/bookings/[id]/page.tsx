@@ -62,7 +62,7 @@ export default async function AdminBookingPage({ params }: AdminBookingPageProps
 
   return (
     <div className="space-y-6">
-      <BookingHeader backHref="/admin/bookings" backLabel={t("back")} booking={booking} />
+      <BookingHeader backHref="/admin/bookings" backLabel={t("back")} booking={booking} hasOpenDispute={dispute?.status === "OPEN"} />
       <RelatedBookings parent={booking.parentBooking} replacements={booking.replacementBookings} hrefBase="/admin/bookings/" />
       {booking.groupBooking && (
         <p className="rounded-lg bg-accent p-3 text-sm">{t("groupNote", { name: booking.groupBooking.cooperative.name })}</p>

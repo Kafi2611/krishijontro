@@ -69,7 +69,7 @@ export default async function ProviderBookingPage({ params }: ProviderBookingPag
 
   return (
     <div className="space-y-6">
-      <BookingHeader backHref="/provider/bookings" backLabel={t("back")} booking={booking} />
+      <BookingHeader backHref="/provider/bookings" backLabel={t("back")} booking={booking} hasOpenDispute={dispute?.status === "OPEN"} />
       <RelatedBookings parent={booking.parentBooking} replacements={booking.replacementBookings} />
       {booking.groupBooking && (
         <p className="rounded-lg bg-accent p-3 text-sm">
