@@ -69,7 +69,7 @@ export default async function AdminDisputesPage() {
                 <li key={dispute.id}>
                   <Card>
                     <CardHeader>
-                      <CardTitle className="flex flex-wrap items-center justify-between gap-2">
+                      <CardTitle as="h3" className="flex flex-wrap items-center justify-between gap-2">
                         <Link href={`/admin/bookings/${booking.id}`} className="underline-offset-4 hover:underline">
                           {t("booking", { code: localizeDigits(booking.code, locale) })}
                         </Link>

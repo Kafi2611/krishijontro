@@ -120,7 +120,7 @@ export default async function FarmerSubsidyPage() {
               <li key={program.id}>
                 <Card className="h-full">
                   <CardHeader>
-                    <CardTitle className="flex flex-wrap items-center gap-2">
+                    <CardTitle as="h3" className="flex flex-wrap items-center gap-2">
                       {pickByLocale(program.name, program.nameBn, locale)}
                       {application && <StatusBadge status={application.status} />}
                     </CardTitle>

@@ -57,7 +57,7 @@ export default async function AdminBreakdownsPage() {
               <li key={breakdown.id}>
                 <Card className={waitedLongEnough ? "border-amber-300 bg-amber-50" : undefined}>
                   <CardHeader>
-                    <CardTitle className="flex flex-wrap items-center gap-2">
+                    <CardTitle as="h3" className="flex flex-wrap items-center gap-2">
                       <TriangleAlert className="size-5 text-orange-700" aria-hidden />
                       {localizeDigits(booking.code, locale)}
                       <StatusBadge status={breakdown.status} />

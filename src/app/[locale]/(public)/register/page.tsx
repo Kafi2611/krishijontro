@@ -17,7 +17,7 @@ export default async function RegisterPage() {
     <div className="mx-auto w-full max-w-md px-4 py-8 sm:py-12">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">{t("registerTitle")}</CardTitle>
+          <CardTitle as="h1" className="text-2xl">{t("registerTitle")}</CardTitle>
           <CardDescription>{t("registerSubtitle")}</CardDescription>
         </CardHeader>
         <CardContent>

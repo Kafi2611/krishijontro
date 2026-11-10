@@ -39,7 +39,7 @@ export function ReplacementOffers({ offers }: { offers: ReplacementOffer[] }) {
             <li key={breakdown.id}>
               <Card className="border-red-300">
                 <CardHeader>
-                  <CardTitle>{t("offerTitle", { type: machineType })}</CardTitle>
+                  <CardTitle as="h3">{t("offerTitle", { type: machineType })}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <dl>

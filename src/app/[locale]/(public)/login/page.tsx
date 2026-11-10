@@ -44,7 +44,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       )}
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">{t("loginTitle")}</CardTitle>
+          <CardTitle as="h1" className="text-2xl">{t("loginTitle")}</CardTitle>
           <CardDescription>{t("loginSubtitle")}</CardDescription>
         </CardHeader>
         <CardContent>

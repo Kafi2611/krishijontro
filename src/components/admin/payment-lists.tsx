@@ -107,7 +107,7 @@ export async function PayoutLists() {
               <li key={provider.id}>
                 <Card className="h-full">
                   <CardHeader>
-                    <CardTitle>{provider.providerProfile?.businessName ?? provider.name}</CardTitle>
+                    <CardTitle as="h3">{provider.providerProfile?.businessName ?? provider.name}</CardTitle>
                     <a href={`tel:${provider.phone}`} className="inline-flex items-center gap-1 text-sm text-primary">
                       <Phone className="size-4" aria-hidden />
                       {provider.name} · {localizeDigits(provider.phone, locale)}

@@ -32,9 +32,18 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+/**
+ * A card's title is a real heading (h2 by default), so screen reader users can jump from card to
+ * card. Use as="h3" for cards inside a section that already has an h2, and as="h1" for the one
+ * card that is the whole page (login, register).
+ */
+function CardTitle({
+  className,
+  as: Heading = "h2",
+  ...props
+}: React.ComponentProps<"h2"> & { as?: "h1" | "h2" | "h3" | "h4" }) {
   return (
-    <div
+    <Heading
       data-slot="card-title"
       className={cn(
         "font-heading text-base leading-snug font-medium group-data-[size=sm]/card:text-sm",
