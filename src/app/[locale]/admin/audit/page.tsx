@@ -17,6 +17,8 @@ import type messages from "../../../../../messages/en.json";
 
 /** A kind of action that has a readable name in the "AuditActions" part of messages/en.json. */
 type AuditActionKey = keyof (typeof messages)["AuditActions"];
+/** A kind of record (a table name) that has a readable name in the "AuditEntities" part. */
+type AuditEntityKey = keyof (typeof messages)["AuditEntities"];
 
 type AdminAuditPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -39,11 +41,14 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
 
   const t = await getTranslations("AdminAudit");
   const tActions = await getTranslations("AuditActions");
+  const tEntities = await getTranslations("AuditEntities");
   const tRoles = await getTranslations("Roles");
   const format = await getFormatter();
 
   /** The readable name of an action code, or the code itself for a kind we have no name for. */
   const actionLabel = (code: string) => (tActions.has(code as AuditActionKey) ? tActions(code as AuditActionKey) : code);
+  /** The readable name of the kind of record a row is about (e.g. "Refund"), or the table name itself. */
+  const entityLabel = (name: string) => (tEntities.has(name as AuditEntityKey) ? tEntities(name as AuditEntityKey) : name);
 
   let allRows = 0;
   for (const item of actionCounts) {
@@ -86,7 +91,7 @@ export default async function AdminAuditPage({ searchParams }: AdminAuditPagePro
                   <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                     <span>{row.actor ? t("by", { name: row.actor.name }) : t("bySystem")}</span>
                     {row.actor && <Badge variant="secondary">{tRoles(row.actor.role)}</Badge>}
-                    <Badge variant="outline">{row.entityType}</Badge>
+                    <Badge variant="outline">{entityLabel(row.entityType)}</Badge>
                   </div>
                 </CardContent>
               </Card>

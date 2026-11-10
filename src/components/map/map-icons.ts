@@ -12,13 +12,14 @@ export const PLACE_PIN_ICON = L.divIcon({
 });
 
 /**
- * An orange circle with a number, for machine number `number` in a result list,
- * so the farmer can match a pin on the map with a card in the list.
+ * An orange circle with a number, for one machine in a result list, so the farmer can match a
+ * pin on the map with a card in the list. `label` is the number already written in the page's
+ * language, e.g. "3" or "৩" (localizeDigits in lib/i18n.ts).
  */
-export function numberedMachineIcon(number: number) {
+export function numberedMachineIcon(label: string) {
   return L.divIcon({
     className: "",
-    html: `<div style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9999px;background:#c2410c;color:#ffffff;font-weight:700;font-size:14px;border:2px solid #ffffff;box-shadow:0 1px 4px rgba(0,0,0,.35)">${number}</div>`,
+    html: `<div style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9999px;background:#c2410c;color:#ffffff;font-weight:700;font-size:14px;border:2px solid #ffffff;box-shadow:0 1px 4px rgba(0,0,0,.35)">${label}</div>`,
     iconSize: [30, 30],
     iconAnchor: [15, 15], // the circle's centre sits on the machine's place
   });

@@ -5,9 +5,10 @@
 // Leaflet needs the browser's `window`, so this file is only loaded in the browser (see results-map.tsx).
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect } from "react";
 import { Circle, MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import { localizeDigits } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 import type { LatLng } from "@/lib/services/geo";
 import { numberedMachineIcon, PLACE_PIN_ICON } from "./map-icons";
@@ -47,6 +48,7 @@ function FitToView({ field, machines, radiusKm }: ResultsMapProps) {
 
 export default function ResultsMapLeaflet({ field, machines, radiusKm }: ResultsMapProps) {
   const t = useTranslations("SearchMap");
+  const locale = useLocale();
 
   return (
     <MapContainer
@@ -74,10 +76,15 @@ export default function ResultsMapLeaflet({ field, machines, radiusKm }: Results
       </Marker>
 
       {machines.map((machine) => (
-        <Marker key={machine.id} position={[machine.lat, machine.lng]} icon={numberedMachineIcon(machine.number)}>
+        <Marker
+          key={machine.id}
+          position={[machine.lat, machine.lng]}
+          // The pin shows the same number as the card, in Bangla digits on Bangla pages.
+          icon={numberedMachineIcon(localizeDigits(machine.number, locale))}
+        >
           <Popup>
             <span className="block font-semibold">
-              {machine.number}. {machine.name}
+              {localizeDigits(machine.number, locale)}. {machine.name}
             </span>
             <span className="block">{t("facts", { km: machine.distanceKm, amount: machine.totalAmount })}</span>
             <Link href={machine.href} className="font-medium">

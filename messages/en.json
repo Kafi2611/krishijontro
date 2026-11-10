@@ -1444,7 +1444,7 @@
         "hint": "After this, an admin may close the search with \"No replacement found\"."
       }
     },
-    "range": "From {min} to {max}.",
+    "range": "From {min, number} to {max, number}.",
     "auditNote": "Every change is saved in the audit log with your name.",
     "saveButton": "Save settings",
     "saved": "Settings saved",
@@ -1539,6 +1539,22 @@
     "STAFF_CREATED": "Staff account made",
     "DISPUTE_DECIDED": "Complaint decided",
     "BILL_CORRECTED": "Bill corrected"
+  },
+  "AuditEntities": {
+    "BreakdownReport": "Breakdown",
+    "Dispute": "Complaint",
+    "FarmerProfile": "Farmer",
+    "Machine": "Machine",
+    "MachineType": "Machine type",
+    "OperatorProfile": "Operator",
+    "Payout": "Payout",
+    "PricingRule": "Price limit",
+    "ProviderProfile": "Provider",
+    "Refund": "Refund",
+    "Setting": "Setting",
+    "SubsidyApplication": "Subsidy application",
+    "SubsidyProgram": "Subsidy program",
+    "User": "Account"
   },
   "AdminBookings": {
     "title": "All bookings",
