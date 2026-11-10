@@ -36,6 +36,17 @@ describe("registerSchema", () => {
     expect(result.error?.issues[0].path).toEqual(["confirmPassword"]);
   });
 
+  it("needs at least 8 characters for a new password", () => {
+    const seven = registerSchema.safeParse({ ...validRegistration, password: "abc1234", confirmPassword: "abc1234" });
+    expect(seven.error?.issues[0].message).toBe("passwordShort");
+    const eight = registerSchema.safeParse({ ...validRegistration, password: "abcd1234", confirmPassword: "abcd1234" });
+    expect(eight.success).toBe(true);
+  });
+
+  it("still lets an old, shorter password log in", () => {
+    expect(loginSchema.safeParse({ phone: "01700000001", password: "abc12" }).success).toBe(true);
+  });
+
   it("rejects short passwords", () => {
     const result = registerSchema.safeParse({
       ...validRegistration,

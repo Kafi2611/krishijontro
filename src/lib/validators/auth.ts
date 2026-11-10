@@ -9,6 +9,9 @@ export const PHONE_REGEX = /^01[3-9]\d{8}$/;
 
 export const phoneSchema = z.string().trim().regex(PHONE_REGEX, "phoneInvalid");
 
+/** The shortest password a new account may have (register, new operator, new staff account). */
+export const MIN_PASSWORD_LENGTH = 8;
+
 export const loginSchema = z.object({
   phone: phoneSchema,
   password: z.string().min(1, "required"),
@@ -18,8 +21,10 @@ export const registerSchema = z
   .object({
     name: z.string().trim().min(2, "nameRequired").max(80, "nameTooLong"),
     phone: phoneSchema,
-    // bcrypt only reads the first 72 characters, so we do not allow longer passwords
-    password: z.string().min(6, "passwordShort").max(72, "passwordLong"),
+    // At least 8 characters for a NEW account (a short password is easy to guess).
+    // bcrypt only reads the first 72 characters, so we do not allow longer passwords.
+    // (Logging in accepts any length, so accounts made earlier keep working.)
+    password: z.string().min(MIN_PASSWORD_LENGTH, "passwordShort").max(72, "passwordLong"),
     confirmPassword: z.string().min(1, "required"),
     role: z.enum(["FARMER", "PROVIDER"], "required"),
     providerType: z.enum(["INDIVIDUAL", "COOPERATIVE", "COMPANY"]),

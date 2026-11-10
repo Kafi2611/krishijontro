@@ -36,7 +36,7 @@ describe("operatorSchema", () => {
   const operator = {
     name: "Shamim Reza",
     phone: "01730000005",
-    password: "op1234",
+    password: "op123456",
     licenseNo: "",
     experienceYears: 3,
   };

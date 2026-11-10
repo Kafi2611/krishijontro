@@ -77,7 +77,7 @@
   "Validation": {
     "required": "This field is required",
     "phoneInvalid": "Enter an 11-digit mobile number starting with 01",
-    "passwordShort": "Password must be at least 6 characters",
+    "passwordShort": "Password must be at least 8 characters",
     "passwordLong": "Password is too long (72 characters at most)",
     "nameRequired": "Please enter your name",
     "nameTooLong": "Name is too long",
