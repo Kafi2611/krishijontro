@@ -11,6 +11,7 @@ import { requireRole } from "@/lib/auth";
 import { pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 import { listFarmerBookings } from "@/lib/services/booking-queries";
+import { getAmountDue } from "@/lib/services/booking-rules";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("FarmerBookings");
@@ -36,7 +37,7 @@ export default async function FarmerBookingsPage() {
           startAt={booking.startAt}
           status={booking.status}
           detail={pickByLocale(machine.machineType.name, machine.machineType.nameBn, locale)}
-          amount={booking.totalAmount}
+          amount={getAmountDue(booking, booking.totalAmount)} // 0 for a cancelled booking (or its late fee)
         />
       </li>
     );

@@ -9,6 +9,7 @@ import {
   estimateWorkHours,
   formatBookingCode,
   generateOtp,
+  getAmountDue,
   getBookingYear,
   getJobStartAt,
   getJobTimeRange,
@@ -109,6 +110,13 @@ describe("codes", () => {
     expect(isOtpLocked(4)).toBe(false);
     expect(isOtpLocked(5)).toBe(true);
     expect(isOtpLocked(6)).toBe(true);
+  });
+
+  it("asks nothing for a booking that never went ahead, except a late cancellation fee", () => {
+    expect(getAmountDue({ status: "CANCELLED", cancellationFee: 0 }, 1517)).toBe(0);
+    expect(getAmountDue({ status: "CANCELLED", cancellationFee: 90 }, 1517)).toBe(90);
+    expect(getAmountDue({ status: "REJECTED", cancellationFee: 0 }, 1517)).toBe(0);
+    expect(getAmountDue({ status: "COMPLETED", cancellationFee: 0 }, 1517)).toBe(1517);
   });
 
   it("counts the tries that are left, never below 0", () => {

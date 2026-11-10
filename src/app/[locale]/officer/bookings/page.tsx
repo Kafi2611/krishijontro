@@ -12,6 +12,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
 import { localizeDigits, pickByLocale } from "@/lib/i18n";
+import { getAmountDue } from "@/lib/services/booking-rules";
 import { listUpazilaBookings, listUpazilaComplaints } from "@/lib/services/officer";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -101,7 +102,7 @@ export default async function OfficerBookingsPage() {
                     startAt={booking.startAt}
                     status={booking.status}
                     detail={t("people", { farmer: booking.farmer.name, provider: provider.providerProfile?.businessName ?? provider.name })}
-                    amount={booking.totalAmount}
+                    amount={getAmountDue(booking, booking.totalAmount)}
                   />
                 </li>
               );

@@ -11,6 +11,7 @@ import { BookingStatus } from "@/generated/prisma/enums";
 import { requireRole } from "@/lib/auth";
 import { listHref, readChoice, readPageNumber, readSearchText } from "@/lib/list-params";
 import { countBookingsByStatus, listBookingsForAdmin } from "@/lib/services/booking-queries";
+import { getAmountDue } from "@/lib/services/booking-rules";
 
 type AdminBookingsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -74,7 +75,7 @@ export default async function AdminBookingsPage({ searchParams }: AdminBookingsP
                 startAt={booking.startAt}
                 status={booking.status}
                 detail={t("people", { farmer: booking.farmer.name, provider: booking.machine.provider.name })}
-                amount={booking.totalAmount}
+                amount={getAmountDue(booking, booking.totalAmount)}
               />
             </li>
           ))}

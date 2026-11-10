@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
 import { localizeDigits, pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
+import { getAmountDue } from "@/lib/services/booking-rules";
 import { getGroupBooking } from "@/lib/services/group-booking";
 import { countGroupProgress } from "@/lib/services/group-booking-rules";
 
@@ -106,7 +107,10 @@ export default async function GroupBookingPage({ params }: GroupBookingPageProps
                     {t("deliveryShare", { amount: booking.deliveryCharge })}
                     {booking.minimumShare > 0 && ` · ${t("minimumShare", { amount: booking.minimumShare })}`}
                   </span>
-                  <span className="font-semibold tabular-nums">{tPrice("amount", { amount: booking.totalAmount })}</span>
+                  {/* A rejected or cancelled plot is not paid (only a late cancellation fee, if any) */}
+                  <span className="font-semibold tabular-nums">
+                    {tPrice("amount", { amount: getAmountDue(booking, booking.totalAmount) })}
+                  </span>
                 </div>
                 <a href={`tel:${booking.farmer.phone}`} className="text-sm text-primary underline-offset-4 hover:underline">
                   {localizeDigits(booking.farmer.phone, locale)}

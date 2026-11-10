@@ -11,7 +11,7 @@ import { ReplacementOffers } from "@/components/provider/replacement-offers";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
 import { listProviderBookings } from "@/lib/services/booking-queries";
-import { getProviderShare } from "@/lib/services/booking-rules";
+import { getAmountDue, getProviderShare } from "@/lib/services/booking-rules";
 import { listReplacementOffers } from "@/lib/services/replacement";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -68,7 +68,7 @@ export default async function ProviderBookingsPage() {
                       startAt={booking.startAt}
                       status={booking.status}
                       detail={booking.farmer.name}
-                      amount={getProviderShare(booking)}
+                      amount={getAmountDue(booking, getProviderShare(booking))}
                     />
                   </li>
                 ))}

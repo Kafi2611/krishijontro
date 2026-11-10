@@ -4,7 +4,8 @@
  * Everything here is a pure function (no database), so it is easy to test and the
  * browser can use it too (the booking form, the timeline, the operator's buttons).
  *
- *   1. Groups of statuses: which keep a machine busy, which are finished.
+ *   1. Groups of statuses: which keep a machine busy, which are finished, which never went
+ *      ahead (and what is then still due).
  *   2. The allowed moves between statuses (the life of a booking).
  *   3. Job time: how long a job takes, and when it starts and ends.
  *   4. Codes: the booking code (KJ-2026-000123), the 4-digit OTP codes and their lock after
@@ -41,6 +42,27 @@ export const FINISHED_BOOKING_STATUSES: BookingStatus[] = ["REJECTED", "CANCELLE
 /** True if the booking is in FINISHED_BOOKING_STATUSES. */
 export function isBookingFinished(status: BookingStatus): boolean {
   return FINISHED_BOOKING_STATUSES.includes(status);
+}
+
+/** Statuses of a booking that never went ahead: the provider said no, or it was cancelled. */
+export const STOPPED_BOOKING_STATUSES: BookingStatus[] = ["REJECTED", "CANCELLED"];
+
+/** True if the booking never went ahead (rejected or cancelled), so no work is billed. */
+export function isBookingStopped(status: BookingStatus): boolean {
+  return STOPPED_BOOKING_STATUSES.includes(status);
+}
+
+/**
+ * The money that is really due for a booking, for the lists and the bill:
+ * - a booking that goes ahead: the amount of its bill (`billAmount`)
+ * - a rejected or cancelled booking: nothing, except the farmer's late cancellation fee (if any)
+ * Example: cancelled early -> 0; cancelled late with a 90 Tk fee -> 90; work done, bill 1517 -> 1517
+ */
+export function getAmountDue(booking: { status: BookingStatus; cancellationFee: number }, billAmount: number): number {
+  if (isBookingStopped(booking.status)) {
+    return booking.cancellationFee;
+  }
+  return billAmount;
 }
 
 // ─────────────────────────── 2. The allowed moves ───────────────────────────
@@ -330,8 +352,6 @@ const NORMAL_PATH: TimelineKey[] = [
   "REVIEWED",
 ];
 
-/** A booking that stopped here goes no further, so no grey steps follow. */
-const STOP_STATUSES: BookingStatus[] = ["REJECTED", "CANCELLED"];
 
 /**
  * Builds the timeline on a booking's page:
@@ -349,7 +369,8 @@ export function buildTimeline(logs: TimelineLog[], arrivedAt: Date | null, statu
     }
   }
 
-  if (STOP_STATUSES.includes(status)) {
+  // A rejected or cancelled booking goes no further, so no grey steps follow.
+  if (isBookingStopped(status)) {
     return steps;
   }
 
