@@ -1,6 +1,7 @@
 "use client";
-// A photo picker for forms. Each chosen photo is uploaded at once to /api/upload,
-// then shown as a small preview with a remove (X) button.
+// A photo picker for forms. Each chosen photo is first made smaller in the browser (a big phone
+// photo becomes a JPEG of a few hundred KB, see lib/image-resize.ts), then uploaded at once to
+// /api/upload, then shown as a small preview with a remove (X) button.
 // The form only keeps the list of photo addresses, e.g. ["/uploads/ab12....jpg"]
 // (on Vercel the addresses point to Vercel Blob instead, see lib/services/upload.ts).
 import { ImagePlus, Loader2, X } from "lucide-react";
@@ -9,6 +10,7 @@ import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { shrinkPhoto } from "@/lib/image-resize";
 import { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_BYTES } from "@/lib/validators/upload";
 import type { ValidationKey } from "@/lib/validators/types";
 
@@ -55,8 +57,10 @@ export function ImageUploader({ value, onChange, maxImages }: ImageUploaderProps
 
     setIsUploading(true);
     const urls = [...value];
-    for (const file of chosenFiles.slice(0, room)) {
-      // Check the size here first, so a big photo is not sent for nothing.
+    for (const chosenFile of chosenFiles.slice(0, room)) {
+      // A phone photo of 3–6 MB is first made smaller here in the browser (lib/image-resize.ts).
+      const file = await shrinkPhoto(chosenFile);
+      // Still too big (or not a photo the browser can read): say so, and do not send it for nothing.
       if (file.size > MAX_IMAGE_BYTES) {
         toast.error(tError("imageTooBig"));
         continue;
