@@ -117,15 +117,10 @@ export async function getGovtReports() {
   const since = new Date(Date.now() - REPORT_DAYS * 24 * 60 * 60 * 1000);
   const worked = { status: { notIn: NOT_WORKED_STATUSES } };
 
-  const [bookings, recent, machineTypes, readyMachines, subsidyRows, waiting] = await Promise.all([
-    // Every booking that went ahead, with its field's upazila and district.
-    db.booking.findMany({
-      where: worked,
-      select: {
-        locationId: true,
-        location: { select: { name: true, nameBn: true, lat: true, lng: true, parent: { select: { id: true, name: true, nameBn: true } } } },
-      },
-    }),
+  const [bookingsPerUpazila, recent, machineTypes, readyMachines, subsidyRows, waiting] = await Promise.all([
+    // How many bookings went ahead in each upazila (of the field). The database counts them,
+    // so this stays fast however many bookings there are.
+    db.booking.groupBy({ by: ["locationId"], where: worked, _count: { _all: true } }),
     // The last 90 days: which machine type, and the rate booked.
     db.booking.findMany({
       where: { ...worked, createdAt: { gte: since } },
@@ -144,14 +139,25 @@ export async function getGovtReports() {
     }),
   ]);
 
+  // The upazilas that have bookings, with their centre and their district (one row each).
+  const upazilas = await db.location.findMany({
+    where: { id: { in: bookingsPerUpazila.map((row) => row.locationId) } },
+    select: { id: true, name: true, nameBn: true, lat: true, lng: true, parent: { select: { id: true, name: true, nameBn: true } } },
+  });
+  const upazilaById = new Map(upazilas.map((upazila) => [upazila.id, upazila]));
+  let totalBookings = 0;
+  for (const row of bookingsPerUpazila) {
+    totalBookings += row._count._all;
+  }
+
   // ── Bookings by district ──
   const districtNames = new Map<string, Named>();
   const districtRows: { key: string; amount: number }[] = [];
-  for (const booking of bookings) {
-    const district = booking.location.parent;
+  for (const row of bookingsPerUpazila) {
+    const district = upazilaById.get(row.locationId)?.parent;
     if (district) {
       districtNames.set(district.id, district);
-      districtRows.push({ key: district.id, amount: 1 });
+      districtRows.push({ key: district.id, amount: row._count._all });
     }
   }
   const byDistrict = sumByKey(districtRows).map((point) => ({ ...districtNames.get(point.key)!, value: point.value }));
@@ -189,11 +195,13 @@ export async function getGovtReports() {
 
   // ── The demand heatmap: bookings + farmers still waiting, per upazila ──
   const demandMap = buildDemandPlaces([
-    ...bookings.map((booking) => ({ kind: "booking" as const, placeId: booking.locationId, place: booking.location })),
+    ...bookingsPerUpazila
+      .filter((row) => upazilaById.has(row.locationId))
+      .map((row) => ({ kind: "booking" as const, placeId: row.locationId, place: upazilaById.get(row.locationId)!, count: row._count._all })),
     ...waiting
       .filter((entry) => entry.locationId !== null && entry.location !== null)
       .map((entry) => ({ kind: "waiting" as const, placeId: entry.locationId!, place: entry.location! })),
   ]);
 
-  return { totalBookings: bookings.length, byDistrict, demandVsSupply, prices, subsidyByMonth, demandMap };
+  return { totalBookings, byDistrict, demandVsSupply, prices, subsidyByMonth, demandMap };
 }

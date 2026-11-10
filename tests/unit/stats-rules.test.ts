@@ -100,6 +100,17 @@ describe("niceTicks", () => {
   });
 });
 
+describe("buildDemandPlaces with counted rows", () => {
+  it("adds up rows that stand for several bookings (counted by the database)", () => {
+    const paba = { name: "Paba", nameBn: "পবা", lat: 24.43, lng: 88.61 };
+    const places = buildDemandPlaces([
+      { kind: "booking", placeId: "paba", place: paba, count: 7 },
+      { kind: "waiting", placeId: "paba", place: paba },
+    ]);
+    expect(places).toEqual([{ id: "paba", ...paba, bookings: 7, waiting: 1, demand: 8 }]);
+  });
+});
+
 describe("buildDemandPlaces", () => {
   const paba = { name: "Paba", nameBn: "পবা", lat: 24.4, lng: 88.6 };
   const tanore = { name: "Tanore", nameBn: "তানোর", lat: 24.6, lng: 88.5 };

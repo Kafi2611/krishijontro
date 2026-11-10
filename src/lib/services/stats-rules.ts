@@ -136,11 +136,15 @@ export type DemandPlace = {
   demand: number; // bookings + waiting
 };
 
-/** A booking or a waitlist entry, with the upazila it is in (its centre may be unknown). */
+/**
+ * Bookings or waitlist entries in one upazila (its centre may be unknown). `count` says how many
+ * this row stands for (1 when it is left out), so the database can count them for us.
+ */
 export type DemandRow = {
   kind: "booking" | "waiting";
   placeId: string;
   place: { name: string; nameBn: string; lat: number | null; lng: number | null };
+  count?: number;
 };
 
 /**
@@ -160,12 +164,13 @@ export function buildDemandPlaces(rows: DemandRow[]): DemandPlace[] {
       place = { id: row.placeId, name: row.place.name, nameBn: row.place.nameBn, lat, lng, bookings: 0, waiting: 0, demand: 0 };
       places.set(row.placeId, place);
     }
+    const count = row.count ?? 1;
     if (row.kind === "booking") {
-      place.bookings += 1;
+      place.bookings += count;
     } else {
-      place.waiting += 1;
+      place.waiting += count;
     }
-    place.demand += 1;
+    place.demand += count;
   }
   return [...places.values()].sort((a, b) => b.demand - a.demand || a.name.localeCompare(b.name));
 }
