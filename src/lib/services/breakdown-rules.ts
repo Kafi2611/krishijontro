@@ -10,6 +10,8 @@
  *      - the broken machine is paid only for the work it did (plus its delivery: it did come)
  *      - the replacement machine does the rest at the same rate, with free delivery
  *      Neither bill uses the minimum charge, because a breakdown cut the job in two.
+ *      A group plot's saved share of the group's minimum charge is kept: it is split between
+ *      the two bills in proportion to the work each machine does (splitMinimumShare).
  *   4. The order of the replacement machines: nearest first, then the more trusted provider.
  */
 import type { BillingUnit } from "@/generated/prisma/enums";
@@ -119,13 +121,36 @@ export type BillPercents = {
 };
 
 /**
+ * A group plot may carry a "minimum share": its part of the group's minimum charge, saved inside
+ * its work charge when the plots together were below the minimum (group-booking-rules.ts).
+ * After a breakdown that share must not get lost, and it must not be charged twice. So it is
+ * split between the two machines in proportion to the work each one does (whole taka; the two
+ * parts add up to exactly the share):
+ *   doneShare        -> the broken machine's bill (for the part of the plot it did)
+ *   replacementShare -> the replacement machine's bill (for the rest of the plot)
+ * Example: share 100 Tk, 0.1 acre booked, 0.04 acre done -> doneShare 40, replacementShare 60
+ * A booking that is not a group plot has minimumShare 0, so both parts are 0.
+ */
+export function splitMinimumShare(
+  booking: { minimumShare: number; quantity: number },
+  doneQuantity: number,
+): { doneShare: number; replacementShare: number } {
+  if (booking.minimumShare === 0 || booking.quantity <= 0) {
+    return { doneShare: 0, replacementShare: 0 };
+  }
+  const doneShare = Math.round((booking.minimumShare * doneQuantity) / booking.quantity);
+  return { doneShare, replacementShare: booking.minimumShare - doneShare };
+}
+
+/**
  * The broken machine's bill: only the work it did, at the booked rate, plus its delivery
- * charge (it did come to the field). No minimum charge.
+ * charge (it did come to the field). No minimum charge of its own; `minimumShare` is its part
+ * of a group plot's minimum share (splitMinimumShare), 0 for every other booking.
  * Example: 0.4 acre done at 2400, delivery 250, 20% subsidy, 3% fee
  *          -> work 960, delivery 250, subsidy 192, farmer pays 1018
  */
-export function billWorkDone(booking: BrokenBooking, doneQuantity: number, percents: BillPercents): Bill {
-  const workCharge = Math.round(doneQuantity * booking.rateSnapshot);
+export function billWorkDone(booking: BrokenBooking, doneQuantity: number, percents: BillPercents, minimumShare = 0): Bill {
+  const workCharge = Math.round(doneQuantity * booking.rateSnapshot) + minimumShare;
   return billFromCharges(
     { workCharge, deliveryCharge: booking.deliveryCharge },
     percents.subsidyPercent,
@@ -135,12 +160,18 @@ export function billWorkDone(booking: BrokenBooking, doneQuantity: number, perce
 
 /**
  * The replacement machine's bill: the work left, at the rate the farmer BOOKED (the price they
- * agreed to), with free delivery. No minimum charge.
+ * agreed to), with free delivery. No minimum charge of its own; `minimumShare` is its part of
+ * a group plot's minimum share (splitMinimumShare), 0 for every other booking.
  * Example: 0.26 acre left at 2400, 20% subsidy, 3% fee -> work 624, subsidy 125, farmer pays 499
  * Together with the example above: 1018 + 499 = 1517, the same as the job without a breakdown.
  */
-export function billReplacement(booking: BrokenBooking, remainingQuantity: number, percents: BillPercents): Bill {
-  const workCharge = Math.round(remainingQuantity * booking.rateSnapshot);
+export function billReplacement(
+  booking: BrokenBooking,
+  remainingQuantity: number,
+  percents: BillPercents,
+  minimumShare = 0,
+): Bill {
+  const workCharge = Math.round(remainingQuantity * booking.rateSnapshot) + minimumShare;
   return billFromCharges({ workCharge, deliveryCharge: 0 }, percents.subsidyPercent, percents.platformFeePercent);
 }
 

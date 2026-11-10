@@ -11,6 +11,8 @@
  *      - a new booking for the rest of the work, with parentBookingId = the broken booking, the
  *        farmer's booked rate and free delivery. It is accepted at once, with new OTP codes.
  *      - the broken booking moves BREAKDOWN -> COMPLETED, billed only for the work done
+ *      - a group plot's share of the group's minimum charge is split between these two bills
+ *        in proportion to the work (splitMinimumShare in breakdown-rules.ts), so it is not lost
  *      - the report becomes REPLACED, and the farmer and the broken machine's provider are told
  * 4. markNoReplacement(): nobody sent a machine within 2 hours, so the admin presses "No
  *    replacement found". The broken booking is billed only for the work done (COMPLETED), or
@@ -43,6 +45,7 @@ import {
   getRemainingWork,
   getReplacementTimeRange,
   sortReplacementMachines,
+  splitMinimumShare,
   type BillPercents,
 } from "@/lib/services/breakdown-rules";
 import { generateOtp } from "@/lib/services/booking-rules";
@@ -197,7 +200,8 @@ export async function listReplacementOffers(providerId: string) {
     const machines = (await findReplacementMachines(breakdown)).filter((machine) => machine.providerId === providerId);
     if (machines.length > 0) {
       const job = getReplacementJob(breakdown);
-      const bill = billReplacement(breakdown.booking, job.remaining.quantity, await getBillPercents(breakdown));
+      const shares = splitMinimumShare(breakdown.booking, breakdown.completedQuantity);
+      const bill = billReplacement(breakdown.booking, job.remaining.quantity, await getBillPercents(breakdown), shares.replacementShare);
       offers.push({ breakdown, machines, job, providerAmount: bill.providerAmount });
     }
   }
@@ -270,8 +274,12 @@ export async function acceptReplacement(reportId: string, machineId: string, pro
       const machine = await checkReplacementMachine(tx, breakdown, machineId, providerId, job);
       const percents = await getBillPercents(breakdown);
 
+      // A group plot's share of the group's minimum charge is split between the two bills, in
+      // proportion to the work each machine does (0 and 0 for a booking that is not a group plot).
+      const shares = splitMinimumShare(broken, breakdown.completedQuantity);
+
       // 1. The new booking for the rest of the work: the booked rate, free delivery, accepted at once.
-      const bill = billReplacement(broken, job.remaining.quantity, percents);
+      const bill = billReplacement(broken, job.remaining.quantity, percents, shares.replacementShare);
       const replacement = await insertNewBooking(tx, {
         farmerId: broken.farmerId,
         machineId,
@@ -289,6 +297,7 @@ export async function acceptReplacement(reportId: string, machineId: string, pro
         locationId: broken.locationId,
         distanceKm: machine.distanceKm,
         rateSnapshot: broken.rateSnapshot,
+        minimumShare: shares.replacementShare, // saved, so the bill at its own finish keeps it
         ...billColumns(bill),
       }, providerId);
       const startOtp = generateOtp();
@@ -296,9 +305,14 @@ export async function acceptReplacement(reportId: string, machineId: string, pro
       await changeBookingStatus(replacement.id, "ACCEPTED", providerId, tx, { data: { startOtp, finishOtp } });
 
       // 2. The broken booking is billed only for the work done before the breakdown.
-      const doneBill = billWorkDone(broken, breakdown.completedQuantity, percents);
+      const doneBill = billWorkDone(broken, breakdown.completedQuantity, percents, shares.doneShare);
       await changeBookingStatus(broken.id, "COMPLETED", providerId, tx, {
-        data: { actualQuantity: breakdown.completedQuantity, ...billColumns(doneBill), completedAt: new Date() },
+        data: {
+          actualQuantity: breakdown.completedQuantity,
+          ...billColumns(doneBill),
+          minimumShare: shares.doneShare,
+          completedAt: new Date(),
+        },
       });
 
       // 3. The search is over.
@@ -334,9 +348,17 @@ export async function markNoReplacement(reportId: string, adminId: string): Prom
     const brokenInfo = messageInfo(broken);
 
     if (breakdown.completedQuantity > 0) {
-      const doneBill = billWorkDone(broken, breakdown.completedQuantity, await getBillPercents(breakdown));
+      // A group plot keeps the part of its minimum share that belongs to the work done; the part
+      // for the unfinished work is not charged (like the unfinished work itself).
+      const shares = splitMinimumShare(broken, breakdown.completedQuantity);
+      const doneBill = billWorkDone(broken, breakdown.completedQuantity, await getBillPercents(breakdown), shares.doneShare);
       await changeBookingStatus(broken.id, "COMPLETED", adminId, tx, {
-        data: { actualQuantity: breakdown.completedQuantity, ...billColumns(doneBill), completedAt: new Date() },
+        data: {
+          actualQuantity: breakdown.completedQuantity,
+          ...billColumns(doneBill),
+          minimumShare: shares.doneShare,
+          completedAt: new Date(),
+        },
       });
       await createNotification({ userId: broken.farmerId, channel: "SMS", ...noReplacementFarmerMessage(brokenInfo, doneBill.totalAmount) }, tx);
       await createNotification({ userId: broken.machine.providerId, ...brokenJobClosedMessage(brokenInfo, doneBill.providerAmount) }, tx);

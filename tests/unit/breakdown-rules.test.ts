@@ -12,6 +12,7 @@ import {
   getReplacementTimeRange,
   isDoneAmountValid,
   sortReplacementMachines,
+  splitMinimumShare,
 } from "@/lib/services/breakdown-rules";
 
 // The project's price example: 66 decimal of tilling at 2400 Tk/acre, 250 Tk delivery.
@@ -89,6 +90,42 @@ describe("the two bills of a breakdown", () => {
 
   it("does not use the minimum charge: no work done means only the delivery", () => {
     expect(billWorkDone(tilling, 0, percents).totalAmount).toBe(250);
+  });
+});
+
+describe("a group plot's minimum share after a breakdown", () => {
+  // A small group plot: 10 decimal (0.1 acre) at 1500 Tk/acre = 150 Tk of own work, plus a
+  // 100 Tk share of the group's minimum charge, and a 50 Tk share of the one trip.
+  const groupPlot = { rateSnapshot: 1500, deliveryCharge: 50, minimumShare: 100, quantity: 0.1 };
+  const noSubsidy = { subsidyPercent: 0, platformFeePercent: 3 };
+
+  it("splits the share in proportion to the work each machine does", () => {
+    expect(splitMinimumShare(groupPlot, 0.04)).toEqual({ doneShare: 40, replacementShare: 60 });
+    expect(splitMinimumShare(groupPlot, 0.05)).toEqual({ doneShare: 50, replacementShare: 50 });
+  });
+
+  it("never loses or adds a taka: the two parts are always the whole share", () => {
+    const shares = splitMinimumShare({ minimumShare: 37, quantity: 0.1 }, 0.033);
+    expect(shares).toEqual({ doneShare: 12, replacementShare: 25 });
+    expect(shares.doneShare + shares.replacementShare).toBe(37);
+  });
+
+  it("gives the whole share to the replacement when no work was done", () => {
+    expect(splitMinimumShare(groupPlot, 0)).toEqual({ doneShare: 0, replacementShare: 100 });
+  });
+
+  it("is 0 for a booking that is not a group plot", () => {
+    expect(splitMinimumShare({ minimumShare: 0, quantity: 0.66 }, 0.4)).toEqual({ doneShare: 0, replacementShare: 0 });
+  });
+
+  it("keeps the share in the two bills, so the farmer pays the same as without a breakdown", () => {
+    const shares = splitMinimumShare(groupPlot, 0.04);
+    const doneBill = billWorkDone(groupPlot, 0.04, noSubsidy, shares.doneShare);
+    const replacementBill = billReplacement(groupPlot, 0.06, noSubsidy, shares.replacementShare);
+    expect(doneBill.workCharge).toBe(100); // 60 Tk of work + 40 Tk of the share
+    expect(replacementBill.workCharge).toBe(150); // 90 Tk of work + 60 Tk of the share
+    // Booked: work 150 + share 100 + delivery 50 = 300 Tk.
+    expect(doneBill.totalAmount + replacementBill.totalAmount).toBe(300);
   });
 });
 
