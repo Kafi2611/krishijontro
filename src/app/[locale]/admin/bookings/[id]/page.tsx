@@ -97,9 +97,11 @@ export default async function AdminBookingPage({ params }: AdminBookingPageProps
                     {tMethod(payment.method)} ·{" "}
                     {format.dateTime(payment.paidAt ?? payment.createdAt, { dateStyle: "medium", timeStyle: "short" })}
                   </p>
+                  {/* Each refund with its status: a FAILED one gave no money back */}
                   {payment.refunds.map((refund) => (
-                    <p key={refund.id} className="text-sm">
-                      {t("refundLine", { amount: refund.amount, reason: refund.reason })}
+                    <p key={refund.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                      <span>{t("refundLine", { amount: refund.amount, reason: refund.reason })}</span>
+                      <StatusBadge status={refund.status} />
                     </p>
                   ))}
                 </li>
