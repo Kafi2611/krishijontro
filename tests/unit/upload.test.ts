@@ -1,7 +1,8 @@
-// Unit tests for photo uploads: finding the real picture type from the first bytes
-// (src/lib/services/upload.ts) and the allowed photo address shape (validators/upload.ts).
+// Unit tests for photo uploads: finding the real picture type from the first bytes, choosing
+// where photos are kept (src/lib/services/upload.ts) and the allowed photo address shape
+// (validators/upload.ts).
 import { describe, expect, it } from "vitest";
-import { detectImageType } from "@/lib/services/upload";
+import { detectImageType, usesBlobStorage } from "@/lib/services/upload";
 import { UPLOADED_IMAGE_URL_REGEX } from "@/lib/validators/upload";
 
 /** Makes a byte list from numbers and text, e.g. bytes("RIFF", 0, 0, 0, 0, "WEBP"). */
@@ -37,9 +38,16 @@ describe("detectImageType", () => {
 });
 
 describe("UPLOADED_IMAGE_URL_REGEX", () => {
+  const blobStore = "https://abc123xyz.public.blob.vercel-storage.com";
+
   it("accepts addresses made by our upload service", () => {
     expect(UPLOADED_IMAGE_URL_REGEX.test("/uploads/9f86d081884c7d659a2feaa0c55ad015.jpg")).toBe(true);
     expect(UPLOADED_IMAGE_URL_REGEX.test("/uploads/9f86d081884c7d659a2feaa0c55ad015.webp")).toBe(true);
+  });
+
+  it("accepts the Vercel Blob address of a photo saved on Vercel", () => {
+    expect(UPLOADED_IMAGE_URL_REGEX.test(`${blobStore}/uploads/9f86d081884c7d659a2feaa0c55ad015.jpg`)).toBe(true);
+    expect(UPLOADED_IMAGE_URL_REGEX.test(`${blobStore}/uploads/9f86d081884c7d659a2feaa0c55ad015.png`)).toBe(true);
   });
 
   it("rejects other addresses", () => {
@@ -47,5 +55,21 @@ describe("UPLOADED_IMAGE_URL_REGEX", () => {
     expect(UPLOADED_IMAGE_URL_REGEX.test("/uploads/../.env")).toBe(false);
     expect(UPLOADED_IMAGE_URL_REGEX.test("/uploads/short.jpg")).toBe(false);
     expect(UPLOADED_IMAGE_URL_REGEX.test("/uploads/9f86d081884c7d659a2feaa0c55ad015.gif")).toBe(false);
+  });
+
+  it("rejects look-alike addresses on other websites", () => {
+    const photo = "uploads/9f86d081884c7d659a2feaa0c55ad015.jpg";
+    expect(UPLOADED_IMAGE_URL_REGEX.test(`https://evil.com/${photo}`)).toBe(false);
+    expect(UPLOADED_IMAGE_URL_REGEX.test(`http://abc.public.blob.vercel-storage.com/${photo}`)).toBe(false); // not https
+    expect(UPLOADED_IMAGE_URL_REGEX.test(`https://public.blob.vercel-storage.com.evil.com/${photo}`)).toBe(false);
+    expect(UPLOADED_IMAGE_URL_REGEX.test(`${blobStore}/other/9f86d081884c7d659a2feaa0c55ad015.jpg`)).toBe(false);
+  });
+});
+
+describe("usesBlobStorage", () => {
+  it("uses Vercel Blob only when its token is set", () => {
+    expect(usesBlobStorage({ BLOB_READ_WRITE_TOKEN: "vercel_blob_rw_example" })).toBe(true);
+    expect(usesBlobStorage({})).toBe(false);
+    expect(usesBlobStorage({ BLOB_READ_WRITE_TOKEN: "" })).toBe(false);
   });
 });

@@ -1,7 +1,8 @@
 // API route for uploading ONE photo:  POST /api/upload  (form field "file").
 // The photo picker calls it as soon as a photo is chosen, so the person sees a
 // preview before saving the form. The form then sends only the photo's address.
-// Answers with { url: "/uploads/<name>.jpg" } or { error: "<message key>" }.
+// Answers with { url: "<the photo's address>" } or { error: "<message key>" }.
+// Where the photo is kept (public/uploads or Vercel Blob) is decided in lib/services/upload.ts.
 import { auth } from "@/lib/auth";
 import type { Role } from "@/generated/prisma/enums";
 import { saveUploadedImage } from "@/lib/services/upload";
@@ -37,7 +38,9 @@ export async function POST(request: Request) {
   // 4. Check its real type and size, then save it.
   const result = await saveUploadedImage(file);
   if (!result.ok) {
-    return Response.json({ error: result.error }, { status: 400 });
+    // "uploadFailed" is a problem on our side (the file store); the others mean a wrong file.
+    const status = result.error === "uploadFailed" ? 500 : 400;
+    return Response.json({ error: result.error }, { status });
   }
   return Response.json({ url: result.url });
 }

@@ -1,12 +1,18 @@
 /**
- * Upload service — saves photos people upload (machine photos now, breakdown photos later).
+ * Upload service — saves the photos people upload (machine photos, breakdown photos).
  *
- * In development the files go into the public/uploads folder, so Next.js shows them
- * at the address /uploads/<file name>. (A hosting service like Vercel cannot save
- * files on its disk; the deploy guide in Phase 8 explains using cloud storage there.)
+ * Where a photo is kept depends on where the app runs:
+ *   - On our own computer: in the public/uploads folder, so Next.js shows it at the address
+ *     /uploads/<file name>.
+ *   - On Vercel: a Vercel server cannot keep files on its disk (the disk is read-only and is
+ *     thrown away after each request), so the photo goes to Vercel Blob, a file store in the
+ *     cloud, and gets an address like
+ *     https://<store id>.public.blob.vercel-storage.com/uploads/<file name>.
+ * We use Vercel Blob whenever BLOB_READ_WRITE_TOKEN is set (Vercel adds it when a Blob store
+ * is connected to the project), otherwise the local folder.
  *
  * Safety rules:
- * - Only JPG, PNG and WebP pictures, at most 5 MB.
+ * - Only JPG, PNG and WebP pictures, at most 4 MB.
  * - We read the first bytes of the file (its "magic number") to learn its REAL type,
  *   because the file name and the type sent by the browser are easy to fake.
  * - We give every file a new random name, so nobody can overwrite another file.
@@ -14,13 +20,21 @@
 import { randomBytes } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { put } from "@vercel/blob";
 import { MAX_IMAGE_BYTES } from "@/lib/validators/upload";
 
 export type ImageExtension = "jpg" | "png" | "webp";
 
 export type SaveImageResult =
   | { ok: true; url: string }
-  | { ok: false; error: "imageTooBig" | "imageWrongType" };
+  | { ok: false; error: "imageTooBig" | "imageWrongType" | "uploadFailed" };
+
+/** The type name browsers use for each picture type (sent along when the photo is shown). */
+const CONTENT_TYPES: Record<ImageExtension, string> = {
+  jpg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+};
 
 /**
  * True if `bytes` contains exactly `expected` starting at position `offset`.
@@ -56,8 +70,37 @@ export function detectImageType(bytes: Uint8Array): ImageExtension | null {
 }
 
 /**
- * Checks one uploaded photo and saves it in public/uploads with a random name.
- * Returns { ok: true, url: "/uploads/<name>.jpg" } or an error key.
+ * True if photos go to Vercel Blob (its token is set), false if they go to the local folder.
+ * Example: usesBlobStorage({ BLOB_READ_WRITE_TOKEN: "vercel_blob_rw_..." }) -> true
+ */
+export function usesBlobStorage(env: Record<string, string | undefined> = process.env): boolean {
+  return Boolean(env.BLOB_READ_WRITE_TOKEN);
+}
+
+/**
+ * Saves a photo in Vercel Blob and returns its public address.
+ * put() reads the token from BLOB_READ_WRITE_TOKEN by itself.
+ */
+async function saveToBlobStore(fileName: string, bytes: Uint8Array, extension: ImageExtension): Promise<string> {
+  const blob = await put(`uploads/${fileName}`, Buffer.from(bytes), {
+    access: "public", // machine photos are shown to everyone, like the files in public/uploads
+    contentType: CONTENT_TYPES[extension],
+  });
+  return blob.url;
+}
+
+/** Saves a photo in the public/uploads folder and returns its address on our own site. */
+async function saveToLocalFolder(fileName: string, bytes: Uint8Array): Promise<string> {
+  const folder = path.join(process.cwd(), "public", "uploads");
+  await mkdir(folder, { recursive: true }); // create the folder the first time
+  await writeFile(path.join(folder, fileName), bytes);
+  return `/uploads/${fileName}`;
+}
+
+/**
+ * Checks one uploaded photo and saves it with a random name (in Vercel Blob or in
+ * public/uploads, see the top of this file).
+ * Returns { ok: true, url } with the photo's address, or an error key.
  */
 export async function saveUploadedImage(file: File): Promise<SaveImageResult> {
   if (file.size > MAX_IMAGE_BYTES) {
@@ -72,9 +115,14 @@ export async function saveUploadedImage(file: File): Promise<SaveImageResult> {
 
   // 16 random bytes written as 32 hex letters, e.g. "9f86d081884c7d659a2feaa0c55ad015"
   const fileName = `${randomBytes(16).toString("hex")}.${extension}`;
-  const folder = path.join(process.cwd(), "public", "uploads");
-  await mkdir(folder, { recursive: true }); // create the folder the first time
-  await writeFile(path.join(folder, fileName), bytes);
-
-  return { ok: true, url: `/uploads/${fileName}` };
+  try {
+    const url = usesBlobStorage()
+      ? await saveToBlobStore(fileName, bytes, extension)
+      : await saveToLocalFolder(fileName, bytes);
+    return { ok: true, url };
+  } catch (error) {
+    // The file store could not be reached, or (on Vercel without a Blob store) the disk is read-only.
+    console.error("Saving an uploaded photo failed", error);
+    return { ok: false, error: "uploadFailed" };
+  }
 }

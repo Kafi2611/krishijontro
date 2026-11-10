@@ -1,7 +1,8 @@
 "use client";
 // A photo picker for forms. Each chosen photo is uploaded at once to /api/upload,
 // then shown as a small preview with a remove (X) button.
-// The form only keeps the list of photo addresses, e.g. ["/uploads/ab12....jpg"].
+// The form only keeps the list of photo addresses, e.g. ["/uploads/ab12....jpg"]
+// (on Vercel the addresses point to Vercel Blob instead, see lib/services/upload.ts).
 import { ImagePlus, Loader2, X } from "lucide-react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
