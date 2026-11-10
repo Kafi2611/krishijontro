@@ -101,7 +101,7 @@ export async function PayoutLists() {
         </h2>
         {toPay.length === 0 && <EmptyNote text={t("toPayEmpty")} />}
         <ul className="grid gap-4 lg:grid-cols-2">
-          {toPay.map(({ provider, bookingCount, owed }) => {
+          {toPay.map(({ provider, bookingCount, carriedForward, owed }) => {
             const account = provider.providerProfile?.payoutAccount;
             return (
               <li key={provider.id}>
@@ -118,8 +118,12 @@ export async function PayoutLists() {
                       <span className="text-muted-foreground">{t("bookingCount", { count: bookingCount })}</span>
                       <span className="text-2xl font-bold text-primary tabular-nums">{tPrice("amount", { amount: owed })}</span>
                     </p>
+                    {/* A refund or a fine decided after an earlier payout is already taken off the amount */}
+                    {carriedForward !== 0 && (
+                      <p className="rounded-lg bg-muted p-3 text-sm">{t("carriedForward", { amount: carriedForward })}</p>
+                    )}
                     <p className="text-sm">{account ? t("account", { account }) : t("noAccount")}</p>
-                    {/* Below 0: the provider holds our fee from cash jobs; it waits for the next online job. */}
+                    {/* 0 or below: the provider holds money of ours; it comes off their next payout. */}
                     {owed > 0 ? (
                       <PayoutForm providerId={provider.id} amount={owed} />
                     ) : (

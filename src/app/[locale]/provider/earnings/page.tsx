@@ -1,7 +1,8 @@
 // Provider page: earnings (/provider/earnings).
 // Three numbers at the top (earned so far, waiting to be sent, already sent), then the paid jobs
-// that are not in a payout yet (with how the amount to send is worked out), then the payouts
-// the admin has sent. The money rules are in lib/services/payout.ts and payment-rules.ts.
+// that are not in a payout yet (with how the amount to send is worked out), a note when a refund
+// or a fine after an earlier payout is carried forward, then the payouts the admin has sent.
+// The money rules are in lib/services/payout.ts and payment-rules.ts.
 import { CircleCheckBig, Hourglass, Info, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -36,11 +37,12 @@ export default async function ProviderEarningsPage() {
 
       <div className="grid gap-3 sm:grid-cols-3">
         <StatCard label={t("earned")} value={earnings.earnedTotal} icon={<Wallet className="size-5" aria-hidden />} />
+        {/* The balance = the waiting jobs, with any refund or fine after an earlier payout taken off */}
         <StatCard
           label={t("waiting")}
-          value={earnings.waitingTotal}
+          value={earnings.balance}
           icon={<Hourglass className="size-5" aria-hidden />}
-          highlight={earnings.waitingTotal > 0}
+          highlight={earnings.balance > 0}
         />
         <StatCard label={t("paidOut")} value={earnings.paidOutTotal} icon={<CircleCheckBig className="size-5" aria-hidden />} />
       </div>
@@ -107,6 +109,23 @@ export default async function ProviderEarningsPage() {
                   </TableRow>
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* A refund or a fine decided after a job was already paid out comes off the next payout */}
+        {earnings.carriedForward !== 0 && (
+          <Card className="border-amber-300 bg-amber-50">
+            <CardContent className="space-y-2">
+              <p className="flex flex-wrap items-baseline justify-between gap-2 font-semibold">
+                <span>{t("carried")}</span>
+                <span className="tabular-nums">{tPrice("amount", { amount: earnings.carriedForward })}</span>
+              </p>
+              <p className="text-sm">{t("carriedText")}</p>
+              <p className="flex flex-wrap items-baseline justify-between gap-2 border-t border-amber-200 pt-2 font-bold">
+                <span>{t("toSendNow")}</span>
+                <span className="tabular-nums">{tPrice("amount", { amount: earnings.balance })}</span>
+              </p>
             </CardContent>
           </Card>
         )}

@@ -1,9 +1,11 @@
 // Unit tests for src/lib/services/payment-rules.ts: the transaction id, which bookings can be
-// paid, how much can still be refunded, and what KrishiJontro owes the provider.
+// paid, how much can still be refunded, what KrishiJontro owes the provider for one booking, and
+// the provider's balance (with a refund or fine after a payout carried forward).
 import { describe, expect, it } from "vitest";
 import {
   canPayBooking,
   getBookingMoney,
+  getProviderBalance,
   getRefundableAmount,
   makeTransactionId,
   sumAmounts,
@@ -71,6 +73,58 @@ describe("refund amounts", () => {
 
   it("never goes below 0", () => {
     expect(getRefundableAmount(100, [{ amount: 150, status: "PROCESSED" }])).toBe(0);
+  });
+});
+
+describe("getProviderBalance", () => {
+  it("is the total of the waiting bookings when nothing was paid out yet", () => {
+    const balance = getProviderBalance(
+      [
+        { owed: 1779, isPaidOut: false },
+        { owed: 262, isPaidOut: false },
+      ],
+      0,
+    );
+    expect(balance).toEqual({ waitingTotal: 2041, carriedForward: 0, balance: 2041 });
+  });
+
+  it("carries nothing forward when the paid-out bookings are still worth what was sent", () => {
+    const balance = getProviderBalance(
+      [
+        { owed: 1779, isPaidOut: true },
+        { owed: 1500, isPaidOut: false },
+      ],
+      1779,
+    );
+    expect(balance).toEqual({ waitingTotal: 1500, carriedForward: 0, balance: 1500 });
+  });
+
+  it("carries a refund made after the payout forward to the next payout", () => {
+    // 1779 was sent for the first booking; then 200 Tk went back to the farmer, so it is worth 1579.
+    const balance = getProviderBalance(
+      [
+        { owed: 1579, isPaidOut: true },
+        { owed: 1500, isPaidOut: false },
+      ],
+      1779,
+    );
+    expect(balance).toEqual({ waitingTotal: 1500, carriedForward: -200, balance: 1300 });
+  });
+
+  it("is even again after that next payout", () => {
+    const balance = getProviderBalance(
+      [
+        { owed: 1579, isPaidOut: true },
+        { owed: 1500, isPaidOut: true },
+      ],
+      1779 + 1300,
+    );
+    expect(balance).toEqual({ waitingTotal: 0, carriedForward: 0, balance: 0 });
+  });
+
+  it("keeps a debt when no new job waits: the balance is below 0 until the provider earns more", () => {
+    const balance = getProviderBalance([{ owed: 1479, isPaidOut: true }], 1779); // fined 300 after the payout
+    expect(balance).toEqual({ waitingTotal: 0, carriedForward: -300, balance: -300 });
   });
 });
 

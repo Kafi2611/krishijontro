@@ -8,6 +8,8 @@
  *      one the farmer complained about before paying, once the admin has decided the complaint
  *   3. getRefundableAmount(): how much of a payment can still be given back
  *   4. getBookingMoney(): for one paid booking, what KrishiJontro still owes the provider
+ *   5. getProviderBalance(): for one provider, what the next payout sends, with any refund or
+ *      fine decided after an earlier payout carried forward
  */
 import type { BookingStatus, PaymentMethod, PaymentStatus, RefundStatus } from "@/generated/prisma/enums";
 import { getProviderShare } from "@/lib/services/booking-rules";
@@ -113,4 +115,42 @@ export function getBookingMoney(booking: MoneyBooking): BookingMoney {
     fined += dispute.penaltyAmount;
   }
   return { share, cashTaken, refunded, fined, owed: share - cashTaken - refunded - fined };
+}
+
+// ─────────────────────────── 5. The provider's balance ───────────────────────────
+
+/** What KrishiJontro owes one provider at this moment, every amount in whole taka. */
+export type ProviderBalance = {
+  waitingTotal: number; // the paid bookings that are not in a payout yet, added up
+  carriedForward: number; // changes to bookings that were ALREADY paid out (0 when there are none)
+  balance: number; // what the next payout sends = waitingTotal + carriedForward
+};
+
+/**
+ * Works out a provider's balance like a bank statement:
+ *   everything their paid bookings are worth now (getBookingMoney's "owed")
+ *   − everything already sent to them in payouts.
+ * The bookings are split in two, so the pages can explain the number:
+ * - waitingTotal: bookings not in a payout yet
+ * - carriedForward: bookings already in a payout are worth less now than what was sent for
+ *   them, when a refund or a fine was decided AFTER the payout. That difference (below 0) is
+ *   carried forward: it comes off the next payout.
+ *
+ * Example: a booking worth 1779 Tk was paid out (payout 1779). Then the farmer got 200 Tk back,
+ *   so it is worth 1579 now: carriedForward = 1579 − 1779 = −200.
+ *   A new paid booking worth 1500 waits: balance = 1500 − 200 = 1300, the next payout.
+ *   After that payout (1300) everything is even again: 1579 + 1500 − (1779 + 1300) = 0.
+ */
+export function getProviderBalance(bookings: { owed: number; isPaidOut: boolean }[], payoutsTotal: number): ProviderBalance {
+  let waitingTotal = 0;
+  let paidOutWorth = 0; // what the bookings already in a payout are worth NOW
+  for (const booking of bookings) {
+    if (booking.isPaidOut) {
+      paidOutWorth += booking.owed;
+    } else {
+      waitingTotal += booking.owed;
+    }
+  }
+  const carriedForward = paidOutWorth - payoutsTotal;
+  return { waitingTotal, carriedForward, balance: waitingTotal + carriedForward };
 }
