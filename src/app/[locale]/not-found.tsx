@@ -3,6 +3,7 @@ import { SearchX } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Footer } from "@/components/layout/footer";
 import { Navbar } from "@/components/layout/navbar";
+import { MAIN_CONTENT_ID } from "@/components/layout/skip-link";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/lib/navigation";
 
@@ -11,7 +12,11 @@ export default async function NotFoundPage() {
   return (
     <>
       <Navbar />
-      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-16 text-center">
+      <main
+        id={MAIN_CONTENT_ID}
+        tabIndex={-1}
+        className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-16 text-center outline-none"
+      >
         <SearchX className="size-14 text-muted-foreground" aria-hidden />
         <h1 className="text-2xl font-bold">{t("notFoundTitle")}</h1>
         <p className="text-muted-foreground">{t("notFoundText")}</p>

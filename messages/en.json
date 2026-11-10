@@ -21,7 +21,8 @@
     "saved": "Saved",
     "cancel": "Cancel",
     "edit": "Edit",
-    "back": "Back"
+    "back": "Back",
+    "skipToContent": "Skip to main content"
   },
   "Roles": {
     "FARMER": "Farmer",

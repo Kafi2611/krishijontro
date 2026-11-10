@@ -6,6 +6,7 @@ import { Inter, Noto_Sans_Bengali } from "next/font/google";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { SkipLink } from "@/components/layout/skip-link";
 import { Toaster } from "@/components/ui/sonner";
 import { routing } from "@/lib/i18n";
 import "../globals.css";
@@ -48,6 +49,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
     <html lang={locale} className={`${inter.variable} ${bengali.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <NextIntlClientProvider>
+          <SkipLink />
           {children}
           <Toaster richColors position="top-center" />
         </NextIntlClientProvider>

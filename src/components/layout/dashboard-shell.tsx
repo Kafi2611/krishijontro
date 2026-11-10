@@ -5,6 +5,7 @@ import type { Role } from "@/generated/prisma/enums";
 import { getNavItemsForRole } from "@/lib/role-nav";
 import { Navbar } from "./navbar";
 import { SidebarNav, type SidebarLink } from "./sidebar-nav";
+import { MAIN_CONTENT_ID } from "./skip-link";
 
 type DashboardShellProps = {
   role: Role;
@@ -32,7 +33,9 @@ export async function DashboardShell({ role, children }: DashboardShellProps) {
           </p>
           <SidebarNav items={sidebarLinks} />
         </aside>
-        <main className="min-w-0 flex-1 p-4 md:p-6">{children}</main>
+        <main id={MAIN_CONTENT_ID} tabIndex={-1} className="min-w-0 flex-1 p-4 outline-none md:p-6">
+          {children}
+        </main>
       </div>
     </>
   );
