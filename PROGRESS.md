@@ -155,3 +155,31 @@ What was built in each phase, and how to check it.
 - Admin → **Users**: search `01710000010` → **Suspend** with a reason (that farmer, if logged in, is sent to the login page on their next click) → **Activate**. **Add a staff account** → Officer (an upazila is required) → log in as them. **Settings** → fee 4% → **Audit log** shows "Settings changed".
 - Provider and admin **Dashboard** charts; govt `01700000007` → **Reports** (heatmap, districts, demand vs supply, prices, subsidy); officer `01700000006` → **Bookings and complaints**. Switch to **বাং**: Bangla digits and month names; everything is in Bangla.
 - `npm test` runs 305 unit tests (final bill, settings, user filters and staff form, complaints and fines, tickets, cooperative and group booking rules with the group minimum charge, chart helpers); `npm run lint` and `npm run build` pass.
+
+---
+
+## Phase 8 — Quality + deploy (in progress, 10 November 2026)
+
+**What is done so far**
+
+- **Fixes from testing**: `npm audit fix` (without `--force`); the login and register forms are sent with POST, so the phone and password never appear in the address; a refund the payment gateway cannot send (e.g. SSLCommerz without keys) is saved as **Failed** with a clear message, and a failed refund never counts as money given back; machine and breakdown photos go to **Vercel Blob** when `BLOB_READ_WRITE_TOKEN` is set (still `public/uploads` on our own computer), and the photo limit is now 4 MB because Vercel refuses bigger requests.
+- **Codes and bills**: the start and finish codes **lock after 5 wrong tries** (the operator sees how many tries are left; the farmer gets a message and a **Get a new code** button; new column `Booking.otpWrongTries`); a cancelled or rejected booking shows that nothing is to be paid (or only the late cancellation fee), in the bill and in every list.
+- **Complaints and money**: after the admin decides a complaint on an unpaid booking the badge says **Waiting for payment** (not "Complaint open"), and a bill correction is written in the audit log as **Bill corrected**; a refund or fine decided **after** a provider was paid out is carried forward and taken from their next payout (Earnings and the admin's Payouts show it); a group plot that breaks down keeps its share of the group's minimum charge, split between the broken machine's bill and the replacement's bill by the work each one did. The admin's booking page shows each refund's status.
+- **Bangla**: times show as **সকাল ৮:০০ / বিকাল ৪:৩০** instead of AM/PM (one formatter for the whole app, `lib/format.ts`); map pin numbers, the settings limits, the footer and the demo messages use Bangla digits; the audit log names each kind of record; subsidy programs get a **Bangla description** (new column `SubsidyProgram.descriptionBn`). Every page of every role was opened in Bangla at **360 px** phone width: no page scrolls sideways and no screen text is left in English (names, notes and model numbers that people typed stay as typed).
+- **End-to-end tests (Playwright)**: `npm run test:e2e` opens a real browser (Edge on Windows) and runs the **main flow** — register a new farmer → search → book (3 steps) → provider accepts → sends an operator → start code → finish code → pay online → review — plus a check that the group booking form asks for a machine type before step 2 (that error now also goes away once a type is chosen).
+
+**How to test what is done** (run `npm install`, then `npm run db:migrate` once for the 3 new migrations, then `npm run db:seed`)
+
+- Open `/en/login`, turn JavaScript off in the browser and press **Log in**: the address stays `/en/login` (no phone or password in it).
+- Admin `01700000008` → **Payments** → **Refund** on an SSLCommerz payment (no keys in `.env`): a clear error, and the refund shows **Failed**.
+- Operator `01700000004` → a job "On the way" → **I have arrived** → type a wrong start code 5 times: "The code is locked". Farmer `01700000001` → that booking → **Get a new code** → the operator types the new code.
+- Switch to **বাং**: booking times read "সকাল ৯:০০"; the farmer's **Subsidy** page shows the program description in Bangla.
+- `npm test` runs 333 unit tests and `npm run test:e2e` runs 2 browser tests (it builds the site and starts it on port 3100 by itself); `npm run lint` and `npm run build` pass.
+
+**Still to do in Phase 8**
+
+- Check the same pages in **English** at 360 px, take the **screenshots** (`docs/screenshots/`) and write the **final README** (features, screenshots, setup steps, demo logins).
+- Look again at `npm audit`: it shows 17 advisories now (some came with Vercel Blob and Playwright); the rest need `--force`, which is not used.
+- **Final review** of the whole project (security, bugs, performance, accessibility, code quality) with a short report, then small fixes. Already noted: card titles are not real headings (accessibility), and audit log notes are written in English only.
+- **Deploy preparation** for Vercel + Neon: the build runs `prisma migrate deploy`, both database addresses use `sslmode=verify-full` (`DIRECT_URL` in `.env.example` still says `require`), the deploy guide in the README and the Vercel website steps.
+- End of phase: `study/phase-8.md`, `study/99-full-project-tour.md`, the `docs(progress): complete phase 8` commit and the `phase-8` tag.
