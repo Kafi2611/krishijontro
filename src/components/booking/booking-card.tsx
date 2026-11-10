@@ -2,11 +2,12 @@
 // work starts, the status and (if given) one more line and an amount.
 // The whole card is a link to the booking's page (without `href`, e.g. for the officer, who has no
 // booking page, it is a plain card). Used by the farmer, provider, operator, admin and officer lists.
-import { useFormatter, useLocale, useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { MachineTypeIcon } from "@/components/machine-type-icon";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { BookingStatus } from "@/generated/prisma/enums";
+import { useFormatter } from "@/lib/format";
 import { localizeDigits } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 

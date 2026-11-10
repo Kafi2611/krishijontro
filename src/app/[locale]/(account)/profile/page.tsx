@@ -1,10 +1,11 @@
 // The profile page: shows the logged-in user's details and the extra
 // information of their role (land for farmers, approval for providers, ...).
 import type { Metadata } from "next";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireUser } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { localizeDigits, pickByLocale } from "@/lib/i18n";
 import { getUserWithProfile } from "@/lib/services/user";
 

@@ -3,7 +3,8 @@
 // was stopped (rejected / cancelled), and grey circles for the steps still to come.
 // The list of steps is made by buildTimeline() in lib/services/booking-rules.ts.
 import { Check, Circle, X } from "lucide-react";
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
+import { useFormatter } from "@/lib/format";
 import type { TimelineKey, TimelineStep } from "@/lib/services/booking-rules";
 import { cn } from "@/lib/utils";
 

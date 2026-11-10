@@ -5,7 +5,7 @@
 // list), three charts (bookings and platform fees per month, accounts per role), and the list of
 // admin features.
 import { Building2, Headset, MessageSquareWarning, Tractor, TriangleAlert, Users, Wallet } from "lucide-react";
-import { getFormatter, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { BarChart } from "@/components/charts/bar-chart";
 import { ChartCard } from "@/components/charts/chart-card";
 import { RoleDashboard } from "@/components/dashboard/role-dashboard";
@@ -13,6 +13,7 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import type { Role } from "@/generated/prisma/enums";
 import { requireRole } from "@/lib/auth";
 import { CHART_COLORS } from "@/lib/chart-colors";
+import { getFormatter } from "@/lib/format-server";
 import { countPendingApprovals } from "@/lib/services/approval";
 import { countOpenDisputes } from "@/lib/services/dispute";
 import { countProvidersToPay } from "@/lib/services/payout";

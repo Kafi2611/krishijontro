@@ -3,13 +3,14 @@
 // spent (with a bar), the applications waiting / approved, and a button to change it.
 import { Pencil, Plus } from "lucide-react";
 import type { Metadata } from "next";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { DetailRow } from "@/components/detail-row";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 import { listSubsidyPrograms } from "@/lib/services/subsidy-program";

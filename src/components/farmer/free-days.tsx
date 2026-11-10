@@ -1,6 +1,7 @@
 // The next 14 days of a machine as small boxes: green = free, grey = busy
 // (another booking, or a day the owner blocked). Two rows of 7 days fit a phone.
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
+import { useFormatter } from "@/lib/format";
 import { startOfDhakaDay, type StripDay } from "@/lib/services/calendar";
 import { cn } from "@/lib/utils";
 

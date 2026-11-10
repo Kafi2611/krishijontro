@@ -1,7 +1,7 @@
 // A small dashboard box with a big number, e.g. "3 machines waiting".
 // If `href` is given, the whole box is a link to the page with the details.
-import { useFormatter } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
+import { useFormatter } from "@/lib/format";
 import { Link } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 

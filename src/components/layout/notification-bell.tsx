@@ -1,7 +1,8 @@
 // The bell icon in the navbar. Shows how many messages are unread and opens the Messages page.
 import { Bell } from "lucide-react";
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { useFormatter } from "@/lib/format";
 import { Link } from "@/lib/navigation";
 
 type NotificationBellProps = {

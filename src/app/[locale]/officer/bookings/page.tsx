@@ -4,13 +4,14 @@
 // latest bookings with the farmer and the provider.
 import { CalendarCheck, CircleCheckBig } from "lucide-react";
 import type { Metadata } from "next";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { BookingCard } from "@/components/booking/booking-card";
 import { DisputeCard } from "@/components/booking/dispute-card";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { localizeDigits, pickByLocale } from "@/lib/i18n";
 import { getAmountDue } from "@/lib/services/booking-rules";
 import { listUpazilaBookings, listUpazilaComplaints } from "@/lib/services/officer";

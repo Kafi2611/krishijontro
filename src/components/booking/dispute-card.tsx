@@ -5,10 +5,11 @@
 //   paid:     "120 Tk given back to the farmer"
 //   not paid: "Bill lowered by 120 Tk" (the farmer then pays the new bill)
 import { MessageSquareWarning } from "lucide-react";
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DisputeDecision, DisputeStatus } from "@/generated/prisma/enums";
+import { useFormatter } from "@/lib/format";
 import { DISPUTE_REASONS, type DisputeReason } from "@/lib/services/dispute-rules";
 import { cn } from "@/lib/utils";
 

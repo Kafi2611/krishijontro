@@ -4,13 +4,14 @@
 // the leader to make one first.
 import { Phone, UsersRound } from "lucide-react";
 import type { Metadata } from "next";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { AddMemberForm, RemoveMemberButton } from "@/components/cooperative/member-actions";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { localizeDigits } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 import { getLeaderCooperative, listMembers } from "@/lib/services/cooperative";

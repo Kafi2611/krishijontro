@@ -5,13 +5,14 @@
 // Below, the applications decided most recently.
 import { CircleAlert, CircleCheckBig, Phone } from "lucide-react";
 import type { Metadata } from "next";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { DetailRow } from "@/components/detail-row";
 import { OfficerDecision } from "@/components/officer/officer-decision";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { localizeDigits, pickByLocale } from "@/lib/i18n";
 import { listApplicationsForOfficer } from "@/lib/services/subsidy";
 

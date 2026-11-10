@@ -3,10 +3,11 @@
 // machine is going. The last line explains what happens next, for the person reading it.
 import { TriangleAlert } from "lucide-react";
 import Image from "next/image";
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { BillingUnit, BreakdownStatus } from "@/generated/prisma/enums";
+import { useFormatter } from "@/lib/format";
 
 type BreakdownCardProps = {
   report: {

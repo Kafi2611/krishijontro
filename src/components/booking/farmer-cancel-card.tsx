@@ -1,10 +1,11 @@
 // The "Change of plans?" box on the farmer's booking page, while the booking can still be
 // cancelled. It says what cancelling costs right now (cancellation-rules.ts):
 // free while the provider has not answered, free until 24 hours before the start, a late fee after.
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { CancelBookingButton } from "@/components/booking/cancel-booking-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { BookingStatus } from "@/generated/prisma/enums";
+import { useFormatter } from "@/lib/format";
 import type { CancellationRules } from "@/lib/services/cancellation-rules";
 
 type FarmerCancelCardProps = {

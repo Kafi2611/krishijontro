@@ -9,7 +9,7 @@
 // which checks it all again (lib/services/group-booking.ts).
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, ArrowRight, CalendarCheck, Check, SearchX } from "lucide-react";
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ import { WorkTypeIcon } from "@/components/work-type-icon";
 import { WorkType } from "@/generated/prisma/enums";
 import { createGroupBookingAction, findGroupMachinesAction } from "@/lib/actions/group-booking";
 import { numberFromInput } from "@/lib/form-values";
+import { useFormatter } from "@/lib/format";
 import { pickByLocale } from "@/lib/i18n";
 import { useRouter } from "@/lib/navigation";
 import { getJobStartAt, START_HOURS } from "@/lib/services/booking-rules";

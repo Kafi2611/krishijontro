@@ -3,12 +3,13 @@
 // Approve / Reject buttons. These are Server Components: they read the database directly.
 import { CircleCheckBig, MapPin, Phone } from "lucide-react";
 import Image from "next/image";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { ApprovalActions } from "@/components/admin/approval-actions";
 import { DetailRow } from "@/components/detail-row";
 import { MachineTypeIcon } from "@/components/machine-type-icon";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getFormatter } from "@/lib/format-server";
 import { localizeDigits, pickByLocale } from "@/lib/i18n";
 import {
   listPendingMachines,

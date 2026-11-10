@@ -1,8 +1,9 @@
 // The conversation of a support ticket, like a chat: the reader's own messages on the right
 // (green), the other side's on the left (grey), each with who wrote it and when.
 // To a user, every admin is shown as "KrishiJontro support".
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import type { Role } from "@/generated/prisma/enums";
+import { useFormatter } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 type ThreadMessage = {

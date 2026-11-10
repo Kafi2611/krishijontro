@@ -3,10 +3,11 @@
 // (work, time, field, what the provider would get) and a "Send this machine" button for each
 // machine that could go (nearest first). The offers come from listReplacementOffers().
 import { Siren } from "lucide-react";
-import { useFormatter, useLocale, useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { DetailRow } from "@/components/detail-row";
 import { SendReplacementButton } from "@/components/provider/send-replacement-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useFormatter } from "@/lib/format";
 import { pickByLocale } from "@/lib/i18n";
 import type { ReplacementOffer } from "@/lib/services/replacement";
 

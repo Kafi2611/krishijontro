@@ -5,7 +5,7 @@
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getFormatter, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/page-header";
 import { AvailabilityCalendar } from "@/components/provider/availability-calendar";
 import { BlockDaysForm } from "@/components/provider/block-days-form";
@@ -13,6 +13,7 @@ import { RemoveBlockButton } from "@/components/provider/remove-block-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { Link } from "@/lib/navigation";
 import { getMachineCalendar } from "@/lib/services/availability";
 import { DAY_REGEX, MONTH_REGEX, toDhakaDay } from "@/lib/services/calendar";

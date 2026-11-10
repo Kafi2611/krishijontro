@@ -1,9 +1,10 @@
 // The facts of one price limit as a short list: rate limit, harvest season,
 // delivery charge, minimum charge and since when it is in force.
 // Used on the government's price limits pages.
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { DetailRow } from "@/components/detail-row";
 import type { BillingUnit } from "@/generated/prisma/enums";
+import { useFormatter } from "@/lib/format";
 import { getSeasonMaxRate } from "@/lib/services/pricing";
 
 export type PricingRuleFacts = {

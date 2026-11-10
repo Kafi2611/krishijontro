@@ -6,7 +6,7 @@
  * The link opens the booking on the page of the person who gets the message.
  * Bangla texts use Bangla digits for codes, amounts and dates.
  */
-import { toBanglaDigits } from "@/lib/i18n";
+import { fixBanglaTimes, toBanglaDigits } from "@/lib/i18n";
 
 /** What every booking message needs to know about the booking. */
 export type BookingMessageInfo = {
@@ -18,11 +18,13 @@ export type BookingMessageInfo = {
 
 /**
  * A date and time in Bangladesh time, for a message.
- * Example: "Oct 20, 2026, 8:00 AM" (en) or "২০ অক্টো, ২০২৬, ৮:০০ AM" (bn)
+ * Example: "Oct 20, 2026, 8:00 AM" (en) or "২০ অক্টো, ২০২৬, সকাল ৮:০০" (bn)
  */
 export function formatDhakaTime(date: Date, language: "en" | "bn"): string {
   const locale = language === "bn" ? "bn-BD" : "en";
-  return new Intl.DateTimeFormat(locale, { timeZone: "Asia/Dhaka", dateStyle: "medium", timeStyle: "short" }).format(date);
+  const text = new Intl.DateTimeFormat(locale, { timeZone: "Asia/Dhaka", dateStyle: "medium", timeStyle: "short" }).format(date);
+  // JavaScript writes Bangla times with an English "AM"/"PM"; fixBanglaTimes turns that into Bangla.
+  return language === "bn" ? fixBanglaTimes(text) : text;
 }
 
 /**

@@ -1,9 +1,10 @@
 // The facts of a booking's job as a list: the work, the land, the time booked (for machines
 // rented per hour or day), the real work done (after the finish), when, where and how far.
 // Used on the booking pages of the farmer, the provider and the operator.
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { DetailRow } from "@/components/detail-row";
 import type { BillingUnit, WorkType } from "@/generated/prisma/enums";
+import { useFormatter } from "@/lib/format";
 import { toDhakaDay } from "@/lib/services/calendar";
 
 /** The Booking columns this list needs. */

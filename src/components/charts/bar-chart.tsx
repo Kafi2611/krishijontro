@@ -6,7 +6,7 @@
 // orange, with a legend. Touching a bar shows its exact value. Under the chart, "Show the
 // numbers" opens the same data as a table (for screen readers, and for anyone who prefers it).
 // Recharts draws in the browser, so this is a Client Component; the page passes plain data.
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import {
   Bar,
   BarChart as RechartsBarChart,
@@ -18,6 +18,7 @@ import {
   type TooltipContentProps,
 } from "recharts";
 import { CHART_COLORS } from "@/lib/chart-colors";
+import { useFormatter } from "@/lib/format";
 import { niceTicks } from "@/lib/services/stats-rules";
 
 /** One series of bars: its name (for the legend and the table), colour and one value per label. */

@@ -1,11 +1,12 @@
 // A card for one repair or service request in the technician's lists: the machine's icon and
 // name, repair or service, the step it is at, the provider and the place, and when it was asked.
 // The whole card is a link to the request's page.
-import { useFormatter, useLocale, useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { MachineTypeIcon } from "@/components/machine-type-icon";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { MaintenanceStatus, MaintenanceType } from "@/generated/prisma/enums";
+import { useFormatter } from "@/lib/format";
 import { pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 

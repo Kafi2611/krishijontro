@@ -8,7 +8,7 @@
 // the current step; "Book now" sends everything to the server, which checks it all again.
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, ArrowRight, CalendarCheck, Check } from "lucide-react";
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -25,6 +25,7 @@ import { UpazilaSelect } from "@/components/upazila-select";
 import { WorkTypeIcon } from "@/components/work-type-icon";
 import { createBookingAction } from "@/lib/actions/booking";
 import { numberFromInput } from "@/lib/form-values";
+import { useFormatter } from "@/lib/format";
 import { useRouter } from "@/lib/navigation";
 import type { BookingFormMachine } from "@/lib/services/booking-queries";
 import { estimateWorkHours, getJobStartAt, getJobTimeRange, START_HOURS } from "@/lib/services/booking-rules";

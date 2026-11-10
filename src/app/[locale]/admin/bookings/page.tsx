@@ -2,13 +2,14 @@
 // Filter buttons for each status (with how many bookings have it), a search by booking code
 // or the farmer's name or mobile number, and one card per booking that opens its page.
 import type { Metadata } from "next";
-import { getFormatter, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { BookingCard } from "@/components/booking/booking-card";
 import { FilterLinks, PageLinks, SearchBox, type FilterLink } from "@/components/list-filters";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { BookingStatus } from "@/generated/prisma/enums";
 import { requireRole } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { listHref, readChoice, readPageNumber, readSearchText } from "@/lib/list-params";
 import { countBookingsByStatus, listBookingsForAdmin } from "@/lib/services/booking-queries";
 import { getAmountDue } from "@/lib/services/booking-rules";

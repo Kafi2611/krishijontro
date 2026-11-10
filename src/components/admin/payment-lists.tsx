@@ -4,11 +4,12 @@
 //                    successful one that still has money left to give back
 //   PayoutLists    — providers we owe money to (with the payout form), then the latest payouts
 import { CircleCheckBig, Phone } from "lucide-react";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { PayoutForm } from "@/components/admin/payout-form";
 import { RefundForm } from "@/components/admin/refund-form";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getFormatter } from "@/lib/format-server";
 import { localizeDigits } from "@/lib/i18n";
 import { listRecentPayments } from "@/lib/services/payment";
 import { listProvidersToPay, listRecentPayouts } from "@/lib/services/payout";

@@ -6,7 +6,7 @@
 import { ArrowLeft, CalendarCheck, CircleAlert, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { DetailRow } from "@/components/detail-row";
 import { FreeDays } from "@/components/farmer/free-days";
 import { MachinePhotos } from "@/components/machine-photos";
@@ -17,6 +17,7 @@ import { StarRating } from "@/components/star-rating";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { localizeDigits, pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 import { getFarmerStartingJob, getMachineForFarmer, searchToJob } from "@/lib/services/search";

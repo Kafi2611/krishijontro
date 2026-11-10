@@ -5,7 +5,7 @@
 // change goes through its own page (Payments, Breakdowns, Disputes).
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { BookingBill } from "@/components/booking/booking-bill";
 import { BookingFacts } from "@/components/booking/booking-facts";
 import { BookingHeader } from "@/components/booking/booking-header";
@@ -18,6 +18,7 @@ import { MapPicker } from "@/components/map/map-picker";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 import { getAdminBooking } from "@/lib/services/booking-queries";

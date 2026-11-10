@@ -3,8 +3,9 @@
 // Tapping a free day opens the same page with ?day=..., which fills the
 // "Block days" form below with that day.
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useFormatter, useLocale, useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { useFormatter } from "@/lib/format";
 import { localizeDigits } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 import { addDays, addMonths, startOfDhakaDay, type CalendarDay, type DayState } from "@/lib/services/calendar";

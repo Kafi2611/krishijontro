@@ -4,12 +4,13 @@
 // The log can only be read here, never changed (see lib/services/audit.ts).
 import { ScrollText } from "lucide-react";
 import type { Metadata } from "next";
-import { getFormatter, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { FilterLinks, PageLinks, type FilterLink } from "@/components/list-filters";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { listHref, readPageNumber } from "@/lib/list-params";
 import { countAuditActions, listAuditLogs } from "@/lib/services/audit";
 import type messages from "../../../../../messages/en.json";

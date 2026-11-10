@@ -2,10 +2,11 @@
 // how many messages it has and when it last changed. For the admin also who opened it.
 // The whole card is a link to the ticket's conversation.
 import { MessagesSquare } from "lucide-react";
-import { useFormatter, useLocale, useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Role, TicketStatus } from "@/generated/prisma/enums";
+import { useFormatter } from "@/lib/format";
 import { localizeDigits } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 

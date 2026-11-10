@@ -4,7 +4,7 @@
 // "Add a staff account" opens the form for the roles that cannot sign up themselves.
 import { UserPlus } from "lucide-react";
 import type { Metadata } from "next";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { UserStatusButton } from "@/components/admin/user-status-button";
 import { FilterLinks, PageLinks, SearchBox, type FilterLink } from "@/components/list-filters";
 import { PageHeader } from "@/components/page-header";
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Role } from "@/generated/prisma/enums";
 import { requireRole } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { localizeDigits, pickByLocale } from "@/lib/i18n";
 import { listHref, readChoice, readPageNumber, readSearchText } from "@/lib/list-params";
 import { Link } from "@/lib/navigation";

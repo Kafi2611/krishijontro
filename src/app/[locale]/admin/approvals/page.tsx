@@ -2,10 +2,11 @@
 // Three tabs, each a list of items waiting for the admin's decision.
 // The tabs are plain links that change ?tab=..., so the page works without JavaScript.
 import type { Metadata } from "next";
-import { getFormatter, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { PendingMachines, PendingOperators, PendingProviders } from "@/components/admin/approval-lists";
 import { PageHeader } from "@/components/page-header";
 import { requireRole } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { Link } from "@/lib/navigation";
 import { countPendingApprovals } from "@/lib/services/approval";
 import { cn } from "@/lib/utils";

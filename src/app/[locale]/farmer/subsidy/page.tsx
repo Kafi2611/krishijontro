@@ -5,7 +5,7 @@
 // At the top, the discount the farmer gets right now (if any).
 import { BadgePercent, IdCard, Info } from "lucide-react";
 import type { Metadata } from "next";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { DetailRow } from "@/components/detail-row";
 import { FarmerDetailsForm } from "@/components/farmer/farmer-details-form";
 import { SubsidyApplyForm } from "@/components/farmer/subsidy-apply-form";
@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { localizeDigits, pickByLocale } from "@/lib/i18n";
 import { listUpazilaOptions } from "@/lib/services/location";
 import { findUsableSubsidy, listProgramsForFarmer } from "@/lib/services/subsidy";

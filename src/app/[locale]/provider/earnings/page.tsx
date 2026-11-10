@@ -4,12 +4,13 @@
 // the admin has sent. The money rules are in lib/services/payout.ts and payment-rules.ts.
 import { CircleCheckBig, Hourglass, Info, Wallet } from "lucide-react";
 import type { Metadata } from "next";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { requireRole } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { localizeDigits } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 import { getProviderEarnings } from "@/lib/services/payout";

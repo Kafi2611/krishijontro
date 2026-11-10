@@ -4,12 +4,13 @@
 // - Paid: how much, how and when, the PDF receipt, and any money given back (refunds).
 // The amounts come from the saved Booking and Payment rows (see lib/services/payment.ts).
 import { CircleCheckBig, Download, HandCoins, Wallet } from "lucide-react";
-import { useFormatter, useLocale, useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { PayOnlineButton } from "@/components/payment/pay-online-button";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { BookingStatus, PaymentMethod, PaymentStatus, RefundStatus } from "@/generated/prisma/enums";
+import { useFormatter } from "@/lib/format";
 import { canPayBooking } from "@/lib/services/payment-rules";
 
 type CardPayment = {

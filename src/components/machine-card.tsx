@@ -3,11 +3,12 @@
 // Used in the provider's machine list and in the farmer search (with a number that
 // matches the pin on the map, and extra facts like distance and price).
 import Image from "next/image";
-import { useFormatter, useLocale, useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { MachineTypeIcon } from "@/components/machine-type-icon";
 import { StatusBadge } from "@/components/status-badge";
 import { Card } from "@/components/ui/card";
 import type { ApprovalStatus, BillingUnit, MachineStatus } from "@/generated/prisma/enums";
+import { useFormatter } from "@/lib/format";
 import { pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 

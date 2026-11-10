@@ -3,12 +3,13 @@
 // "2 accepted, 1 waiting"), and what the members pay together. Each card opens the group.
 import { CalendarPlus, CalendarRange } from "lucide-react";
 import type { Metadata } from "next";
-import { getFormatter, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { MachineTypeIcon } from "@/components/machine-type-icon";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { Link } from "@/lib/navigation";
 import { countGroupProgress } from "@/lib/services/group-booking-rules";
 import { listGroupBookings } from "@/lib/services/group-booking";

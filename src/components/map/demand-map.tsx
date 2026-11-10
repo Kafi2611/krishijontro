@@ -2,9 +2,10 @@
 // The demand heatmap with its legend: the map (loaded in the browser only), then the 5 colour
 // steps with the numbers each one means. The page shows the same numbers as a table under it.
 import dynamic from "next/dynamic";
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CHART_COLORS } from "@/lib/chart-colors";
+import { useFormatter } from "@/lib/format";
 import { heatLevelRanges } from "@/lib/services/stats-rules";
 import type { DemandMapProps } from "./demand-map-leaflet";
 

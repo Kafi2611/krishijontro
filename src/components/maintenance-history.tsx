@@ -1,9 +1,10 @@
 // A machine's service history: every repair and service, newest first, with its step, what was
 // wrong, who took it, and (once fixed) the parts, the cost and the technician's note.
 // Used on the provider's machine page and on the technician's request page.
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { StatusBadge } from "@/components/status-badge";
 import type { MaintenanceStatus, MaintenanceType } from "@/generated/prisma/enums";
+import { useFormatter } from "@/lib/format";
 
 type HistoryItem = {
   id: string;

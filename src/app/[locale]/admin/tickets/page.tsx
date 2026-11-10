@@ -3,13 +3,14 @@
 // first, because those people wait for an answer. Each card opens the conversation.
 import { LifeBuoy } from "lucide-react";
 import type { Metadata } from "next";
-import { getFormatter, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { FilterLinks, type FilterLink } from "@/components/list-filters";
 import { PageHeader } from "@/components/page-header";
 import { TicketCard } from "@/components/support/ticket-card";
 import { Card, CardContent } from "@/components/ui/card";
 import type { TicketStatus } from "@/generated/prisma/enums";
 import { requireRole } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { listHref, readChoice } from "@/lib/list-params";
 import { countTicketsByStatus, listTicketsForAdmin } from "@/lib/services/support";
 

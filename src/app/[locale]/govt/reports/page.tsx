@@ -8,7 +8,7 @@
 // Every chart can also be opened as a table ("Show the numbers").
 import { BadgePercent, CalendarCheck, MapPinned } from "lucide-react";
 import type { Metadata } from "next";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { BarChart } from "@/components/charts/bar-chart";
 import { ChartCard } from "@/components/charts/chart-card";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -16,6 +16,7 @@ import { DemandMap } from "@/components/map/demand-map";
 import { PageHeader } from "@/components/page-header";
 import { requireRole } from "@/lib/auth";
 import { CHART_COLORS } from "@/lib/chart-colors";
+import { getFormatter } from "@/lib/format-server";
 import { pickByLocale } from "@/lib/i18n";
 import { getGovtReports, REPORT_DAYS } from "@/lib/services/stats";
 import { monthMiddle } from "@/lib/services/stats-rules";

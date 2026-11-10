@@ -2,10 +2,11 @@
 // the machines you can book (read from the database, so a type the admin adds shows
 // up here too), and the 4 steps of a booking.
 import { ArrowRight, Banknote, Calculator, CalendarCheck, KeyRound, Search } from "lucide-react";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { MachineTypeIcon } from "@/components/machine-type-icon";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { getFormatter } from "@/lib/format-server";
 import { pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 import { listActiveMachineTypes } from "@/lib/services/machine-type";

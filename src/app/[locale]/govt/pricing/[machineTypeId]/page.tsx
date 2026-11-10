@@ -3,12 +3,13 @@
 import { ArrowLeft, History } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { PricingRuleForm } from "@/components/govt/pricing-rule-form";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 import { toDhakaDay } from "@/lib/services/calendar";

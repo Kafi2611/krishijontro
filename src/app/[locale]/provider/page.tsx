@@ -4,7 +4,7 @@
 // operator counts, machines that need a service (each box opens its page), the trust score
 // farmers see, two charts (earnings per month, jobs per machine), and the list of provider features.
 import { CircleCheck, Clock, Inbox, ShieldCheck, Tractor, UserRound, Users, Wallet, Wrench } from "lucide-react";
-import { getFormatter, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { BarChart } from "@/components/charts/bar-chart";
 import { ChartCard } from "@/components/charts/chart-card";
 import { RoleDashboard } from "@/components/dashboard/role-dashboard";
@@ -12,6 +12,7 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { ProviderApprovalNote } from "@/components/provider/provider-approval-note";
 import { requireRole } from "@/lib/auth";
 import { CHART_COLORS } from "@/lib/chart-colors";
+import { getFormatter } from "@/lib/format-server";
 import { countProviderBookingsToHandle } from "@/lib/services/booking-queries";
 import { countProviderMachines } from "@/lib/services/machine";
 import { listProviderServiceAlerts } from "@/lib/services/maintenance";

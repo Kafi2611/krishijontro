@@ -4,7 +4,7 @@
 // when no machine is free, or by themselves after a breakdown with no replacement.
 import { Hourglass, Search } from "lucide-react";
 import type { Metadata } from "next";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { LeaveWaitlistButton } from "@/components/farmer/leave-waitlist-button";
 import { MachineTypeIcon } from "@/components/machine-type-icon";
 import { PageHeader } from "@/components/page-header";
@@ -12,6 +12,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 import { listFarmerWaitlist } from "@/lib/services/waitlist";

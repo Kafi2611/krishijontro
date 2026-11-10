@@ -2,12 +2,13 @@
 // A message with a link (e.g. about a booking) opens that page when tapped.
 import { ChevronRight, MessageSquare, Smartphone } from "lucide-react";
 import type { Metadata } from "next";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { markAllReadAction } from "@/lib/actions/notification";
 import { requireUser } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { pickByLocale } from "@/lib/i18n";
 import { Link } from "@/lib/navigation";
 import { listNotifications } from "@/lib/services/notification";

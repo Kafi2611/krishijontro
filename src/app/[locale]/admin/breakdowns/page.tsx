@@ -5,13 +5,14 @@
 // Below: the latest closed breakdowns (a replacement came, or none).
 import { TriangleAlert } from "lucide-react";
 import type { Metadata } from "next";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { NoReplacementButton } from "@/components/admin/no-replacement-button";
 import { DetailRow } from "@/components/detail-row";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
+import { getFormatter } from "@/lib/format-server";
 import { localizeDigits, pickByLocale } from "@/lib/i18n";
 import { getReplacementDeadline } from "@/lib/services/breakdown-rules";
 import { findReplacementMachines, listClosedBreakdowns, listOpenBreakdowns } from "@/lib/services/replacement";
