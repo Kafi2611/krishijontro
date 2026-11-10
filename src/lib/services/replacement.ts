@@ -8,9 +8,10 @@
  *    an emergency message. Their Bookings page shows the offer (listReplacementOffers).
  * 3. acceptReplacement(): the FIRST provider to press "Send this machine" gets the job. In ONE
  *    transaction — the breakdown report is locked, so a second provider gets "already taken":
- *      - a new booking for the rest of the work, with parentBookingId = the broken booking, the
- *        farmer's booked rate and free delivery. It is accepted at once, with new OTP codes.
  *      - the broken booking moves BREAKDOWN -> COMPLETED, billed only for the work done
+ *      - a new booking for the rest of the work, with parentBookingId = the broken booking, the
+ *        farmer's booked rate and free delivery (and the subsidy its program can still pay).
+ *        It is accepted at once, with new OTP codes.
  *      - a group plot's share of the group's minimum charge is split between these two bills
  *        in proportion to the work (splitMinimumShare in breakdown-rules.ts), so it is not lost
  *      - the report becomes REPLACED, and the farmer and the broken machine's provider are told
@@ -52,6 +53,7 @@ import { generateOtp } from "@/lib/services/booking-rules";
 import { distanceInKm } from "@/lib/services/geo";
 import { isServiceDue } from "@/lib/services/machine-rules";
 import { createNotification } from "@/lib/services/notification";
+import { grantSubsidy, limitSubsidy } from "@/lib/services/subsidy";
 import type { Bill } from "@/lib/services/pricing";
 import { findBusyMachineIdsBetween, LISTED_MACHINE } from "@/lib/services/search";
 import { getPlatformFeePercent, getReplacementRadiusKm } from "@/lib/services/settings";
@@ -74,7 +76,7 @@ const BREAKDOWN_WITH_BOOKING = {
         },
       },
       farmer: { select: { name: true } },
-      subsidyApplication: { select: { program: { select: { discountPercent: true } } } },
+      subsidyApplication: { select: { programId: true, program: { select: { discountPercent: true } } } },
     },
   },
 } satisfies Prisma.BreakdownReportInclude;
@@ -278,8 +280,25 @@ export async function acceptReplacement(reportId: string, machineId: string, pro
       // proportion to the work each machine does (0 and 0 for a booking that is not a group plot).
       const shares = splitMinimumShare(broken, breakdown.completedQuantity);
 
-      // 1. The new booking for the rest of the work: the booked rate, free delivery, accepted at once.
-      const bill = billReplacement(broken, job.remaining.quantity, percents, shares.replacementShare);
+      // 1. The broken booking is billed only for the work done before the breakdown. (Done FIRST:
+      //    its reserved subsidy goes down to the work done, so that money is free for step 2.)
+      const doneBill = billWorkDone(broken, breakdown.completedQuantity, percents, shares.doneShare);
+      await changeBookingStatus(broken.id, "COMPLETED", providerId, tx, {
+        data: {
+          actualQuantity: breakdown.completedQuantity,
+          ...billColumns(doneBill),
+          minimumShare: shares.doneShare,
+          completedAt: new Date(),
+        },
+      });
+
+      // 2. The new booking for the rest of the work: the booked rate, free delivery, accepted at once.
+      //    Its subsidy is what the program can still pay (an emergency is never refused for money).
+      let bill = billReplacement(broken, job.remaining.quantity, percents, shares.replacementShare);
+      if (broken.subsidyApplication && bill.subsidyAmount > 0) {
+        const granted = await grantSubsidy(tx, broken.subsidyApplication.programId, bill.subsidyAmount);
+        bill = limitSubsidy(bill, granted);
+      }
       const replacement = await insertNewBooking(tx, {
         farmerId: broken.farmerId,
         machineId,
@@ -303,17 +322,6 @@ export async function acceptReplacement(reportId: string, machineId: string, pro
       const startOtp = generateOtp();
       const finishOtp = generateOtp();
       await changeBookingStatus(replacement.id, "ACCEPTED", providerId, tx, { data: { startOtp, finishOtp } });
-
-      // 2. The broken booking is billed only for the work done before the breakdown.
-      const doneBill = billWorkDone(broken, breakdown.completedQuantity, percents, shares.doneShare);
-      await changeBookingStatus(broken.id, "COMPLETED", providerId, tx, {
-        data: {
-          actualQuantity: breakdown.completedQuantity,
-          ...billColumns(doneBill),
-          minimumShare: shares.doneShare,
-          completedAt: new Date(),
-        },
-      });
 
       // 3. The search is over.
       await tx.breakdownReport.update({ where: { id: reportId }, data: { status: "REPLACED", resolvedAt: new Date() } });

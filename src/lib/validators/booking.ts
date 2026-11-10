@@ -29,6 +29,9 @@ export const bookingSchema = z
     startHour: z.number("chooseStartTime").refine((hour) => START_HOURS.includes(hour), "chooseStartTime"),
     // Step 3: a message for the provider
     note: z.string().trim().max(300, "tooLong"),
+    // true when the subsidy program had no money left for this booking and the farmer chose to
+    // book without the discount (see grantSubsidy in lib/services/subsidy.ts)
+    skipSubsidy: z.boolean(),
   })
   // "YYYY-MM-DD" text sorts like dates, so we can compare days with <=
   .refine((booking) => booking.day <= addDays(toDhakaDay(new Date()), MAX_DAYS_AHEAD), {

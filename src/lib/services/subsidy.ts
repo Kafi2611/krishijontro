@@ -5,18 +5,27 @@
  *   1. an agriculture officer has VERIFIED the farmer (NID + land, see verification.ts)
  *   2. the farmer has an APPROVED application for a program
  *   3. the program is switched on and today is inside its dates
- *   4. the program still has budget left (usedAmount < budget)
+ *   4. the program still has money left: budget − spent − reserved
  * The discount is a % of the WORK charge only (see calculateBookingPrice in pricing.ts).
+ *
+ * The budget can never be overspent. A booking's subsidy is RESERVED from the moment it is
+ * booked: the reserved money is the subsidy of every booking that still goes ahead and is not
+ * paid yet (we add it up from the bookings, so nothing has to be "given back" by hand: a
+ * cancelled or rejected booking, or one that ends without payment, simply stops counting).
+ * Before a booking gets a subsidy, grantSubsidy() locks the program and checks:
+ * spent + reserved + this one ≤ budget. When the farmer pays, the subsidy moves from
+ * "reserved" to "spent" (spendSubsidy).
  *
  * This file has four parts:
  *   1. Rules (pure): is a program open, can this farmer apply, can the officer approve.
- *   2. Using a subsidy: the discount for a price, and spending the budget when a booking is paid.
+ *   2. Using a subsidy: the reserved money, granting a subsidy to a booking, and spending the
+ *      budget when a booking is paid.
  *   3. The farmer applies to a program (the officers of their upazila are told).
  *   4. The officer of the farmer's upazila approves or rejects the application.
  * The government creates the programs (subsidy-program.ts).
  */
 import type { Prisma } from "@/generated/prisma/client";
-import type { VerificationStatus } from "@/generated/prisma/enums";
+import type { BookingStatus, VerificationStatus } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { isUniqueConstraintError } from "@/lib/db-errors";
 import { writeAuditLog } from "@/lib/services/audit";
@@ -29,9 +38,10 @@ import type { ActionResult, ValidationKey } from "@/lib/validators/types";
 
 // ─────────────────────────── 1. Rules ───────────────────────────
 
-/** The subsidy a farmer can use: which application, and how much discount. */
+/** The subsidy a farmer can use: which application (and program), and how much discount. */
 export type UsableSubsidy = {
   applicationId: string;
+  programId: string;
   programName: string;
   programNameBn: string;
   discountPercent: number; // e.g. 20 means 20% off the work charge
@@ -43,7 +53,8 @@ type ProgramDates = {
   startAt: Date;
   endAt: Date;
   budget: number;
-  usedAmount: number;
+  usedAmount: number; // spent: the subsidy of bookings that are paid
+  reservedAmount: number; // reserved: the subsidy of bookings that go ahead but are not paid yet
 };
 
 /**
@@ -52,7 +63,7 @@ type ProgramDates = {
  */
 export function isProgramOpen(program: ProgramDates, date: Date): boolean {
   const insideDates = date >= program.startAt && date <= program.endAt;
-  const hasBudgetLeft = program.usedAmount < program.budget;
+  const hasBudgetLeft = program.usedAmount + program.reservedAmount < program.budget;
   return program.isActive && insideDates && hasBudgetLeft;
 }
 
@@ -68,7 +79,7 @@ type FarmerForSubsidy = {
 
 /**
  * Why this farmer cannot apply to this program now, or null if they can:
- * - "programClosed": switched off, outside its dates, or no budget left
+ * - "programClosed": switched off, outside its dates, or no money left
  * - "fillDetailsFirst": the farmer has not sent their NID and land, or the officer rejected them
  * - "landTooBig": the farmer has more land than the program allows
  * Example: a 150 decimal farmer and a program for up to 200 decimal -> null (may apply)
@@ -117,22 +128,125 @@ export async function findUsableSubsidy(farmerId: string, date: Date = new Date(
     include: { program: true },
     orderBy: { program: { discountPercent: "desc" } }, // biggest discount first
   });
-  const usable = applications.find((application) => isProgramOpen(application.program, date));
+  const programs = await withReservedAmounts(applications.map((application) => application.program));
+  const usable = applications.find((_application, index) => isProgramOpen(programs[index], date));
   if (!usable) {
     return null;
   }
   return {
     applicationId: usable.id,
+    programId: usable.program.id,
     programName: usable.program.name,
     programNameBn: usable.program.nameBn,
     discountPercent: usable.program.discountPercent,
   };
 }
 
+// ─── Reserved money ───
+
+/** Booking statuses that go ahead and are not paid yet (a complaint is handled separately). */
+const UNPAID_GOING_STATUSES: BookingStatus[] = [
+  "REQUESTED",
+  "ACCEPTED",
+  "OPERATOR_ASSIGNED",
+  "ON_THE_WAY",
+  "WORKING",
+  "BREAKDOWN",
+  "COMPLETED",
+];
+
+/**
+ * The bookings whose subsidy is reserved: they have a subsidy, they still go ahead (not rejected
+ * or cancelled), and they are not paid yet. A booking with a complaint (DISPUTED) keeps its
+ * reservation only while it is not paid (one that was paid before the complaint has a successful
+ * payment, and its subsidy is already spent).
+ */
+function reservedBookings(programIds: string[]): Prisma.BookingWhereInput {
+  return {
+    subsidyApplication: { programId: { in: programIds } },
+    subsidyAmount: { gt: 0 },
+    OR: [
+      { status: { in: UNPAID_GOING_STATUSES } },
+      { status: "DISPUTED", payments: { none: { status: "SUCCESS" } } },
+    ],
+  };
+}
+
+/**
+ * The reserved money of each program: programId -> taka (0 if nothing is reserved).
+ * `exceptBookingId` leaves one booking out (when its own subsidy is being worked out again).
+ */
+export async function getReservedAmounts(
+  programIds: string[],
+  tx: Prisma.TransactionClient = db,
+  exceptBookingId?: string,
+): Promise<Map<string, number>> {
+  const where = reservedBookings(programIds);
+  if (exceptBookingId) {
+    where.id = { not: exceptBookingId };
+  }
+  const bookings = await tx.booking.findMany({
+    where,
+    select: { subsidyAmount: true, subsidyApplication: { select: { programId: true } } },
+  });
+  const reserved = new Map<string, number>(programIds.map((id) => [id, 0]));
+  for (const booking of bookings) {
+    const programId = booking.subsidyApplication!.programId; // always set: the filter asks for it
+    reserved.set(programId, (reserved.get(programId) ?? 0) + booking.subsidyAmount);
+  }
+  return reserved;
+}
+
+/** Adds each program's reserved money (reservedAmount) to the programs, in the same order. */
+export async function withReservedAmounts<T extends { id: string }>(programs: T[]): Promise<(T & { reservedAmount: number })[]> {
+  const reserved = await getReservedAmounts(programs.map((program) => program.id));
+  return programs.map((program) => ({ ...program, reservedAmount: reserved.get(program.id) ?? 0 }));
+}
+
+/**
+ * How much subsidy a booking may get from a program now: what it asks for (`wanted`), or less if
+ * the program has less money left (never below 0). Call it inside the transaction that saves the
+ * booking's subsidy. The program's row is locked first ("FOR UPDATE"), so two bookings at the same
+ * moment are checked one after the other, and each one sees the other's reservation. That is why
+ * the budget can never be overspent.
+ * `exceptBookingId`: the booking whose subsidy is worked out again (its old amount does not count).
+ * Example: budget 1000, spent 600, reserved 300 -> 100 left: wanted 317 -> 100; wanted 80 -> 80
+ */
+export async function grantSubsidy(
+  tx: Prisma.TransactionClient,
+  programId: string,
+  wanted: number,
+  exceptBookingId?: string,
+): Promise<number> {
+  await tx.$queryRaw`SELECT id FROM "SubsidyProgram" WHERE id = ${programId} FOR UPDATE`;
+  const program = await tx.subsidyProgram.findUniqueOrThrow({ where: { id: programId } });
+  const reserved = (await getReservedAmounts([programId], tx, exceptBookingId)).get(programId) ?? 0;
+  const left = program.budget - program.usedAmount - reserved;
+  return Math.max(0, Math.min(wanted, left));
+}
+
+/**
+ * A bill whose subsidy is at most `maxSubsidy` (the money a program could still give, see
+ * grantSubsidy). Only the subsidy and what the farmer pays change: work + delivery − subsidy.
+ * The platform fee and the provider's share do not depend on the subsidy, so they stay the same.
+ * Example: work 1584, delivery 250, subsidy 317, at most 100 -> subsidy 100, farmer pays 1734
+ */
+export function limitSubsidy<T extends { workCharge: number; deliveryCharge: number; subsidyAmount: number; totalAmount: number }>(
+  bill: T,
+  maxSubsidy: number,
+): T {
+  if (bill.subsidyAmount <= maxSubsidy) {
+    return bill;
+  }
+  const subsidyAmount = Math.max(0, maxSubsidy);
+  return { ...bill, subsidyAmount, totalAmount: bill.workCharge + bill.deliveryCharge - subsidyAmount };
+}
+
 /**
  * Takes a paid booking's subsidy from its program's budget (usedAmount goes up).
  * Called inside the transaction that marks the booking PAID (payment.ts), because the
- * government's money is really spent only when the farmer has paid their part.
+ * government's money is really spent only when the farmer has paid their part. (The same booking
+ * stops counting as "reserved" because it is PAID now, so spent + reserved stays the same.)
  * "increment" adds in the database itself, so two payments at the same moment both count.
  */
 export async function spendSubsidy(
@@ -157,7 +271,8 @@ export async function findOpenSubsidyProgram(date: Date = new Date()) {
     where: { isActive: true, startAt: { lte: date }, endAt: { gte: date } },
     orderBy: { discountPercent: "desc" },
   });
-  return programs.find((program) => isProgramOpen(program, date)) ?? null;
+  const withReserved = await withReservedAmounts(programs);
+  return withReserved.find((program) => isProgramOpen(program, date)) ?? null;
 }
 
 // ─────────────────────────── 3. The farmer applies ───────────────────────────
@@ -168,7 +283,7 @@ export async function findOpenSubsidyProgram(date: Date = new Date()) {
  * (if they cannot). Newest program first.
  */
 export async function listProgramsForFarmer(farmerId: string, date: Date = new Date()) {
-  const [programs, profile] = await Promise.all([
+  const [found, profile] = await Promise.all([
     db.subsidyProgram.findMany({
       where: { isActive: true, startAt: { lte: date }, endAt: { gte: date } },
       include: { applications: { where: { farmerId } } },
@@ -176,6 +291,7 @@ export async function listProgramsForFarmer(farmerId: string, date: Date = new D
     }),
     db.farmerProfile.findUnique({ where: { userId: farmerId } }),
   ]);
+  const programs = await withReservedAmounts(found);
   return programs.map((program) => ({
     program,
     application: program.applications[0] ?? null, // at most one: a farmer applies to a program once
@@ -192,14 +308,15 @@ export async function applyForSubsidy(
   programId: string,
   input: SubsidyApplicationInput,
 ): Promise<ActionResult> {
-  const [program, profile, existing] = await Promise.all([
+  const [foundProgram, profile, existing] = await Promise.all([
     db.subsidyProgram.findUnique({ where: { id: programId } }),
     db.farmerProfile.findUnique({ where: { userId: farmer.id } }),
     db.subsidyApplication.findUnique({ where: { programId_farmerId: { programId, farmerId: farmer.id } } }),
   ]);
-  if (!program || !profile?.locationId) {
+  if (!foundProgram || !profile?.locationId) {
     return { ok: false, error: "notFound" };
   }
+  const [program] = await withReservedAmounts([foundProgram]);
   const problem = getApplyProblem(program, profile, new Date());
   if (problem) {
     return { ok: false, error: problem };
@@ -282,11 +399,12 @@ export async function listApplicationsForOfficer(officerId: string) {
   ]);
 
   const now = new Date();
+  const programs = await withReservedAmounts(waiting.map((application) => application.program));
   return {
     upazila,
-    waiting: waiting.map((application) => {
+    waiting: waiting.map((application, index) => {
       const profile = application.farmer.farmerProfile;
-      const problem = profile ? getApprovalProblem(application.program, profile, now) : "farmerNotVerified";
+      const problem = profile ? getApprovalProblem(programs[index], profile, now) : "farmerNotVerified";
       return { ...application, problem };
     }),
     recent,
@@ -327,7 +445,8 @@ export async function decideSubsidyApplication(
     return { ok: false, error: "alreadyDecided" };
   }
   if (decision.approve) {
-    const problem = getApprovalProblem(application.program, profile, new Date());
+    const [programNow] = await withReservedAmounts([application.program]);
+    const problem = getApprovalProblem(programNow, profile, new Date());
     if (problem) {
       return { ok: false, error: problem };
     }

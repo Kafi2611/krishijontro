@@ -36,7 +36,7 @@ import { getBillingQuantity, isRateAllowed } from "@/lib/services/pricing";
 import { listPricedMachineTypes, type PricedMachineType } from "@/lib/services/pricing-rule";
 import { findBusyMachineIdsBetween, LISTED_MACHINE } from "@/lib/services/search";
 import { getPlatformFeePercent } from "@/lib/services/settings";
-import { findUsableSubsidy } from "@/lib/services/subsidy";
+import { findUsableSubsidy, grantSubsidy } from "@/lib/services/subsidy";
 import { DEFAULT_SEARCH_KM } from "@/lib/validators/search";
 import type { GroupBookingInput } from "@/lib/validators/group-booking";
 import type { ValidationKey } from "@/lib/validators/types";
@@ -100,6 +100,7 @@ type PreparedPlot = {
   plotNote: string;
   subsidyPercent: number;
   subsidyApplicationId: string | null;
+  subsidyProgramId: string | null; // the program that pays the member's subsidy
 };
 
 /** A checked group: the cooperative, the machine type and every plot with its time and subsidy. */
@@ -166,6 +167,7 @@ async function prepareGroup(
       plotNote: plot.plotNote,
       subsidyPercent: subsidies[index]?.discountPercent ?? 0,
       subsidyApplicationId: subsidies[index]?.applicationId ?? null,
+      subsidyProgramId: subsidies[index]?.programId ?? null,
     };
   });
   return {
@@ -349,6 +351,14 @@ export async function createGroupBooking(
         });
         for (const [index, plot] of group.plots.entries()) {
           const bill = price.bills[index];
+          // Reserve the member's subsidy (the plots saved just before count already). If a
+          // program has not enough money left, the whole group is refused (nothing is saved).
+          if (plot.subsidyProgramId && bill.subsidyAmount > 0) {
+            const granted = await grantSubsidy(tx, plot.subsidyProgramId, bill.subsidyAmount);
+            if (granted < bill.subsidyAmount) {
+              throw new BookingProblem("groupSubsidyRunOut");
+            }
+          }
           const booking = await insertNewBooking(
             tx,
             {

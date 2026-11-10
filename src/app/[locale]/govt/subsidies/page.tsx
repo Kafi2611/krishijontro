@@ -47,7 +47,9 @@ export default async function GovtSubsidiesPage() {
       <ul className="grid gap-4 lg:grid-cols-2">
         {items.map(({ program, isOpen, pending, approved }) => {
           // How much of the budget is spent, from 0 to 100 (for the bar).
+          // The bar: spent money (dark green), then reserved money (light green), of the budget.
           const spentPercent = Math.min(100, Math.round((program.usedAmount / program.budget) * 100));
+          const reservedPercent = Math.min(100 - spentPercent, Math.round((program.reservedAmount / program.budget) * 100));
           let stateLabel = t("closed");
           if (!program.isActive) {
             stateLabel = t("off");
@@ -81,10 +83,14 @@ export default async function GovtSubsidiesPage() {
                   </dl>
 
                   <div className="space-y-1">
-                    <p className="text-sm">{t("budgetLine", { used: program.usedAmount, budget: program.budget })}</p>
-                    <div className="h-3 overflow-hidden rounded-full bg-muted" aria-hidden>
-                      <div className="h-full rounded-full bg-primary" style={{ width: `${spentPercent}%` }} />
+                    <p className="text-sm">
+                      {t("budgetLine", { used: program.usedAmount, reserved: program.reservedAmount, budget: program.budget })}
+                    </p>
+                    <div className="flex h-3 overflow-hidden rounded-full bg-muted" aria-hidden>
+                      <div className="h-full bg-primary" style={{ width: `${spentPercent}%` }} />
+                      <div className="h-full bg-primary/40" style={{ width: `${reservedPercent}%` }} />
                     </div>
+                    <p className="text-xs text-muted-foreground">{t("reservedNote")}</p>
                   </div>
 
                   <Button asChild variant="outline">

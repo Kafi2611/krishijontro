@@ -3,22 +3,24 @@
  *
  * A program says: "X% off the work charge, for farmers with up to Y decimal of land, between
  * these dates, until this budget is spent". Farmers apply to it, officers approve them
- * (subsidy.ts), and each paid booking spends some of its budget (spendSubsidy in subsidy.ts).
+ * (subsidy.ts), each booking reserves its subsidy, and each paid booking spends it (see the top
+ * of subsidy.ts).
  * Every create or change writes an audit log row (who changed what, and when).
  */
 import { db } from "@/lib/db";
 import { writeAuditLog } from "@/lib/services/audit";
 import { endOfDhakaDay, startOfDhakaDay, toDhakaDay } from "@/lib/services/calendar";
-import { isProgramOpen } from "@/lib/services/subsidy";
+import { getReservedAmounts, isProgramOpen, withReservedAmounts } from "@/lib/services/subsidy";
 import type { SubsidyProgramInput } from "@/lib/validators/subsidy";
 import type { ActionResult } from "@/lib/validators/types";
 
 /**
- * Every program (newest first) with its application counts and whether it is open today.
+ * Every program (newest first) with its application counts, its reserved money
+ * (reservedAmount: bookings not paid yet) and whether it is open today.
  * For the government's "Subsidy programs" page.
  */
 export async function listSubsidyPrograms() {
-  const [programs, counts] = await Promise.all([
+  const [found, counts] = await Promise.all([
     db.subsidyProgram.findMany({ orderBy: { startAt: "desc" } }),
     // One row per program and status, e.g. { programId: "abc", status: "PENDING", _count: 3 }
     db.subsidyApplication.groupBy({ by: ["programId", "status"], _count: true }),
@@ -30,6 +32,7 @@ export async function listSubsidyPrograms() {
     return row?._count ?? 0;
   }
 
+  const programs = await withReservedAmounts(found);
   const now = new Date();
   return programs.map((program) => ({
     program,
@@ -74,7 +77,7 @@ export function programToFormValues(program: {
 /**
  * Creates a program (programId null) or changes one. The first day starts at midnight and the
  * last day ends at 23:59:59, Bangladesh time. When changing, the budget may not go below what
- * is already spent ("budgetBelowUsed").
+ * is already spent and reserved ("budgetBelowUsed").
  */
 export async function saveSubsidyProgram(
   programId: string | null,
@@ -99,7 +102,9 @@ export async function saveSubsidyProgram(
     if (!existing) {
       return { ok: false, error: "notFound" };
     }
-    if (input.budget < existing.usedAmount) {
+    // The budget must still cover what is spent AND what is reserved for bookings not paid yet.
+    const reserved = (await getReservedAmounts([existing.id])).get(existing.id) ?? 0;
+    if (input.budget < existing.usedAmount + reserved) {
       return { ok: false, error: "budgetBelowUsed" };
     }
   }

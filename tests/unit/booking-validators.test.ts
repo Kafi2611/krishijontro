@@ -23,6 +23,7 @@ const validBooking: BookingInput = {
   day: "2026-10-21",
   startHour: 8,
   note: "",
+  skipSubsidy: false,
 };
 
 /** The error keys Zod gives for a booking (empty list = the booking is fine). */

@@ -83,9 +83,9 @@ export function BookingForm({
   const errors = form.formState.errors;
 
   // Watch the values the price, the time and the summary depend on.
-  const [landValue, landUnit, hoursOrDays, lat, lng, day, startHour, workType, fieldAddress] = useWatch({
+  const [landValue, landUnit, hoursOrDays, lat, lng, day, startHour, workType, fieldAddress, skipSubsidy] = useWatch({
     control: form.control,
-    name: ["landValue", "landUnit", "hoursOrDays", "lat", "lng", "day", "startHour", "workType", "fieldAddress"],
+    name: ["landValue", "landUnit", "hoursOrDays", "lat", "lng", "day", "startHour", "workType", "fieldAddress", "skipSubsidy"],
   });
   const field: LatLng = { lat, lng };
   const billingUnit = pricedType.billingUnit;
@@ -93,7 +93,9 @@ export function BookingForm({
   // ── The live price ──
   const landDecimal = toDecimal(landValue, landUnit);
   const jobIsComplete = landValue > 0 && (billingUnit === "PER_ACRE" || hoursOrDays > 0);
-  const estimate = estimateJob(machine, pricedType, { landDecimal, hoursOrDays, field }, subsidyPercent, platformFeePercent);
+  // When the subsidy program had no money left, the farmer books without the discount.
+  const usedSubsidyPercent = skipSubsidy ? 0 : subsidyPercent;
+  const estimate = estimateJob(machine, pricedType, { landDecimal, hoursOrDays, field }, usedSubsidyPercent, platformFeePercent);
 
   // ── The time of the job, and whether the machine is free then ──
   const dayIsValid = DAY_REGEX.test(day);
@@ -159,6 +161,11 @@ export function BookingForm({
         return;
       }
       toast.error(tError(result.error));
+      // The subsidy program has no money left for this booking: show the price without the
+      // discount. Pressing "Book now" again books at that price (the farmer agrees to it first).
+      if (result.error === "subsidyRunOut") {
+        form.setValue("skipSubsidy", true);
+      }
       // Someone else took this time a moment ago: go back to the time step to choose another.
       if (result.error === "timeTaken" || result.error === "machineBlocked") {
         setStep(1);
@@ -434,10 +441,15 @@ export function BookingForm({
                 distanceKm={estimate.distanceKm}
                 freeKm={pricedType.freeKm}
                 deliveryRatePerKm={pricedType.deliveryRatePerKm}
-                subsidyPercent={subsidyPercent}
+                subsidyPercent={usedSubsidyPercent}
               />
             ) : (
               <p className="text-muted-foreground">{t("priceHint")}</p>
+            )}
+            {skipSubsidy && subsidyPercent > 0 && (
+              <p role="status" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-950">
+                {t("noSubsidyNote")}
+              </p>
             )}
             <p className="text-sm text-muted-foreground">{t("payNote")}</p>
           </CardContent>

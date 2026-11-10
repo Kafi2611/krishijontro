@@ -424,6 +424,7 @@ export async function getBookingFormData(machineId: string, farmerId: string, se
     day: search?.day ?? addDays(toDhakaDay(new Date()), 1),
     startHour: DEFAULT_START_HOUR,
     note: "",
+    skipSubsidy: false,
   };
 
   return {

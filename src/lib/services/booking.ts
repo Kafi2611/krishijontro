@@ -59,7 +59,7 @@ import { createNotification } from "@/lib/services/notification";
 import { calculateFinalBill, estimateJob, getBillingQuantity, isRateAllowed } from "@/lib/services/pricing";
 import { getActivePricingRule, listPricedMachineTypes } from "@/lib/services/pricing-rule";
 import { getPlatformFeePercent } from "@/lib/services/settings";
-import { findUsableSubsidy } from "@/lib/services/subsidy";
+import { findUsableSubsidy, grantSubsidy, limitSubsidy } from "@/lib/services/subsidy";
 import type { BookingInput, FinishWorkInput } from "@/lib/validators/booking";
 import type { ActionResult, ValidationKey } from "@/lib/validators/types";
 
@@ -158,6 +158,7 @@ type PreparedBooking = {
   row: NewBookingRow;
   providerId: string;
   machineName: string;
+  subsidyProgramId: string | null; // the program that pays the subsidy (null = no subsidy)
 };
 
 /**
@@ -197,10 +198,11 @@ async function prepareBooking(
   }
 
   // The price, with the farmer's subsidy (if any): the same estimate the form showed.
+  // If the farmer chose to book without the subsidy (its program had no money left), there is none.
   const field = { lat: input.lat, lng: input.lng };
   const job = { landDecimal: toDecimal(input.landValue, input.landUnit), hoursOrDays: input.hoursOrDays, field };
   const [subsidy, platformFeePercent, fieldUpazilaId] = await Promise.all([
-    findUsableSubsidy(farmerId),
+    input.skipSubsidy ? null : findUsableSubsidy(farmerId),
     getPlatformFeePercent(),
     findNearestUpazilaId(field),
   ]);
@@ -212,6 +214,7 @@ async function prepareBooking(
     booking: {
       providerId: machine.providerId,
       machineName: `${machine.brand} ${machine.model}`,
+      subsidyProgramId: subsidy?.programId ?? null,
       row: {
         farmerId,
         machineId: machine.id,
@@ -343,10 +346,20 @@ async function saveNewBooking(tx: Prisma.TransactionClient, booking: PreparedBoo
     throw new BookingProblem(clash);
   }
 
-  // 4. Save the booking with the next code, and its first history row.
+  // 4. Reserve the subsidy from its program. The budget can never be overspent: if not enough
+  //    money is left, the booking is refused, and the farmer may book again without the discount.
+  const wantedSubsidy = booking.row.subsidyAmount ?? 0;
+  if (booking.subsidyProgramId && wantedSubsidy > 0) {
+    const granted = await grantSubsidy(tx, booking.subsidyProgramId, wantedSubsidy);
+    if (granted < wantedSubsidy) {
+      throw new BookingProblem("subsidyRunOut");
+    }
+  }
+
+  // 5. Save the booking with the next code, and its first history row.
   const created = await insertNewBooking(tx, booking.row, farmerId);
 
-  // 5. Tell both sides (simulated SMS).
+  // 6. Tell both sides (simulated SMS).
   const info = { id: created.id, code: created.code, machineName: booking.machineName, startAt };
   await createNotification({ userId: farmerId, channel: "SMS", ...requestSentMessage(info, created.totalAmount) }, tx);
   await createNotification({ userId: booking.providerId, channel: "SMS", ...newRequestMessage(info, farmerName) }, tx);
@@ -507,7 +520,7 @@ export async function findOperatorJob(tx: Prisma.TransactionClient, bookingId: s
     include: {
       machine: { select: { brand: true, model: true, machineTypeId: true, providerId: true } },
       operator: { select: { name: true } },
-      subsidyApplication: { select: { program: { select: { discountPercent: true } } } },
+      subsidyApplication: { select: { programId: true, program: { select: { discountPercent: true } } } },
     },
   });
   if (!job) {
@@ -725,20 +738,27 @@ export async function finishWork(bookingId: string, operatorId: string, input: F
     }
 
     const { actualQuantity, price } = await workOutFinalBill(job, input.actualValue);
+    // More work than booked means a bigger subsidy. The program gives it if it still has the
+    // money; otherwise only what is left (the finish is never blocked, and the budget is never overspent).
+    let bill = price;
+    if (job.subsidyApplication && price.subsidyAmount > 0) {
+      const granted = await grantSubsidy(tx, job.subsidyApplication.programId, price.subsidyAmount, bookingId);
+      bill = limitSubsidy(price, granted);
+    }
     await changeBookingStatus(bookingId, "COMPLETED", operatorId, tx, {
       data: {
         actualQuantity,
-        workCharge: price.workCharge,
-        deliveryCharge: price.deliveryCharge,
-        subsidyAmount: price.subsidyAmount,
-        totalAmount: price.totalAmount,
-        platformFee: price.platformFee,
+        workCharge: bill.workCharge,
+        deliveryCharge: bill.deliveryCharge,
+        subsidyAmount: bill.subsidyAmount,
+        totalAmount: bill.totalAmount,
+        platformFee: bill.platformFee,
         completedAt: new Date(),
       },
     });
 
     const info = messageInfo(job);
-    await createNotification({ userId: job.farmerId, channel: "SMS", ...workFinishedMessage(info, price.totalAmount) }, tx);
+    await createNotification({ userId: job.farmerId, channel: "SMS", ...workFinishedMessage(info, bill.totalAmount) }, tx);
     await createNotification({ userId: job.machine.providerId, ...jobFinishedMessage(info, price.providerAmount) }, tx);
 
     // The engine ran for this job: count its hours (the provider is warned when a service is near).
