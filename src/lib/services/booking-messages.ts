@@ -244,12 +244,20 @@ export function operatorReviewedMessage(booking: BookingMessageInfo, stars: numb
   };
 }
 
-/** To the provider, when the farmer cancels. Says if a late cancellation fee is due. */
+/**
+ * To the provider, when the farmer cancels. Says if a late cancellation fee is due; the farmer
+ * and the provider settle that fee directly (KrishiJontro only records it).
+ */
 export function farmerCancelledMessage(booking: BookingMessageInfo, fee: number) {
   const code = booking.code;
-  const feeText = fee > 0 ? `A late cancellation fee of ${fee} Tk is due to you.` : "The machine is free again at that time.";
+  const feeText =
+    fee > 0
+      ? `A late cancellation fee of ${fee} Tk is due to you. Settle it directly with the farmer.`
+      : "The machine is free again at that time.";
   const feeTextBn =
-    fee > 0 ? `দেরিতে বাতিলের জন্য আপনার পাওনা ${toBanglaDigits(fee)} টাকা।` : "ওই সময়ে যন্ত্রটি আবার খালি।";
+    fee > 0
+      ? `দেরিতে বাতিলের জন্য আপনার পাওনা ${toBanglaDigits(fee)} টাকা। এটি সরাসরি কৃষকের সাথে মিটিয়ে নিন।`
+      : "ওই সময়ে যন্ত্রটি আবার খালি।";
   return {
     title: "Booking cancelled by the farmer",
     titleBn: "কৃষক বুকিং বাতিল করেছেন",

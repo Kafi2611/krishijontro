@@ -13,6 +13,8 @@
  *
  * Farmers pay only after the work, so a cancelled booking was never paid: there is no money to
  * give back. A "full refund" after the provider cancels means: the farmer owes nothing at all.
+ * The late fee is only RECORDED (Booking.cancellationFee) and shown on both booking pages: the
+ * farmer pays it to the provider directly, and it is not part of payments or payouts.
  */
 import type { BookingStatus } from "@/generated/prisma/enums";
 
