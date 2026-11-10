@@ -28,8 +28,9 @@ export function DemandMap({ places }: DemandMapProps) {
 
   return (
     <div className="space-y-3">
-      {/* isolate: keeps the map's own layers below our menus and pop-ups */}
-      <div className="isolate h-80 overflow-hidden rounded-lg border sm:h-96" role="img" aria-label={t("mapTitle")}>
+      {/* isolate: keeps the map's own layers below our menus and pop-ups.
+          role="region" (not "img"): the map has buttons inside (zoom, the circles), and a picture may not. */}
+      <div className="isolate h-80 overflow-hidden rounded-lg border sm:h-96" role="region" aria-label={t("mapTitle")}>
         <DemandMapLeaflet places={places} />
       </div>
       {max > 0 && (
