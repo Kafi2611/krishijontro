@@ -171,6 +171,7 @@ without new code; every change is written to the audit log.
 | --- | --- |
 | `npm run dev` | Start the app in development mode |
 | `npm run build` | Build the app for production |
+| `npm run vercel-build` | What Vercel runs: apply the migrations, then build (see **Deploy**) |
 | `npm start` | Run the production build |
 | `npm run lint` | Check the code style |
 | `npm test` | Run the unit tests |
@@ -179,3 +180,67 @@ without new code; every change is written to the audit log.
 | `npx prisma migrate deploy` | Apply the existing migrations to a database |
 | `npm run db:seed` | Empty the database and fill it with demo data |
 | `npx prisma studio` | Open a browser view of the database |
+
+## Deploy on Vercel + Neon
+
+The live site runs on [Vercel](https://vercel.com) (the Next.js app) with a [Neon](https://neon.tech) PostgreSQL
+database. Everything needed is already in the code:
+
+- `vercel.json` tells Vercel to build with `npm run vercel-build`, which first runs `prisma migrate deploy`
+  (it creates or updates the tables with the files in `prisma/migrations`) and then `next build`.
+  So every deploy brings the database up to date by itself. It also runs the app in Singapore (`sin1`),
+  close to a Neon database in Singapore.
+- `npm install` runs `prisma generate` by itself (the `postinstall` script), so Vercel always has a fresh Prisma client.
+- Photos are saved in **Vercel Blob** when `BLOB_READ_WRITE_TOKEN` is set (Vercel adds it when a Blob store is connected).
+- No secret is in Git: every key and password is set in Vercel's **Environment Variables**.
+
+### 1. Neon: a database for the live site
+
+1. In the Neon console, open the project and use its main branch for the live site
+   (keep your development branch for your own computer: the demo data empties every table).
+2. Press **Connect**, choose the branch and the database, and copy two connection strings:
+   - **with "Connection pooling" switched on** → this is `DATABASE_URL` (the host contains `-pooler`)
+   - **with it switched off** → this is `DIRECT_URL` (the same host without `-pooler`)
+3. At the end of both strings, make sure it says `?sslmode=verify-full` (replace `sslmode=require` and remove
+   `&channel_binding=require` if Neon added it). `verify-full` checks Neon's certificate fully.
+
+### 2. Vercel: the site
+
+1. Sign in at https://vercel.com with your GitHub account. **Add New… → Project**, then **Import** the
+   `krishijontro` repository.
+2. Framework: **Next.js** (found by itself). Do not change the build command: `vercel.json` sets it.
+3. Open **Environment Variables** and add:
+
+   | Name | Value |
+   | --- | --- |
+   | `DATABASE_URL` | the pooled Neon string from step 1 |
+   | `DIRECT_URL` | the direct Neon string from step 1 |
+   | `AUTH_SECRET` | a new long random string (`node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`) |
+   | `PAYMENT_GATEWAY` | `mock` (or `sslcommerz` with the two keys below) |
+   | `SSLCOMMERZ_SANDBOX` | `true` |
+   | `SSLCOMMERZ_STORE_ID`, `SSLCOMMERZ_STORE_PASSWORD` | only for `sslcommerz` |
+
+4. Press **Deploy**. The build log shows `prisma migrate deploy` applying the migrations, then the Next.js build.
+5. **Photos:** open the project → **Storage** → **Create Database** → **Blob** → give it a name → **Create**,
+   and connect it to the project (all environments). This adds `BLOB_READ_WRITE_TOKEN`.
+6. **Site address:** copy the address Vercel gave the site (e.g. `https://krishijontro.vercel.app`), add the variable
+   `APP_URL` with it (SSLCommerz sends farmers back there), then **Deployments → … → Redeploy** so the new
+   variables are used.
+
+### 3. Demo data on the live database (once)
+
+The live database is empty after the first deploy. To add the demo accounts and bookings, run the seed **once**
+from your own computer, pointing at the live database (it empties every table first):
+
+```powershell
+$env:DATABASE_URL="<the pooled live string>"; $env:DIRECT_URL="<the direct live string>"; npm run db:seed
+```
+
+Then close that terminal window (so the next commands use your `.env` again). The demo logins in the table
+above work on the live site too; the login page does not list them there (only in development).
+
+### 4. Check the live site
+
+- Open the address, switch to বাংলা, log in as the farmer (`01700000001` / `demo1234`) and search for a machine.
+- Log in as a provider and add a machine with a photo: the photo is saved in Vercel Blob.
+- With SSLCommerz: pay a finished job with a sandbox test card.
