@@ -158,28 +158,22 @@ What was built in each phase, and how to check it.
 
 ---
 
-## Phase 8 — Quality + deploy (in progress, 10 November 2026)
 
-**What is done so far**
+## Phase 8 — Quality + deploy (11 November 2026)
 
-- **Fixes from testing**: `npm audit fix` (without `--force`); the login and register forms are sent with POST, so the phone and password never appear in the address; a refund the payment gateway cannot send (e.g. SSLCommerz without keys) is saved as **Failed** with a clear message, and a failed refund never counts as money given back; machine and breakdown photos go to **Vercel Blob** when `BLOB_READ_WRITE_TOKEN` is set (still `public/uploads` on our own computer), and the photo limit is now 4 MB because Vercel refuses bigger requests.
-- **Codes and bills**: the start and finish codes **lock after 5 wrong tries** (the operator sees how many tries are left; the farmer gets a message and a **Get a new code** button; new column `Booking.otpWrongTries`); a cancelled or rejected booking shows that nothing is to be paid (or only the late cancellation fee), in the bill and in every list.
-- **Complaints and money**: after the admin decides a complaint on an unpaid booking the badge says **Waiting for payment** (not "Complaint open"), and a bill correction is written in the audit log as **Bill corrected**; a refund or fine decided **after** a provider was paid out is carried forward and taken from their next payout (Earnings and the admin's Payouts show it); a group plot that breaks down keeps its share of the group's minimum charge, split between the broken machine's bill and the replacement's bill by the work each one did. The admin's booking page shows each refund's status.
-- **Bangla**: times show as **সকাল ৮:০০ / বিকাল ৪:৩০** instead of AM/PM (one formatter for the whole app, `lib/format.ts`); map pin numbers, the settings limits, the footer and the demo messages use Bangla digits; the audit log names each kind of record; subsidy programs get a **Bangla description** (new column `SubsidyProgram.descriptionBn`). Every page of every role was opened in Bangla at **360 px** phone width: no page scrolls sideways and no screen text is left in English (names, notes and model numbers that people typed stay as typed).
-- **End-to-end tests (Playwright)**: `npm run test:e2e` opens a real browser (Edge on Windows) and runs the **main flow** — register a new farmer → search → book (3 steps) → provider accepts → sends an operator → start code → finish code → pay online → review — plus a check that the group booking form asks for a machine type before step 2 (that error now also goes away once a type is chosen).
+**What was built**
 
-**How to test what is done** (run `npm install`, then `npm run db:migrate` once for the 3 new migrations, then `npm run db:seed`)
+- **Fixes from testing**: `npm audit fix` (never `--force`); the login and register forms are sent with POST, so the phone and password never appear in the address; a refund the payment gateway cannot send is saved as **Failed** with a clear message; the start and finish codes **lock after 5 wrong tries** (the farmer gets **Get a new code**); a cancelled or rejected booking shows that nothing is to be paid; Bangla times read **সকাল ৮:০০** instead of AM/PM; a decided complaint on an unpaid booking shows **Waiting for payment** and a bill correction is logged as **Bill corrected**; a refund or fine after a payout is **carried forward** to the next payout; a group plot that breaks down keeps its minimum share, split by the work done.
+- **Photos**: big phone photos are made smaller in the browser before upload (at most 1600 pixels, a JPEG of a few hundred KB; the limit is 4 MB); on Vercel they are saved in **Vercel Blob**; photos uploaded while running `npm start` are now shown too.
+- **Security review and fixes**: wrong logins **lock a mobile number** (5 in 15 minutes) or a connection (20 in 15 minutes) for 15 minutes (new table `LoginAttempt`); new passwords need **8 characters**; the SSLCommerz return addresses only touch SSLCommerz payments, so nobody can mark a test-gateway payment as paid from outside; safety headers on every page; suspended accounts cannot upload or download receipts; the ids pages send are checked. The subsidy is **reserved when booking** (spent + reserved can never go over the budget; the government page shows both), and the late cancellation fee is clearly a record settled directly between farmer and provider.
+- **Speed, accessibility and tidy code**: 29 database indexes; the government reports let the database count; card titles are real headings, a **Skip to main content** link, darker grey text, named map pins (the accessibility checker axe finds no problem on 26 sample pages); `shadcn` moved to the dev tools; one shared page-refresh helper. Bangla polish: no screen text left in English, Bangla digits everywhere, a Bangla description for subsidy programs.
+- **Tests, README and deploy**: **Playwright** browser tests (`npm run test:e2e`, 18 tests): the main flow from register to review, every role's pages on a 360 px phone in both languages, a keyboard-only login, the login lock, the payment addresses, photo upload and the safety headers. The final README has screenshots (`docs/screenshots/`), setup steps, the demo logins and the **Vercel + Neon deploy guide**; `vercel.json` makes the Vercel build run `prisma migrate deploy` first, and both database addresses use `sslmode=verify-full`.
 
-- Open `/en/login`, turn JavaScript off in the browser and press **Log in**: the address stays `/en/login` (no phone or password in it).
-- Admin `01700000008` → **Payments** → **Refund** on an SSLCommerz payment (no keys in `.env`): a clear error, and the refund shows **Failed**.
-- Operator `01700000004` → a job "On the way" → **I have arrived** → type a wrong start code 5 times: "The code is locked". Farmer `01700000001` → that booking → **Get a new code** → the operator types the new code.
-- Switch to **বাং**: booking times read "সকাল ৯:০০"; the farmer's **Subsidy** page shows the program description in Bangla.
-- `npm test` runs 333 unit tests and `npm run test:e2e` runs 2 browser tests (it builds the site and starts it on port 3100 by itself); `npm run lint` and `npm run build` pass.
+**How to test** (run `npm install`, then `npm run db:migrate` once for the 5 new migrations, then `npm run db:seed`)
 
-**Still to do in Phase 8**
-
-- Check the same pages in **English** at 360 px, take the **screenshots** (`docs/screenshots/`) and write the **final README** (features, screenshots, setup steps, demo logins).
-- Look again at `npm audit`: it shows 17 advisories now (some came with Vercel Blob and Playwright); the rest need `--force`, which is not used.
-- **Final review** of the whole project (security, bugs, performance, accessibility, code quality) with a short report, then small fixes. Already noted: card titles are not real headings (accessibility), and audit log notes are written in English only.
-- **Deploy preparation** for Vercel + Neon: the build runs `prisma migrate deploy`, both database addresses use `sslmode=verify-full` (`DIRECT_URL` in `.env.example` still says `require`), the deploy guide in the README and the Vercel website steps.
-- End of phase: `study/phase-8.md`, `study/99-full-project-tour.md`, the `docs(progress): complete phase 8` commit and the `phase-8` tag.
+- `npm test` runs 363 unit tests and `npm run test:e2e` runs 18 browser tests (Edge on Windows; it builds the site and starts it on port 3100 by itself); `npm run lint` and `npm run build` pass.
+- On `/en/login` type a new mobile number with a wrong password 5 times: the 6th try says "Too many wrong tries" (also with the right password).
+- Operator `01700000004` → a job "On the way" → **I have arrived** → a wrong start code 5 times: "The code is locked". Farmer `01700000001` → that booking → **Get a new code**.
+- Provider `01700000003` → **My machines → Add machine** → add a big phone photo: it is made smaller and shown at once. Govt `01700000007` → **Subsidy programs**: spent and reserved money are shown separately.
+- Switch to **বাং** and press **Tab** once: "Skip to main content" appears; times read "সকাল ৯:০০". Open any page on a 360 px wide phone: nothing scrolls sideways.
+- Follow **Deploy on Vercel + Neon** in the README to put the site online.
