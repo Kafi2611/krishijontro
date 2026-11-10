@@ -16,7 +16,6 @@ import { toBanglaDigits } from "@/lib/i18n";
 import { writeAuditLog } from "@/lib/services/audit";
 import { endOfDhakaDay, startOfDhakaDay } from "@/lib/services/calendar";
 import { getMachineType, listActiveMachineTypes } from "@/lib/services/machine-type";
-import { createNotification } from "@/lib/services/notification";
 import { getAllowedRateRange, isRateAllowed, type RateRange } from "@/lib/services/pricing";
 import type { PricingRuleInput } from "@/lib/validators/pricing-rule";
 import type { ValidationKey } from "@/lib/validators/types";
@@ -282,12 +281,10 @@ export async function savePricingRule(
       select: { id: true, brand: true, model: true, rate: true, providerId: true },
     });
     const outside = machines.filter((machine) => !isRateAllowed(machine.rate, range));
-    for (const machine of outside) {
-      await createNotification(
-        { userId: machine.providerId, ...rateOutsideMessage(machine, machineType, range) },
-        tx,
-      );
-    }
+    // One message per machine, all saved with ONE database call (not one call per machine).
+    await tx.notification.createMany({
+      data: outside.map((machine) => ({ userId: machine.providerId, ...rateOutsideMessage(machine, machineType, range) })),
+    });
     return outside.length;
   });
 
