@@ -3,7 +3,7 @@
 // and moves it through its steps. Each one first checks ON THE SERVER that the user has the
 // right role, checks the form again with the same Zod rules as the browser, then calls the
 // service with the user's own id (so nobody can act for someone else).
-import { revalidatePath } from "next/cache";
+import { refreshPagesIfDone } from "@/lib/actions/refresh";
 import { requireRole } from "@/lib/auth";
 import { advanceRequest, finishRequest, requestMaintenance, takeRequest } from "@/lib/services/maintenance";
 import { areIds } from "@/lib/validators/ids";
@@ -14,14 +14,6 @@ import {
   type MaintenanceRequestInput,
 } from "@/lib/validators/maintenance";
 import type { ActionResult } from "@/lib/validators/types";
-
-/** After a successful step, every page is drawn again with the new status. */
-function refreshPagesIfDone(result: ActionResult): ActionResult {
-  if (result.ok) {
-    revalidatePath("/", "layout");
-  }
-  return result;
-}
 
 /** The provider asks for a service or a repair of one of their machines. */
 export async function requestMaintenanceAction(machineId: string, values: MaintenanceRequestInput): Promise<ActionResult> {

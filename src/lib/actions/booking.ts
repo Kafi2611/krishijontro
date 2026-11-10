@@ -3,6 +3,7 @@
 // right role, checks the form again with the same Zod rules as the browser, then calls
 // the booking service with the user's own id (so nobody can act for someone else).
 import { revalidatePath } from "next/cache";
+import { refreshPagesIfDone } from "@/lib/actions/refresh";
 import { requireRole } from "@/lib/auth";
 import {
   acceptBooking,
@@ -33,14 +34,6 @@ import {
 import { cancelByFarmer, cancelByProvider } from "@/lib/services/cancellation";
 import { areIds } from "@/lib/validators/ids";
 import type { ActionResult } from "@/lib/validators/types";
-
-/** After a successful step, every page is drawn again with the new status. */
-function refreshPagesIfDone(result: ActionResult): ActionResult {
-  if (result.ok) {
-    revalidatePath("/", "layout");
-  }
-  return result;
-}
 
 /** The farmer's "Book now". Returns the new booking's id, or an error key. */
 export async function createBookingAction(values: BookingInput): Promise<CreateBookingResult> {

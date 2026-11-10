@@ -3,21 +3,13 @@
 // machine, and the admin closes the search when no machine came. Each one first checks ON THE
 // SERVER that the user has the right role, checks the form again with the same Zod rules as the
 // browser, then calls the service with the user's own id (so nobody can act for someone else).
-import { revalidatePath } from "next/cache";
+import { refreshPagesIfDone } from "@/lib/actions/refresh";
 import { requireRole } from "@/lib/auth";
 import { reportBreakdown } from "@/lib/services/breakdown";
 import { acceptReplacement, markNoReplacement } from "@/lib/services/replacement";
 import { breakdownSchema, type BreakdownInput } from "@/lib/validators/breakdown";
 import { areIds } from "@/lib/validators/ids";
 import type { ActionResult } from "@/lib/validators/types";
-
-/** After a successful step, every page is drawn again with the new status. */
-function refreshPagesIfDone(result: ActionResult): ActionResult {
-  if (result.ok) {
-    revalidatePath("/", "layout");
-  }
-  return result;
-}
 
 /** The operator: "The machine broke down", with the work done, the problem and a photo. */
 export async function reportBreakdownAction(bookingId: string, values: BreakdownInput): Promise<ActionResult> {

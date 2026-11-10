@@ -3,7 +3,7 @@
 // government creates or changes programs. Each one checks ON THE SERVER that the user has the
 // right role, checks the form again with the same Zod rules as the browser, then calls the
 // service with the user's own id.
-import { revalidatePath } from "next/cache";
+import { refreshPagesIfDone } from "@/lib/actions/refresh";
 import { requireRole } from "@/lib/auth";
 import { applyForSubsidy, decideSubsidyApplication } from "@/lib/services/subsidy";
 import { saveSubsidyProgram } from "@/lib/services/subsidy-program";
@@ -16,14 +16,6 @@ import {
   type SubsidyProgramInput,
 } from "@/lib/validators/subsidy";
 import type { ActionResult } from "@/lib/validators/types";
-
-/** After a successful change, every page is drawn again with the new status. */
-function refreshPagesIfDone(result: ActionResult): ActionResult {
-  if (result.ok) {
-    revalidatePath("/", "layout");
-  }
-  return result;
-}
 
 /** The farmer applies to a program. */
 export async function applyForSubsidyAction(programId: string, values: SubsidyApplicationInput): Promise<ActionResult> {

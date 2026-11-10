@@ -2,20 +2,12 @@
 // Server actions for complaints ("disputes"). Each one first checks ON THE SERVER that the user
 // has the right role, checks the form again with the same Zod rules as the browser, then calls
 // the dispute service with the user's own id (so nobody can act for someone else).
-import { revalidatePath } from "next/cache";
+import { refreshPagesIfDone } from "@/lib/actions/refresh";
 import { requireRole } from "@/lib/auth";
 import { decideDispute, raiseDispute } from "@/lib/services/dispute";
 import { complaintSchema, decisionSchema, type ComplaintInput, type DecisionInput } from "@/lib/validators/dispute";
 import { areIds } from "@/lib/validators/ids";
 import type { ActionResult } from "@/lib/validators/types";
-
-/** After a successful change, every page is drawn again with the new status. */
-function refreshPagesIfDone(result: ActionResult): ActionResult {
-  if (result.ok) {
-    revalidatePath("/", "layout");
-  }
-  return result;
-}
 
 /** The farmer's "Report a problem" on one of their finished jobs. */
 export async function raiseDisputeAction(bookingId: string, values: ComplaintInput): Promise<ActionResult> {

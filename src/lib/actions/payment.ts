@@ -3,8 +3,8 @@
 // refunds and payouts (admin). Each one first checks ON THE SERVER that the user has the
 // right role, checks the form again with the same Zod rules as the browser, then calls the
 // service with the user's own id (so nobody can act for someone else).
-import { revalidatePath } from "next/cache";
 import { getLocale } from "next-intl/server";
+import { refreshPagesIfDone } from "@/lib/actions/refresh";
 import { requireRole } from "@/lib/auth";
 import { finishMockPayment, recordCashPayment, startOnlinePayment, type StartPaymentResult } from "@/lib/services/payment";
 import { createPayout } from "@/lib/services/payout";
@@ -18,14 +18,6 @@ import {
   type RefundInput,
 } from "@/lib/validators/payment";
 import type { ActionResult } from "@/lib/validators/types";
-
-/** After a successful change, every page is drawn again with the new amounts and statuses. */
-function refreshPagesIfDone(result: ActionResult): ActionResult {
-  if (result.ok) {
-    revalidatePath("/", "layout");
-  }
-  return result;
-}
 
 // ─────────────────────────── Farmer ───────────────────────────
 

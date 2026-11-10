@@ -3,6 +3,7 @@
 // logged in and only touch THEIR OWN tickets; the admin's actions check the ADMIN role.
 // Every form is checked again with the same Zod rules as the browser.
 import { revalidatePath } from "next/cache";
+import { refreshPagesIfDone } from "@/lib/actions/refresh";
 import { requireRole, requireUser } from "@/lib/auth";
 import {
   addAdminReply,
@@ -14,14 +15,6 @@ import {
 import { areIds } from "@/lib/validators/ids";
 import { newTicketSchema, replySchema, type NewTicketInput, type ReplyInput } from "@/lib/validators/support";
 import type { ActionResult, ValidationKey } from "@/lib/validators/types";
-
-/** After a successful change, every page is drawn again (lists, the thread, the bell). */
-function refreshPagesIfDone(result: ActionResult): ActionResult {
-  if (result.ok) {
-    revalidatePath("/", "layout");
-  }
-  return result;
-}
 
 // ─────────────────────────── The user ───────────────────────────
 

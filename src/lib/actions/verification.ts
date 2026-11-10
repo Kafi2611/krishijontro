@@ -3,21 +3,13 @@
 // agriculture officer verifies or rejects them. Each one checks ON THE SERVER that the user has
 // the right role, checks the form again with the same Zod rules as the browser, then calls the
 // service with the user's own id.
-import { revalidatePath } from "next/cache";
+import { refreshPagesIfDone } from "@/lib/actions/refresh";
 import { requireRole } from "@/lib/auth";
 import { decideVerification, saveFarmerDetails } from "@/lib/services/verification";
 import { approvalDecisionSchema, type ApprovalDecision } from "@/lib/validators/approval";
 import { areIds } from "@/lib/validators/ids";
 import type { ActionResult } from "@/lib/validators/types";
 import { farmerDetailsSchema, type FarmerDetailsInput } from "@/lib/validators/verification";
-
-/** After a successful change, every page is drawn again with the new status. */
-function refreshPagesIfDone(result: ActionResult): ActionResult {
-  if (result.ok) {
-    revalidatePath("/", "layout");
-  }
-  return result;
-}
 
 /** The farmer sends their NID, land, village and upazila for checking. */
 export async function saveFarmerDetailsAction(values: FarmerDetailsInput): Promise<ActionResult> {
