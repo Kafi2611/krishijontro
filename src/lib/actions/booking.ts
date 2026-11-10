@@ -31,6 +31,7 @@ import {
   type StartWorkInput,
 } from "@/lib/validators/booking";
 import { cancelByFarmer, cancelByProvider } from "@/lib/services/cancellation";
+import { areIds } from "@/lib/validators/ids";
 import type { ActionResult } from "@/lib/validators/types";
 
 /** After a successful step, every page is drawn again with the new status. */
@@ -60,12 +61,18 @@ export async function createBookingAction(values: BookingInput): Promise<CreateB
 /** The farmer cancels their booking (free early on; a late fee near the start). */
 export async function cancelBookingAction(bookingId: string): Promise<ActionResult> {
   const farmer = await requireRole("FARMER");
+  if (!areIds(bookingId)) {
+    return { ok: false, error: "notFound" };
+  }
   return refreshPagesIfDone(await cancelByFarmer(bookingId, farmer.id));
 }
 
 /** The farmer's "Get a new code", after a wrong code was typed too many times and the old one is locked. */
 export async function renewOtpAction(bookingId: string): Promise<ActionResult> {
   const farmer = await requireRole("FARMER");
+  if (!areIds(bookingId)) {
+    return { ok: false, error: "notFound" };
+  }
   return refreshPagesIfDone(await renewOtp(bookingId, farmer.id));
 }
 
@@ -74,12 +81,18 @@ export async function renewOtpAction(bookingId: string): Promise<ActionResult> {
 /** The provider accepts a request: the farmer gets the start and finish codes. */
 export async function acceptBookingAction(bookingId: string): Promise<ActionResult> {
   const provider = await requireRole("PROVIDER");
+  if (!areIds(bookingId)) {
+    return { ok: false, error: "notFound" };
+  }
   return refreshPagesIfDone(await acceptBooking(bookingId, provider.id));
 }
 
 /** The provider rejects a request with a reason (sent to the farmer). */
 export async function rejectBookingAction(bookingId: string, values: RejectBookingInput): Promise<ActionResult> {
   const provider = await requireRole("PROVIDER");
+  if (!areIds(bookingId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = rejectBookingSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "reasonRequired" };
@@ -90,6 +103,9 @@ export async function rejectBookingAction(bookingId: string, values: RejectBooki
 /** The provider cancels a booking they accepted, with a reason (the farmer pays nothing). */
 export async function providerCancelBookingAction(bookingId: string, values: ProviderCancelInput): Promise<ActionResult> {
   const provider = await requireRole("PROVIDER");
+  if (!areIds(bookingId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = providerCancelSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "reasonRequired" };
@@ -100,6 +116,9 @@ export async function providerCancelBookingAction(bookingId: string, values: Pro
 /** The provider sends one of their operators to an accepted booking. */
 export async function assignOperatorAction(bookingId: string, values: AssignOperatorInput): Promise<ActionResult> {
   const provider = await requireRole("PROVIDER");
+  if (!areIds(bookingId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = assignOperatorSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "chooseOperator" };
@@ -112,12 +131,18 @@ export async function assignOperatorAction(bookingId: string, values: AssignOper
 /** "I am on the way". */
 export async function startTripAction(bookingId: string): Promise<ActionResult> {
   const operator = await requireRole("OPERATOR");
+  if (!areIds(bookingId)) {
+    return { ok: false, error: "notFound" };
+  }
   return refreshPagesIfDone(await startTrip(bookingId, operator.id));
 }
 
 /** "I have arrived". */
 export async function markArrivedAction(bookingId: string): Promise<ActionResult> {
   const operator = await requireRole("OPERATOR");
+  if (!areIds(bookingId)) {
+    return { ok: false, error: "notFound" };
+  }
   return refreshPagesIfDone(await markArrived(bookingId, operator.id));
 }
 
@@ -133,6 +158,9 @@ function refreshPagesAfterCode(result: ActionResult): ActionResult {
 /** "Start the work", with the farmer's start code. */
 export async function startWorkAction(bookingId: string, values: StartWorkInput): Promise<ActionResult> {
   const operator = await requireRole("OPERATOR");
+  if (!areIds(bookingId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = startWorkSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "otpInvalid" };
@@ -143,6 +171,9 @@ export async function startWorkAction(bookingId: string, values: StartWorkInput)
 /** "Finish the work", with the real amount of work and the farmer's finish code. */
 export async function finishWorkAction(bookingId: string, values: FinishWorkInput): Promise<ActionResult> {
   const operator = await requireRole("OPERATOR");
+  if (!areIds(bookingId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = finishWorkSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "somethingWrong" };

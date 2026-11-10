@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { addMember, removeMember, saveCooperative } from "@/lib/services/cooperative";
 import { addMemberSchema, cooperativeSchema, type AddMemberInput, type CooperativeInput } from "@/lib/validators/cooperative";
+import { areIds } from "@/lib/validators/ids";
 import type { ActionResult } from "@/lib/validators/types";
 
 /** After a successful change, every page is drawn again. */
@@ -39,5 +40,8 @@ export async function addMemberAction(values: AddMemberInput): Promise<ActionRes
 /** Removes a member from the leader's cooperative. */
 export async function removeMemberAction(memberId: string): Promise<ActionResult> {
   const leader = await requireRole("COOP_LEADER");
+  if (!areIds(memberId)) {
+    return { ok: false, error: "notFound" };
+  }
   return refreshPagesIfDone(await removeMember(leader.id, memberId));
 }

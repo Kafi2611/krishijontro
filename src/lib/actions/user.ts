@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { createStaffUser } from "@/lib/services/staff";
 import { changeUserStatus } from "@/lib/services/user";
+import { areIds } from "@/lib/validators/ids";
 import { staffSchema, type StaffInput } from "@/lib/validators/staff";
 import { userStatusSchema, type UserStatusInput } from "@/lib/validators/user";
 import type { ActionResult } from "@/lib/validators/types";
@@ -14,6 +15,9 @@ import type { ActionResult } from "@/lib/validators/types";
 /** Suspends an account (with a reason) or makes it active again. */
 export async function changeUserStatusAction(userId: string, values: UserStatusInput): Promise<ActionResult> {
   const admin = await requireRole("ADMIN");
+  if (!areIds(userId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = userStatusSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "reasonRequired" };

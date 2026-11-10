@@ -10,6 +10,7 @@ import {
   type ApprovalDecision,
   type ApprovalTarget,
 } from "@/lib/validators/approval";
+import { areIds } from "@/lib/validators/ids";
 import type { ActionResult } from "@/lib/validators/types";
 
 /**
@@ -23,6 +24,9 @@ export async function decideApprovalAction(
   values: ApprovalDecision,
 ): Promise<ActionResult> {
   const admin = await requireRole("ADMIN");
+  if (!areIds(id)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = approvalDecisionSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "reasonRequired" };

@@ -5,6 +5,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { joinWaitlist, leaveWaitlist } from "@/lib/services/waitlist";
+import { areIds } from "@/lib/validators/ids";
 import type { ActionResult } from "@/lib/validators/types";
 import { joinWaitlistSchema, type JoinWaitlistInput } from "@/lib/validators/waitlist";
 
@@ -29,5 +30,8 @@ export async function joinWaitlistAction(values: JoinWaitlistInput): Promise<Act
 /** "Leave the list" on the waitlist page. */
 export async function leaveWaitlistAction(entryId: string): Promise<ActionResult> {
   const farmer = await requireRole("FARMER");
+  if (!areIds(entryId)) {
+    return { ok: false, error: "notFound" };
+  }
   return refreshPagesIfDone(await leaveWaitlist(entryId, farmer.id));
 }

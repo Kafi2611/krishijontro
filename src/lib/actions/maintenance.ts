@@ -6,6 +6,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { advanceRequest, finishRequest, requestMaintenance, takeRequest } from "@/lib/services/maintenance";
+import { areIds } from "@/lib/validators/ids";
 import {
   finishRepairSchema,
   maintenanceRequestSchema,
@@ -25,6 +26,9 @@ function refreshPagesIfDone(result: ActionResult): ActionResult {
 /** The provider asks for a service or a repair of one of their machines. */
 export async function requestMaintenanceAction(machineId: string, values: MaintenanceRequestInput): Promise<ActionResult> {
   const provider = await requireRole("PROVIDER");
+  if (!areIds(machineId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = maintenanceRequestSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "somethingWrong" };
@@ -35,18 +39,27 @@ export async function requestMaintenanceAction(machineId: string, values: Mainte
 /** The technician takes a new request ("Take this job"). */
 export async function takeRequestAction(requestId: string): Promise<ActionResult> {
   const technician = await requireRole("TECHNICIAN");
+  if (!areIds(requestId)) {
+    return { ok: false, error: "notFound" };
+  }
   return refreshPagesIfDone(await takeRequest(requestId, technician));
 }
 
 /** The technician moves their request one step on (Inspecting, then Repairing). */
 export async function advanceRequestAction(requestId: string): Promise<ActionResult> {
   const technician = await requireRole("TECHNICIAN");
+  if (!areIds(requestId)) {
+    return { ok: false, error: "notFound" };
+  }
   return refreshPagesIfDone(await advanceRequest(requestId, technician));
 }
 
 /** The technician logs the parts and the cost, and marks the machine fit for work. */
 export async function finishRequestAction(requestId: string, values: FinishRepairInput): Promise<ActionResult> {
   const technician = await requireRole("TECHNICIAN");
+  if (!areIds(requestId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = finishRepairSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "somethingWrong" };

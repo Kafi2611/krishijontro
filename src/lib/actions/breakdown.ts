@@ -8,6 +8,7 @@ import { requireRole } from "@/lib/auth";
 import { reportBreakdown } from "@/lib/services/breakdown";
 import { acceptReplacement, markNoReplacement } from "@/lib/services/replacement";
 import { breakdownSchema, type BreakdownInput } from "@/lib/validators/breakdown";
+import { areIds } from "@/lib/validators/ids";
 import type { ActionResult } from "@/lib/validators/types";
 
 /** After a successful step, every page is drawn again with the new status. */
@@ -21,6 +22,9 @@ function refreshPagesIfDone(result: ActionResult): ActionResult {
 /** The operator: "The machine broke down", with the work done, the problem and a photo. */
 export async function reportBreakdownAction(bookingId: string, values: BreakdownInput): Promise<ActionResult> {
   const operator = await requireRole("OPERATOR");
+  if (!areIds(bookingId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = breakdownSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "somethingWrong" };
@@ -31,11 +35,17 @@ export async function reportBreakdownAction(bookingId: string, values: Breakdown
 /** A provider sends one of their machines to finish a broken-down job. */
 export async function acceptReplacementAction(reportId: string, machineId: string): Promise<ActionResult> {
   const provider = await requireRole("PROVIDER");
+  if (!areIds(reportId, machineId)) {
+    return { ok: false, error: "notFound" };
+  }
   return refreshPagesIfDone(await acceptReplacement(reportId, machineId, provider.id));
 }
 
 /** The admin: nobody sent a machine, so the search is closed. */
 export async function markNoReplacementAction(reportId: string): Promise<ActionResult> {
   const admin = await requireRole("ADMIN");
+  if (!areIds(reportId)) {
+    return { ok: false, error: "notFound" };
+  }
   return refreshPagesIfDone(await markNoReplacement(reportId, admin.id));
 }

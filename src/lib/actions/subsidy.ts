@@ -8,6 +8,7 @@ import { requireRole } from "@/lib/auth";
 import { applyForSubsidy, decideSubsidyApplication } from "@/lib/services/subsidy";
 import { saveSubsidyProgram } from "@/lib/services/subsidy-program";
 import { approvalDecisionSchema, type ApprovalDecision } from "@/lib/validators/approval";
+import { areIds } from "@/lib/validators/ids";
 import {
   subsidyApplicationSchema,
   subsidyProgramSchema,
@@ -27,6 +28,9 @@ function refreshPagesIfDone(result: ActionResult): ActionResult {
 /** The farmer applies to a program. */
 export async function applyForSubsidyAction(programId: string, values: SubsidyApplicationInput): Promise<ActionResult> {
   const farmer = await requireRole("FARMER");
+  if (!areIds(programId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = subsidyApplicationSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "tooLong" };
@@ -37,6 +41,9 @@ export async function applyForSubsidyAction(programId: string, values: SubsidyAp
 /** The officer approves an application of their upazila, or rejects it with a reason. */
 export async function decideSubsidyAction(applicationId: string, values: ApprovalDecision): Promise<ActionResult> {
   const officer = await requireRole("OFFICER");
+  if (!areIds(applicationId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = approvalDecisionSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "reasonRequired" };
@@ -47,6 +54,9 @@ export async function decideSubsidyAction(applicationId: string, values: Approva
 /** The government creates a program (programId null) or changes one. */
 export async function saveSubsidyProgramAction(programId: string | null, values: SubsidyProgramInput): Promise<ActionResult> {
   const govt = await requireRole("GOVT");
+  if (programId !== null && !areIds(programId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = subsidyProgramSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "somethingWrong" };

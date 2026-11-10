@@ -5,6 +5,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { createMachineType, updateMachineType } from "@/lib/services/machine-type";
+import { areIds } from "@/lib/validators/ids";
 import { machineTypeSchema, type MachineTypeInput } from "@/lib/validators/machine-type";
 import type { ActionResult } from "@/lib/validators/types";
 
@@ -29,6 +30,9 @@ export async function updateMachineTypeAction(
   values: MachineTypeInput,
 ): Promise<ActionResult> {
   const admin = await requireRole("ADMIN");
+  if (!areIds(id)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = machineTypeSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "somethingWrong" };

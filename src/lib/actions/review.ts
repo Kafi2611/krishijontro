@@ -5,12 +5,16 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { submitReviews } from "@/lib/services/review";
+import { areIds } from "@/lib/validators/ids";
 import { reviewSchema, type ReviewInput } from "@/lib/validators/review";
 import type { ActionResult } from "@/lib/validators/types";
 
 /** "Send review": the stars (and comments) for the machine and the operator. */
 export async function submitReviewAction(bookingId: string, values: ReviewInput): Promise<ActionResult> {
   const farmer = await requireRole("FARMER");
+  if (!areIds(bookingId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = reviewSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "ratingRequired" };

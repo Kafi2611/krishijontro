@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { addAvailabilityBlock, removeAvailabilityBlock } from "@/lib/services/availability";
 import { availabilityBlockSchema, type AvailabilityBlockInput } from "@/lib/validators/availability";
+import { areIds } from "@/lib/validators/ids";
 import type { ActionResult } from "@/lib/validators/types";
 
 /** Blocks a range of days for one machine. */
@@ -14,6 +15,9 @@ export async function addAvailabilityBlockAction(
   values: AvailabilityBlockInput,
 ): Promise<ActionResult> {
   const provider = await requireRole("PROVIDER");
+  if (!areIds(machineId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = availabilityBlockSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "somethingWrong" };
@@ -29,6 +33,9 @@ export async function addAvailabilityBlockAction(
 /** Removes one block (the days become free again). */
 export async function removeAvailabilityBlockAction(blockId: string): Promise<ActionResult> {
   const provider = await requireRole("PROVIDER");
+  if (!areIds(blockId)) {
+    return { ok: false, error: "notFound" };
+  }
   const result = await removeAvailabilityBlock(blockId, provider.id);
   if (result.ok) {
     revalidatePath("/", "layout");

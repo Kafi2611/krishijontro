@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { decideVerification, saveFarmerDetails } from "@/lib/services/verification";
 import { approvalDecisionSchema, type ApprovalDecision } from "@/lib/validators/approval";
+import { areIds } from "@/lib/validators/ids";
 import type { ActionResult } from "@/lib/validators/types";
 import { farmerDetailsSchema, type FarmerDetailsInput } from "@/lib/validators/verification";
 
@@ -31,6 +32,9 @@ export async function saveFarmerDetailsAction(values: FarmerDetailsInput): Promi
 /** The officer verifies a farmer of their upazila, or rejects with a reason. */
 export async function decideVerificationAction(farmerId: string, values: ApprovalDecision): Promise<ActionResult> {
   const officer = await requireRole("OFFICER");
+  if (!areIds(farmerId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = approvalDecisionSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "reasonRequired" };

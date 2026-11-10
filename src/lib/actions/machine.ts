@@ -11,6 +11,7 @@ import {
   updateMachine,
   type MachineSaveResult,
 } from "@/lib/services/machine";
+import { areIds } from "@/lib/validators/ids";
 import { machineSchema, type MachineInput } from "@/lib/validators/machine";
 import type { ActionResult } from "@/lib/validators/types";
 
@@ -36,6 +37,9 @@ export async function updateMachineAction(
   values: MachineInput,
 ): Promise<MachineSaveResult> {
   const provider = await requireRole("PROVIDER");
+  if (!areIds(machineId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = machineSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "somethingWrong" };
@@ -54,6 +58,9 @@ export async function setMachineActiveAction(
   makeActive: boolean,
 ): Promise<ActionResult> {
   const provider = await requireRole("PROVIDER");
+  if (!areIds(machineId) || typeof makeActive !== "boolean") {
+    return { ok: false, error: "notFound" };
+  }
   const result = await setMachineActive(machineId, provider.id, makeActive);
   if (result.ok) {
     revalidatePath("/", "layout");
@@ -64,6 +71,9 @@ export async function setMachineActiveAction(
 /** Deletes a machine that has no bookings or repair history. */
 export async function deleteMachineAction(machineId: string): Promise<ActionResult> {
   const provider = await requireRole("PROVIDER");
+  if (!areIds(machineId)) {
+    return { ok: false, error: "notFound" };
+  }
   const result = await deleteMachine(machineId, provider.id);
   if (result.ok) {
     revalidatePath("/", "layout");

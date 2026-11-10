@@ -5,6 +5,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { savePricingRule, type PricingRuleSaveResult } from "@/lib/services/pricing-rule";
+import { areIds } from "@/lib/validators/ids";
 import { pricingRuleSchema, type PricingRuleInput } from "@/lib/validators/pricing-rule";
 
 /**
@@ -16,6 +17,9 @@ export async function savePricingRuleAction(
   values: PricingRuleInput,
 ): Promise<PricingRuleSaveResult> {
   const govtUser = await requireRole("GOVT");
+  if (!areIds(machineTypeId)) {
+    return { ok: false, error: "notFound" };
+  }
   // Never trust the browser: check the form again with the same Zod rules.
   const parsed = pricingRuleSchema.safeParse(values);
   if (!parsed.success) {

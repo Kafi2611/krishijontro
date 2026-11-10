@@ -11,6 +11,7 @@ import {
   closeUserTicket,
   createTicket,
 } from "@/lib/services/support";
+import { areIds } from "@/lib/validators/ids";
 import { newTicketSchema, replySchema, type NewTicketInput, type ReplyInput } from "@/lib/validators/support";
 import type { ActionResult, ValidationKey } from "@/lib/validators/types";
 
@@ -43,6 +44,9 @@ export async function createTicketAction(
 /** The user writes again in their own ticket. */
 export async function replyTicketAction(ticketId: string, values: ReplyInput): Promise<ActionResult> {
   const user = await requireUser();
+  if (!areIds(ticketId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = replySchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "messageRequired" };
@@ -53,6 +57,9 @@ export async function replyTicketAction(ticketId: string, values: ReplyInput): P
 /** The user closes their own ticket. */
 export async function closeTicketAction(ticketId: string): Promise<ActionResult> {
   const user = await requireUser();
+  if (!areIds(ticketId)) {
+    return { ok: false, error: "notFound" };
+  }
   return refreshPagesIfDone(await closeUserTicket(ticketId, user.id));
 }
 
@@ -61,6 +68,9 @@ export async function closeTicketAction(ticketId: string): Promise<ActionResult>
 /** An admin answers a ticket. */
 export async function adminReplyTicketAction(ticketId: string, values: ReplyInput): Promise<ActionResult> {
   const admin = await requireRole("ADMIN");
+  if (!areIds(ticketId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = replySchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "messageRequired" };
@@ -71,5 +81,8 @@ export async function adminReplyTicketAction(ticketId: string, values: ReplyInpu
 /** An admin closes a ticket. */
 export async function adminCloseTicketAction(ticketId: string): Promise<ActionResult> {
   await requireRole("ADMIN");
+  if (!areIds(ticketId)) {
+    return { ok: false, error: "notFound" };
+  }
   return refreshPagesIfDone(await closeTicketByAdmin(ticketId));
 }

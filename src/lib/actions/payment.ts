@@ -9,6 +9,7 @@ import { requireRole } from "@/lib/auth";
 import { finishMockPayment, recordCashPayment, startOnlinePayment, type StartPaymentResult } from "@/lib/services/payment";
 import { createPayout } from "@/lib/services/payout";
 import { refundPayment } from "@/lib/services/refund";
+import { areIds, transactionIdSchema } from "@/lib/validators/ids";
 import {
   mockOutcomeSchema,
   payoutSchema,
@@ -31,6 +32,9 @@ function refreshPagesIfDone(result: ActionResult): ActionResult {
 /** "Pay online": returns the gateway page to open, or an error key. */
 export async function startOnlinePaymentAction(bookingId: string): Promise<StartPaymentResult> {
   const farmer = await requireRole("FARMER");
+  if (!areIds(bookingId)) {
+    return { ok: false, error: "notFound" };
+  }
   const locale = await getLocale(); // so the farmer comes back to a page in their language
   return startOnlinePayment(bookingId, farmer, locale);
 }
@@ -38,6 +42,9 @@ export async function startOnlinePaymentAction(bookingId: string): Promise<Start
 /** A button on the pretend bank page: pay, fail or cancel. */
 export async function finishMockPaymentAction(transactionId: string, outcome: string): Promise<ActionResult> {
   const farmer = await requireRole("FARMER");
+  if (!transactionIdSchema.safeParse(transactionId).success) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = mockOutcomeSchema.safeParse(outcome);
   if (!parsed.success) {
     return { ok: false, error: "somethingWrong" };
@@ -50,6 +57,9 @@ export async function finishMockPaymentAction(transactionId: string, outcome: st
 /** "Cash received": the booking's operator or its machine's provider took the farmer's cash. */
 export async function recordCashPaymentAction(bookingId: string): Promise<ActionResult> {
   const receiver = await requireRole("OPERATOR", "PROVIDER");
+  if (!areIds(bookingId)) {
+    return { ok: false, error: "notFound" };
+  }
   return refreshPagesIfDone(await recordCashPayment(bookingId, receiver.id));
 }
 
@@ -58,6 +68,9 @@ export async function recordCashPaymentAction(bookingId: string): Promise<Action
 /** Gives back (part of) a successful payment. */
 export async function refundPaymentAction(paymentId: string, values: RefundInput): Promise<ActionResult> {
   const admin = await requireRole("ADMIN");
+  if (!areIds(paymentId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = refundSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "somethingWrong" };
@@ -68,6 +81,9 @@ export async function refundPaymentAction(paymentId: string, values: RefundInput
 /** Records that the admin has sent a provider all the money owed to them. */
 export async function createPayoutAction(providerId: string, values: PayoutInput): Promise<ActionResult> {
   const admin = await requireRole("ADMIN");
+  if (!areIds(providerId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = payoutSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "referenceRequired" };

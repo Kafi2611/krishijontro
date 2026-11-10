@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { decideDispute, raiseDispute } from "@/lib/services/dispute";
 import { complaintSchema, decisionSchema, type ComplaintInput, type DecisionInput } from "@/lib/validators/dispute";
+import { areIds } from "@/lib/validators/ids";
 import type { ActionResult } from "@/lib/validators/types";
 
 /** After a successful change, every page is drawn again with the new status. */
@@ -19,6 +20,9 @@ function refreshPagesIfDone(result: ActionResult): ActionResult {
 /** The farmer's "Report a problem" on one of their finished jobs. */
 export async function raiseDisputeAction(bookingId: string, values: ComplaintInput): Promise<ActionResult> {
   const farmer = await requireRole("FARMER");
+  if (!areIds(bookingId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = complaintSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "describeProblem" };
@@ -29,6 +33,9 @@ export async function raiseDisputeAction(bookingId: string, values: ComplaintInp
 /** The admin's decision on a complaint: give money back (or lower the bill), fine, or no action. */
 export async function decideDisputeAction(disputeId: string, values: DecisionInput): Promise<ActionResult> {
   const admin = await requireRole("ADMIN");
+  if (!areIds(disputeId)) {
+    return { ok: false, error: "notFound" };
+  }
   const parsed = decisionSchema.safeParse(values);
   if (!parsed.success) {
     return { ok: false, error: "amountRequired" };
