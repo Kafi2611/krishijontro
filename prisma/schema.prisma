@@ -489,6 +489,7 @@ model SubsidyProgram {
   name            String
   nameBn          String
   description     String?
+  descriptionBn   String? // the same description in Bangla (shown on Bangla pages)
   discountPercent Int // e.g. 20 means 20% off the work charge
   maxLandDecimal  Float? // only farmers with this much land or less can apply
   budget          Int // total taka the government will spend

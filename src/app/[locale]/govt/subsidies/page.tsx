@@ -62,7 +62,11 @@ export default async function GovtSubsidiesPage() {
                     {pickByLocale(program.name, program.nameBn, locale)}
                     <Badge variant={isOpen ? "default" : "secondary"}>{stateLabel}</Badge>
                   </CardTitle>
-                  {program.description && <p className="text-sm text-muted-foreground">{program.description}</p>}
+                  {program.description && (
+                    <p className="text-sm text-muted-foreground">
+                      {pickByLocale(program.description, program.descriptionBn, locale)}
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <dl>

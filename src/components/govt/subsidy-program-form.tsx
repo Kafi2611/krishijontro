@@ -83,11 +83,18 @@ export function SubsidyProgramForm({ programId, defaultValues }: SubsidyProgramF
           </Field>
         </div>
 
-        <Field data-invalid={!!errors.description}>
-          <FieldLabel htmlFor="description">{t("description")}</FieldLabel>
-          <Textarea id="description" rows={2} aria-invalid={!!errors.description} {...form.register("description")} />
-          {errorText(errors.description?.message)}
-        </Field>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field data-invalid={!!errors.description}>
+            <FieldLabel htmlFor="description">{t("description")}</FieldLabel>
+            <Textarea id="description" rows={2} aria-invalid={!!errors.description} {...form.register("description")} />
+            {errorText(errors.description?.message)}
+          </Field>
+          <Field data-invalid={!!errors.descriptionBn}>
+            <FieldLabel htmlFor="descriptionBn">{t("descriptionBn")}</FieldLabel>
+            <Textarea id="descriptionBn" lang="bn" rows={2} aria-invalid={!!errors.descriptionBn} {...form.register("descriptionBn")} />
+            {errorText(errors.descriptionBn?.message)}
+          </Field>
+        </div>
 
         <div className="grid gap-5 sm:grid-cols-3">
           <Field data-invalid={!!errors.discountPercent}>

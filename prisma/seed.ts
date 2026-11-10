@@ -279,6 +279,7 @@ async function seedSubsidyProgram() {
       name: "Small Farmer Mechanization Support 2026",
       nameBn: "ক্ষুদ্র কৃষক যান্ত্রিকীকরণ সহায়তা ২০২৬",
       description: "20% off the work charge for verified farmers with 200 decimal of land or less.",
+      descriptionBn: "২০০ শতাংশ বা তার কম জমির যাচাইকৃত কৃষকদের কাজের খরচে ২০% ছাড়।",
       discountPercent: 20,
       maxLandDecimal: 200,
       budget: 500000,

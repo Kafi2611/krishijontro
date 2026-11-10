@@ -20,6 +20,7 @@ export const subsidyProgramSchema = z
     name: z.string().trim().min(3, "required").max(100, "tooLong"),
     nameBn: z.string().trim().min(3, "required").max(100, "tooLong"),
     description: z.string().trim().max(300, "tooLong"),
+    descriptionBn: z.string().trim().max(300, "tooLong"), // the same description in Bangla (optional)
     discountPercent: z
       .number("numberInvalid")
       .int("numberInvalid")

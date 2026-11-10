@@ -49,6 +49,7 @@ export function programToFormValues(program: {
   name: string;
   nameBn: string;
   description: string | null;
+  descriptionBn: string | null;
   discountPercent: number;
   maxLandDecimal: number | null;
   budget: number;
@@ -60,6 +61,7 @@ export function programToFormValues(program: {
     name: program.name,
     nameBn: program.nameBn,
     description: program.description ?? "",
+    descriptionBn: program.descriptionBn ?? "",
     discountPercent: program.discountPercent,
     maxLandDecimal: program.maxLandDecimal ?? undefined,
     budget: program.budget,
@@ -83,6 +85,7 @@ export async function saveSubsidyProgram(
     name: input.name,
     nameBn: input.nameBn,
     description: input.description === "" ? null : input.description,
+    descriptionBn: input.descriptionBn === "" ? null : input.descriptionBn,
     discountPercent: input.discountPercent,
     maxLandDecimal: input.maxLandDecimal ?? null, // null = any farmer may apply
     budget: input.budget,

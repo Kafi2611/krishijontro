@@ -56,6 +56,7 @@ describe("subsidyProgramSchema", () => {
     name: "Small Farmer Support",
     nameBn: "ক্ষুদ্র কৃষক সহায়তা",
     description: "",
+    descriptionBn: "",
     discountPercent: 20,
     maxLandDecimal: 200,
     budget: 500000,

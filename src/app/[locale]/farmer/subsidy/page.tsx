@@ -124,7 +124,9 @@ export default async function FarmerSubsidyPage() {
                       {pickByLocale(program.name, program.nameBn, locale)}
                       {application && <StatusBadge status={application.status} />}
                     </CardTitle>
-                    {program.description && <CardDescription>{program.description}</CardDescription>}
+                    {program.description && (
+                      <CardDescription>{pickByLocale(program.description, program.descriptionBn, locale)}</CardDescription>
+                    )}
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <dl>

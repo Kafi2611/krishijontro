@@ -39,6 +39,7 @@ export default async function NewSubsidyProgramPage() {
               name: "",
               nameBn: "",
               description: "",
+              descriptionBn: "",
               discountPercent: 20,
               maxLandDecimal: 200,
               startDay: today,
