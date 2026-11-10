@@ -57,7 +57,11 @@ export function LoginForm({ callbackUrl, demoAccounts }: LoginFormProps) {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+      {/* method="post": a form without a method uses GET, which writes its boxes into the page
+          address. If someone presses the button before the page's JavaScript is ready, the browser
+          sends the form by itself; with POST the phone and password then travel hidden in the
+          request body, never in the address (or the browser history). */}
+      <form method="post" onSubmit={form.handleSubmit(onSubmit)} noValidate>
         <FieldGroup>
           <Field data-invalid={!!errors.phone}>
             <FieldLabel htmlFor="phone">{t("phone")}</FieldLabel>

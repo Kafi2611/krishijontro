@@ -67,7 +67,10 @@ export function RegisterForm() {
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
+    // method="post": if the button is pressed before the page's JavaScript is ready, the browser
+    // sends the form by itself. With POST the password travels hidden in the request body;
+    // without it (GET) it would be written into the page address.
+    <form method="post" onSubmit={form.handleSubmit(onSubmit)} noValidate>
       <FieldGroup>
         {/* Role: two big cards. Each is a normal radio button, hidden, inside a label. */}
         <FieldSet>
