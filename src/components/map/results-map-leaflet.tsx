@@ -71,7 +71,7 @@ export default function ResultsMapLeaflet({ field, machines, radiusKm }: Results
         />
       )}
 
-      <Marker position={[field.lat, field.lng]} icon={PLACE_PIN_ICON}>
+      <Marker position={[field.lat, field.lng]} icon={PLACE_PIN_ICON} title={t("yourField")} alt={t("yourField")}>
         <Popup>{t("yourField")}</Popup>
       </Marker>
 
@@ -81,6 +81,9 @@ export default function ResultsMapLeaflet({ field, machines, radiusKm }: Results
           position={[machine.lat, machine.lng]}
           // The pin shows the same number as the card, in Bangla digits on Bangla pages.
           icon={numberedMachineIcon(localizeDigits(machine.number, locale))}
+          // Its name for screen readers: "1. Mahindra 575 DI"
+          title={`${localizeDigits(machine.number, locale)}. ${machine.name}`}
+          alt={`${localizeDigits(machine.number, locale)}. ${machine.name}`}
         >
           <Popup>
             <span className="block font-semibold">

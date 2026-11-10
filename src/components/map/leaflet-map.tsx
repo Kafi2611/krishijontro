@@ -4,6 +4,7 @@
 // `window`, so this file is only loaded in the browser (see map-picker.tsx).
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import type { LatLng } from "@/lib/services/geo";
@@ -45,6 +46,7 @@ export type LeafletMapProps = {
 };
 
 export default function LeafletMap({ value, center, onChange, zoom = 13 }: LeafletMapProps) {
+  const t = useTranslations("Map");
   const start = value ?? center;
   const canEdit = onChange !== undefined;
 
@@ -65,6 +67,9 @@ export default function LeafletMap({ value, center, onChange, zoom = 13 }: Leafl
         <Marker
           position={[value.lat, value.lng]}
           icon={PLACE_PIN_ICON}
+          // The pin's name for screen readers (and the tip shown when the mouse is on it).
+          title={canEdit ? t("pinMovable") : t("pinPlace")}
+          alt={canEdit ? t("pinMovable") : t("pinPlace")}
           draggable={canEdit}
           eventHandlers={{
             // After the pin is dragged, report its new place.

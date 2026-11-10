@@ -411,7 +411,9 @@
   "Map": {
     "tapHint": "Tap the map or drag the pin to set the exact place.",
     "useMyLocation": "Use my location",
-    "locationFailed": "Could not find your location. Please tap the map instead."
+    "locationFailed": "Could not find your location. Please tap the map instead.",
+    "pinMovable": "The chosen place. Drag it to move it.",
+    "pinPlace": "The place"
   },
   "ProviderNotes": {
     "accountPending": "Your provider account is waiting for admin approval. You can add machines now; farmers will see them once both your account and the machine are approved.",
