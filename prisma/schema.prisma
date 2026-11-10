@@ -259,6 +259,8 @@ model FarmerProfile {
   user       User      @relation("FarmerUser", fields: [userId], references: [id], onDelete: Cascade)
   location   Location? @relation(fields: [locationId], references: [id])
   verifiedBy User?     @relation("FarmerVerifiedBy", fields: [verifiedById], references: [id])
+
+  @@index([locationId])
 }
 
 model ProviderProfile {
@@ -294,6 +296,8 @@ model OperatorProfile {
 
   user     User @relation("OperatorUser", fields: [userId], references: [id], onDelete: Cascade)
   provider User @relation("ProviderOperators", fields: [providerId], references: [id])
+
+  @@index([providerId])
 }
 
 model TechnicianProfile {
@@ -347,6 +351,7 @@ model CooperativeMember {
 
   // A farmer can join the same cooperative only once
   @@unique([cooperativeId, farmerId])
+  @@index([farmerId])
 }
 
 // ─────────────────────────── Places ───────────────────────────
@@ -433,6 +438,7 @@ model Machine {
 
   @@index([providerId])
   @@index([machineTypeId])
+  @@index([locationId])
 }
 
 model MachineImage {
@@ -443,6 +449,8 @@ model MachineImage {
   createdAt DateTime @default(now())
 
   machine Machine @relation(fields: [machineId], references: [id], onDelete: Cascade)
+
+  @@index([machineId])
 }
 
 // Days or hours when a provider says the machine is NOT available.
@@ -520,6 +528,7 @@ model SubsidyApplication {
 
   // A farmer applies to the same program only once
   @@unique([programId, farmerId])
+  @@index([farmerId])
 }
 
 // ─────────────────────────── Bookings ───────────────────────────
@@ -586,6 +595,11 @@ model Booking {
   @@index([farmerId])
   @@index([operatorId])
   @@index([status])
+  @@index([locationId])
+  @@index([payoutId])
+  @@index([groupBookingId])
+  @@index([parentBookingId])
+  @@index([subsidyApplicationId])
 }
 
 // One machine visiting many cooperative members' plots, one after another.
@@ -606,6 +620,8 @@ model GroupBooking {
   machine     Machine     @relation(fields: [machineId], references: [id])
   location    Location    @relation(fields: [locationId], references: [id])
   bookings    Booking[]
+
+  @@index([leaderId])
 }
 
 // History of every status change of a booking (who changed it and when).
@@ -644,6 +660,7 @@ model WaitlistEntry {
   location    Location?   @relation(fields: [locationId], references: [id])
 
   @@index([machineTypeId, status])
+  @@index([farmerId])
 }
 
 // ─────────────────────────── Problems and service ───────────────────────────
@@ -664,6 +681,9 @@ model BreakdownReport {
   machine             Machine              @relation(fields: [machineId], references: [id])
   reportedBy          User                 @relation(fields: [reportedById], references: [id])
   maintenanceRequests MaintenanceRequest[]
+
+  @@index([bookingId])
+  @@index([status])
 }
 
 model MaintenanceRequest {
@@ -687,6 +707,9 @@ model MaintenanceRequest {
   requestedBy     User             @relation("MaintenanceRequestedBy", fields: [requestedById], references: [id])
   technician      User?            @relation("MaintenanceTechnician", fields: [technicianId], references: [id])
   breakdownReport BreakdownReport? @relation(fields: [breakdownReportId], references: [id])
+
+  @@index([machineId])
+  @@index([technicianId])
 }
 
 model Review {
@@ -707,6 +730,8 @@ model Review {
 
   // One machine review and one operator review per booking
   @@unique([bookingId, target])
+  @@index([machineId])
+  @@index([operatorId])
 }
 
 model Dispute {
@@ -727,6 +752,9 @@ model Dispute {
   booking    Booking @relation(fields: [bookingId], references: [id])
   raisedBy   User    @relation("DisputeRaisedBy", fields: [raisedById], references: [id])
   resolvedBy User?   @relation("DisputeResolvedBy", fields: [resolvedById], references: [id])
+
+  @@index([bookingId])
+  @@index([status])
 }
 
 model SupportTicket {
@@ -741,6 +769,8 @@ model SupportTicket {
   user     User            @relation(fields: [userId], references: [id])
   booking  Booking?        @relation(fields: [bookingId], references: [id])
   messages TicketMessage[]
+
+  @@index([userId])
 }
 
 model TicketMessage {
@@ -752,6 +782,8 @@ model TicketMessage {
 
   ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   sender User          @relation(fields: [senderId], references: [id])
+
+  @@index([ticketId])
 }
 
 // ─────────────────────────── Money ───────────────────────────
@@ -772,6 +804,8 @@ model Payment {
   booking Booking  @relation(fields: [bookingId], references: [id])
   payer   User     @relation(fields: [payerId], references: [id])
   refunds Refund[]
+
+  @@index([bookingId])
 }
 
 model Refund {
@@ -786,6 +820,9 @@ model Refund {
 
   booking Booking  @relation(fields: [bookingId], references: [id])
   payment Payment? @relation(fields: [paymentId], references: [id])
+
+  @@index([paymentId])
+  @@index([bookingId])
 }
 
 // Money the platform sends to a provider for finished bookings.
@@ -800,6 +837,8 @@ model Payout {
 
   provider User      @relation(fields: [providerId], references: [id])
   bookings Booking[]
+
+  @@index([providerId])
 }
 
 // ─────────────────────────── System ───────────────────────────
@@ -821,6 +860,7 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead])
+  @@index([userId, createdAt])
 }
 
 // Record of important admin / government actions (who did what, and when).
@@ -836,6 +876,7 @@ model AuditLog {
   actor User? @relation(fields: [actorId], references: [id])
 
   @@index([createdAt])
+  @@index([action])
 }
 
 // One wrong login try (a wrong password, or a mobile number with no account). Too many of them
