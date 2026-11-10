@@ -22,6 +22,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import type { BillingUnit, BookingStatus } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { isUniqueConstraintError } from "@/lib/db-errors";
+import { retryWhen } from "@/lib/retry";
 import {
   arrivedMessage,
   bookingAcceptedMessage,
@@ -306,20 +307,16 @@ export async function insertNewBooking(
   return created;
 }
 
+/** How many times a new booking is tried when its code was taken (see retryIfCodeTaken). */
+const CODE_TRIES = 3;
+
 /**
- * Runs a step that saves a new booking, and runs it ONE more time if its code was taken.
- * Two bookings saved at the same moment can get the same code. Codes are @unique, so the
- * database refuses the second one; trying once more gives it the next free code.
+ * Runs a step that saves a new booking, and runs it again (up to 3 times in total) if its code
+ * was taken. Bookings saved at the same moment can get the same code. Codes are @unique, so the
+ * database refuses the later ones; trying again gives each the next free code.
  */
 export async function retryIfCodeTaken<T>(saveStep: () => Promise<T>): Promise<T> {
-  try {
-    return await saveStep();
-  } catch (error) {
-    if (isUniqueConstraintError(error)) {
-      return saveStep();
-    }
-    throw error;
-  }
+  return retryWhen(saveStep, isUniqueConstraintError, CODE_TRIES);
 }
 
 /**
