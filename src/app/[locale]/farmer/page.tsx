@@ -41,7 +41,8 @@ export default async function FarmerDashboardPage() {
                 {t("findButton")}
               </Link>
             </Button>
-            <Button asChild variant="link" className="h-auto p-0">
+            {/* A darker green than usual: this link sits on the light-green card and must stay easy to read */}
+            <Button asChild variant="link" className="h-auto p-0 text-green-800">
               <Link href="/price-calculator">
                 <Calculator aria-hidden />
                 {t("calculator")}
