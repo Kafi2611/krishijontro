@@ -90,6 +90,15 @@ export function GroupBookingForm({ members, machineTypes, defaultValues, today, 
     setFound(null);
   }
 
+  /**
+   * A machine type was chosen. If "Next" had already shown "Choose the machine", that error is
+   * no longer true, so we take it away at once (the form would only check again at the next "Next").
+   */
+  function chooseMachineType() {
+    form.clearErrors("machineTypeId");
+    resetPlots();
+  }
+
   /** Saves the map point into the form (both lat and lng). */
   function setPin(point: LatLng) {
     form.setValue("lat", point.lat, { shouldValidate: true });
@@ -249,7 +258,7 @@ export function GroupBookingForm({ members, machineTypes, defaultValues, today, 
                     <OptionCard
                       key={type.id}
                       className="min-h-14"
-                      inputProps={{ value: type.id, ...form.register("machineTypeId", { onChange: resetPlots }) }}
+                      inputProps={{ value: type.id, ...form.register("machineTypeId", { onChange: chooseMachineType }) }}
                     >
                       <MachineTypeIcon icon={type.icon} className="size-6 shrink-0 text-primary" />
                       {pickByLocale(type.name, type.nameBn, locale)}
