@@ -11,6 +11,8 @@
  *    and assignOperator (an approved operator who is free at that time).
  * 4. The operator's steps: startTrip (on the way), markArrived, startWork (needs the farmer's
  *    start OTP) and finishWork (needs the finish OTP + the real amount of work -> the final bill).
+ *    A wrong OTP is counted (checkOtp); after 5 wrong tries the code is locked until the farmer
+ *    makes a new one (renewOtp).
  * Every step sends messages (simulated SMS) to the people involved (booking-messages.ts).
  *
  * Expected problems (a taken time, a wrong OTP...) are thrown as a BookingProblem inside the
@@ -24,7 +26,9 @@ import {
   arrivedMessage,
   bookingAcceptedMessage,
   bookingRejectedMessage,
+  codeLockedMessage,
   jobFinishedMessage,
+  newCodeMessage,
   newJobMessage,
   newRequestMessage,
   onTheWayMessage,
@@ -41,6 +45,9 @@ import {
   generateOtp,
   getBookingYear,
   getJobTimeRange,
+  getOtpToShow,
+  isOtpLocked,
+  MAX_OTP_TRIES,
   readBookingSerial,
 } from "@/lib/services/booking-rules";
 import { toDecimal } from "@/lib/services/geo";
@@ -543,21 +550,113 @@ export async function markArrived(bookingId: string, operatorId: string): Promis
   });
 }
 
+// ─────────────────────────── The farmer's codes (OTP) ───────────────────────────
+
+/** Which of the farmer's two codes a step asks for. */
+type OtpKind = "start" | "finish";
+
+/**
+ * Checks the code the operator typed, and counts wrong tries. After MAX_OTP_TRIES wrong codes
+ * the code is locked (the farmer is told), so nobody can find a 4-digit code by trying them all.
+ *
+ * It runs in its OWN small transaction, before the step that needs the code. Why: a wrong try
+ * must be SAVED. If we threw a BookingProblem inside the step's transaction instead, the whole
+ * transaction would be cancelled, and the count with it.
+ * The booking's row is locked first ("FOR UPDATE"), so many guesses sent at the same moment
+ * are checked one after the other, and each one sees the count left by the one before.
+ * Returns { ok: true } for the right code, or "otpWrong" / "otpLocked" (or why the step is not open).
+ */
+async function checkOtp(bookingId: string, operatorId: string, kind: OtpKind, otp: string): Promise<ActionResult> {
+  return db.$transaction(async (tx): Promise<ActionResult> => {
+    await tx.$queryRaw`SELECT id FROM "Booking" WHERE id = ${bookingId} FOR UPDATE`;
+    const job = await tx.booking.findFirst({
+      where: { id: bookingId, operatorId }, // only the operator's own job
+      include: { machine: { select: { brand: true, model: true } } },
+    });
+    if (!job) {
+      return { ok: false, error: "notFound" };
+    }
+    // A code is only asked at its own step: the start code at the field, the finish code while working.
+    const stepIsOpen = kind === "start" ? job.status === "ON_THE_WAY" : job.status === "WORKING";
+    if (!stepIsOpen) {
+      return { ok: false, error: "wrongBookingStatus" };
+    }
+    if (kind === "start" && !job.arrivedAt) {
+      return { ok: false, error: "notArrivedYet" };
+    }
+    if (isOtpLocked(job.otpWrongTries)) {
+      return { ok: false, error: "otpLocked" };
+    }
+
+    const rightCode = kind === "start" ? job.startOtp : job.finishOtp;
+    if (rightCode !== null && otp === rightCode) {
+      return { ok: true };
+    }
+
+    // A wrong code: count it. The 5th wrong try locks the code and tells the farmer.
+    const wrongTries = job.otpWrongTries + 1;
+    await tx.booking.update({ where: { id: bookingId }, data: { otpWrongTries: wrongTries } });
+    if (!isOtpLocked(wrongTries)) {
+      return { ok: false, error: "otpWrong" };
+    }
+    await createNotification(
+      { userId: job.farmerId, channel: "SMS", ...codeLockedMessage(messageInfo(job), MAX_OTP_TRIES) },
+      tx,
+    );
+    return { ok: false, error: "otpLocked" };
+  });
+}
+
+/**
+ * The farmer makes a NEW code after the old one was locked (the "Get a new code" button on
+ * their booking page). Only the farmer of the booking can do it, and only while the code in use
+ * is locked. The new code replaces the start or the finish code (whichever is in use now), the
+ * count of wrong tries goes back to 0, and the operator is told to ask for the new code.
+ */
+export async function renewOtp(bookingId: string, farmerId: string): Promise<ActionResult> {
+  return runBookingStep(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Booking" WHERE id = ${bookingId} FOR UPDATE`;
+    const booking = await tx.booking.findFirst({
+      where: { id: bookingId, farmerId }, // only the farmer's own booking
+      include: { machine: { select: { brand: true, model: true } } },
+    });
+    if (!booking) {
+      throw new BookingProblem("notFound");
+    }
+    const kind = getOtpToShow(booking.status); // "start", "finish" or null (no code in use)
+    if (!kind || !isOtpLocked(booking.otpWrongTries)) {
+      throw new BookingProblem("otpNotLocked");
+    }
+
+    const newCode = generateOtp();
+    await tx.booking.update({
+      where: { id: bookingId },
+      data: kind === "start" ? { startOtp: newCode, otpWrongTries: 0 } : { finishOtp: newCode, otpWrongTries: 0 },
+    });
+    if (booking.operatorId) {
+      await createNotification({ userId: booking.operatorId, ...newCodeMessage(messageInfo(booking)) }, tx);
+    }
+  });
+}
+
 /**
  * The work starts (ON_THE_WAY -> WORKING), but only with the farmer's START code.
  * The farmer gives the code only when the machine is really at the field, so the work
- * cannot "start" without them.
+ * cannot "start" without them. A wrong code is counted (checkOtp); 5 wrong codes lock it.
  */
 export async function startWork(bookingId: string, operatorId: string, otp: string): Promise<ActionResult> {
+  const checked = await checkOtp(bookingId, operatorId, "start", otp);
+  if (!checked.ok) {
+    return checked;
+  }
   return runBookingStep(async (tx) => {
     const job = await findOperatorJob(tx, bookingId, operatorId);
-    if (!job.arrivedAt) {
-      throw new BookingProblem("notArrivedYet");
-    }
-    if (otp !== job.startOtp) {
+    // Checked once more inside this transaction, in case the farmer made a new code a moment ago.
+    if (!job.arrivedAt || otp !== job.startOtp) {
       throw new BookingProblem("otpWrong");
     }
-    await changeBookingStatus(bookingId, "WORKING", operatorId, tx, { data: { startedAt: new Date() } });
+    // The count starts again from 0, so the finish code has its own 5 tries.
+    await changeBookingStatus(bookingId, "WORKING", operatorId, tx, { data: { startedAt: new Date(), otpWrongTries: 0 } });
     await createNotification({ userId: job.farmerId, channel: "SMS", ...workStartedMessage(messageInfo(job)) }, tx);
   });
 }
@@ -613,8 +712,14 @@ export async function workOutFinalBill(job: BillableBooking, actualValue: number
  * to the machine (maintenance.ts).
  */
 export async function finishWork(bookingId: string, operatorId: string, input: FinishWorkInput): Promise<ActionResult> {
+  // A wrong finish code is counted like a wrong start code (checkOtp); 5 wrong codes lock it.
+  const checked = await checkOtp(bookingId, operatorId, "finish", input.otp);
+  if (!checked.ok) {
+    return checked;
+  }
   return runBookingStep(async (tx) => {
     const job = await findOperatorJob(tx, bookingId, operatorId);
+    // Checked once more inside this transaction, in case the farmer made a new code a moment ago.
     if (input.otp !== job.finishOtp) {
       throw new BookingProblem("otpWrong");
     }

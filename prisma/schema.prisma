@@ -553,6 +553,7 @@ model Booking {
   minimumShare         Int           @default(0) // group booking only: this plot's share of the group's minimum charge (already inside workCharge)
   startOtp             String? // 4 digits, made when the booking is ACCEPTED
   finishOtp            String?
+  otpWrongTries        Int           @default(0) // wrong codes typed for the code in use now; at 5 the code is locked
   actualQuantity       Float? // real acres / hours entered by the operator at finish
   status               BookingStatus @default(REQUESTED)
   note                 String?

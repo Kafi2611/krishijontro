@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth";
 import { getOperatorJob } from "@/lib/services/booking-queries";
+import { getOtpTriesLeft } from "@/lib/services/booking-rules";
 import { getBookingBreakdown } from "@/lib/services/breakdown";
 import { getBookingDispute } from "@/lib/services/dispute";
 import { canPayBooking } from "@/lib/services/payment-rules";
@@ -78,7 +79,13 @@ export default async function OperatorJobPage({ params }: OperatorJobPageProps) 
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <JobActions bookingId={job.id} step={nextStep} billingUnit={job.billingUnit} bookedAmount={bookedAmount} />
+            <JobActions
+              bookingId={job.id}
+              step={nextStep}
+              billingUnit={job.billingUnit}
+              bookedAmount={bookedAmount}
+              otpTriesLeft={getOtpTriesLeft(job.otpWrongTries)}
+            />
           </CardContent>
         </Card>
       )}

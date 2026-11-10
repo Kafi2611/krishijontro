@@ -85,7 +85,7 @@ export default async function FarmerBookingPage({ params }: FarmerBookingPagePro
         </p>
       )}
 
-      {otp && <OtpCard kind={otp.kind} code={otp.code} />}
+      {otp && <OtpCard bookingId={booking.id} kind={otp.kind} code={otp.code} wrongTries={otp.wrongTries} />}
 
       {booking.status === "CANCELLED" && booking.cancellationFee > 0 && (
         <p role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-950">

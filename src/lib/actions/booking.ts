@@ -11,6 +11,7 @@ import {
   finishWork,
   markArrived,
   rejectBooking,
+  renewOtp,
   startTrip,
   startWork,
   type CreateBookingResult,
@@ -60,6 +61,12 @@ export async function createBookingAction(values: BookingInput): Promise<CreateB
 export async function cancelBookingAction(bookingId: string): Promise<ActionResult> {
   const farmer = await requireRole("FARMER");
   return refreshPagesIfDone(await cancelByFarmer(bookingId, farmer.id));
+}
+
+/** The farmer's "Get a new code", after a wrong code was typed too many times and the old one is locked. */
+export async function renewOtpAction(bookingId: string): Promise<ActionResult> {
+  const farmer = await requireRole("FARMER");
+  return refreshPagesIfDone(await renewOtp(bookingId, farmer.id));
 }
 
 // ─────────────────────────── Provider ───────────────────────────
@@ -114,6 +121,15 @@ export async function markArrivedAction(bookingId: string): Promise<ActionResult
   return refreshPagesIfDone(await markArrived(bookingId, operator.id));
 }
 
+/**
+ * After a try with one of the farmer's codes the pages are ALWAYS drawn again, also when the
+ * code was wrong: the job page then shows how many tries are left, or that the code is locked.
+ */
+function refreshPagesAfterCode(result: ActionResult): ActionResult {
+  revalidatePath("/", "layout");
+  return result;
+}
+
 /** "Start the work", with the farmer's start code. */
 export async function startWorkAction(bookingId: string, values: StartWorkInput): Promise<ActionResult> {
   const operator = await requireRole("OPERATOR");
@@ -121,7 +137,7 @@ export async function startWorkAction(bookingId: string, values: StartWorkInput)
   if (!parsed.success) {
     return { ok: false, error: "otpInvalid" };
   }
-  return refreshPagesIfDone(await startWork(bookingId, operator.id, parsed.data.otp));
+  return refreshPagesAfterCode(await startWork(bookingId, operator.id, parsed.data.otp));
 }
 
 /** "Finish the work", with the real amount of work and the farmer's finish code. */
@@ -131,5 +147,5 @@ export async function finishWorkAction(bookingId: string, values: FinishWorkInpu
   if (!parsed.success) {
     return { ok: false, error: "somethingWrong" };
   }
-  return refreshPagesIfDone(await finishWork(bookingId, operator.id, parsed.data));
+  return refreshPagesAfterCode(await finishWork(bookingId, operator.id, parsed.data));
 }

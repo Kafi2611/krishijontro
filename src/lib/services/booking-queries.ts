@@ -118,14 +118,15 @@ export async function getFarmerBooking(bookingId: string, farmerId: string) {
 /**
  * The code the farmer must see right now: the start code until the work begins, then the
  * finish code (getOtpToShow in booking-rules.ts decides). Null when no code is needed.
+ * wrongTries = how many times a wrong code was typed for it (at 5 the code is locked).
  */
-function codeToShow(booking: { status: BookingStatus; startOtp: string | null; finishOtp: string | null }) {
+function codeToShow(booking: { status: BookingStatus; startOtp: string | null; finishOtp: string | null; otpWrongTries: number }) {
   const kind = getOtpToShow(booking.status);
   const code = kind === "start" ? booking.startOtp : booking.finishOtp;
   if (!kind || !code) {
     return null;
   }
-  return { kind, code };
+  return { kind, code, wrongTries: booking.otpWrongTries };
 }
 
 // ─────────────────────────── The provider ───────────────────────────

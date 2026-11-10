@@ -7,7 +7,8 @@
  *   1. Groups of statuses: which keep a machine busy, which are finished.
  *   2. The allowed moves between statuses (the life of a booking).
  *   3. Job time: how long a job takes, and when it starts and ends.
- *   4. Codes: the booking code (KJ-2026-000123) and the 4-digit OTP codes; the provider's share.
+ *   4. Codes: the booking code (KJ-2026-000123), the 4-digit OTP codes and their lock after
+ *      5 wrong tries; the provider's share.
  *   5. What each person sees next: the farmer's OTP, the operator's next button.
  *   6. Sorting bookings into the groups the lists show.
  *   7. The timeline on a booking's page.
@@ -163,6 +164,29 @@ export function getBookingYear(now: Date = new Date()): number {
 export function generateOtp(): string {
   const [randomNumber] = crypto.getRandomValues(new Uint32Array(1));
   return String(randomNumber % 10000).padStart(4, "0");
+}
+
+/**
+ * How many wrong codes may be typed. A 4-digit code has only 10,000 possibilities, so without a
+ * limit someone could simply try them all. After this many wrong tries the code is LOCKED: it
+ * stops working, and only the farmer can make a new one (on their booking page).
+ */
+export const MAX_OTP_TRIES = 5;
+
+/**
+ * True if the code is locked, because it was typed wrong MAX_OTP_TRIES times.
+ * Example: isOtpLocked(4) -> false, isOtpLocked(5) -> true
+ */
+export function isOtpLocked(wrongTries: number): boolean {
+  return wrongTries >= MAX_OTP_TRIES;
+}
+
+/**
+ * How many tries are left before the code is locked (never below 0).
+ * Example: getOtpTriesLeft(2) -> 3
+ */
+export function getOtpTriesLeft(wrongTries: number): number {
+  return Math.max(0, MAX_OTP_TRIES - wrongTries);
 }
 
 /**

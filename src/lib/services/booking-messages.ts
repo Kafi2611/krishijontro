@@ -164,6 +164,34 @@ export function workStartedMessage(booking: BookingMessageInfo) {
   };
 }
 
+/** To the farmer, when a wrong code was typed too many times: the code is locked now. */
+export function codeLockedMessage(booking: BookingMessageInfo, maxTries: number) {
+  const code = booking.code;
+  return {
+    title: "Your code is locked",
+    titleBn: "আপনার কোড লক হয়েছে",
+    body:
+      `A wrong code was typed ${maxTries} times for ${code}, so the code no longer works. ` +
+      `If the operator is with you at the field, open the booking and press "Get a new code".`,
+    bodyBn:
+      `${toBanglaDigits(code)} এর জন্য ${toBanglaDigits(maxTries)} বার ভুল কোড লেখা হয়েছে, তাই কোডটি আর কাজ করবে না। ` +
+      `চালক আপনার জমিতে থাকলে বুকিংটি খুলে "নতুন কোড নিন" চাপুন।`,
+    link: farmerLink(booking),
+  };
+}
+
+/** To the operator, when the farmer has made a new code after a lock. (The code itself is never sent.) */
+export function newCodeMessage(booking: BookingMessageInfo) {
+  const code = booking.code;
+  return {
+    title: "The farmer has a new code",
+    titleBn: "কৃষক নতুন কোড নিয়েছেন",
+    body: `The farmer made a new code for ${code}. Ask them for it and type it on the job page.`,
+    bodyBn: `কৃষক ${toBanglaDigits(code)} এর জন্য নতুন কোড নিয়েছেন। তাঁর কাছ থেকে কোডটি জেনে কাজের পাতায় লিখুন।`,
+    link: operatorLink(booking),
+  };
+}
+
 /** To the farmer, when the work is finished: the final bill. */
 export function workFinishedMessage(booking: BookingMessageInfo, totalAmount: number) {
   const code = booking.code;

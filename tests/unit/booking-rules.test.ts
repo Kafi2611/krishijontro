@@ -14,10 +14,13 @@ import {
   getJobTimeRange,
   getOperatorNextStep,
   getOtpToShow,
+  getOtpTriesLeft,
   getProviderShare,
   groupOperatorJobs,
   groupProviderBookings,
+  isOtpLocked,
   isStartFarEnough,
+  MAX_OTP_TRIES,
   readBookingSerial,
   splitFarmerBookings,
   type TimelineLog,
@@ -98,6 +101,21 @@ describe("codes", () => {
     for (let index = 0; index < 50; index++) {
       expect(generateOtp()).toMatch(/^\d{4}$/);
     }
+  });
+
+  it("locks a code after 5 wrong tries, not before", () => {
+    expect(MAX_OTP_TRIES).toBe(5);
+    expect(isOtpLocked(0)).toBe(false);
+    expect(isOtpLocked(4)).toBe(false);
+    expect(isOtpLocked(5)).toBe(true);
+    expect(isOtpLocked(6)).toBe(true);
+  });
+
+  it("counts the tries that are left, never below 0", () => {
+    expect(getOtpTriesLeft(0)).toBe(5);
+    expect(getOtpTriesLeft(2)).toBe(3);
+    expect(getOtpTriesLeft(5)).toBe(0);
+    expect(getOtpTriesLeft(9)).toBe(0);
   });
 });
 
