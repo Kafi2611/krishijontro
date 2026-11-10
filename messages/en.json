@@ -552,7 +552,7 @@
     "newTitle": "Add an operator",
     "newSubtitle": "This makes a login account for the operator. The admin approves it before you can send the operator to jobs.",
     "firstPassword": "First password",
-    "passwordHint": "Tell this password to the operator yourself. It is never sent by SMS.",
+    "passwordHint": "At least 8 letters or digits. Tell this password to the operator yourself. It is never sent by SMS.",
     "licenseNo": "Driving licence number",
     "optional": "optional",
     "experienceYears": "Years of experience",
@@ -1493,7 +1493,7 @@
       "ADMIN": "Can do everything on the admin pages. Make admin accounts only for trusted people."
     },
     "firstPassword": "First password",
-    "passwordHint": "At least 6 letters. Tell it to the person; they can keep it.",
+    "passwordHint": "At least 8 letters or digits. Tell it to the person; they can keep it.",
     "officerUpazila": "Upazila where the officer works",
     "technicianUpazila": "Upazila where the technician works (optional)",
     "chooseUpazila": "Choose an upazila",
