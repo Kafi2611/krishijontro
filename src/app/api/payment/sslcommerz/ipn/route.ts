@@ -2,9 +2,10 @@
 // SSLCommerz's own server tells our server about a payment, even if the farmer closed the
 // browser before coming back to the success address. It needs a public address, so it works
 // on a deployed site only (not on localhost).
-// It uses the same confirmOnlinePayment() as the success address, which asks SSLCommerz to
-// confirm val_id, and does nothing if the payment was already confirmed.
-import { confirmOnlinePayment, failOnlinePayment } from "@/lib/services/payment";
+// It uses the same confirmSslCommerzPayment() as the success address, which asks SSLCommerz to
+// confirm val_id, does nothing if the payment was already confirmed, and never touches a
+// payment of another gateway.
+import { confirmSslCommerzPayment, failSslCommerzPayment } from "@/lib/services/payment";
 
 export async function POST(request: Request) {
   const form = await request.formData();
@@ -13,9 +14,9 @@ export async function POST(request: Request) {
   const status = String(form.get("status") ?? "");
 
   if (status === "VALID" || status === "VALIDATED") {
-    await confirmOnlinePayment(transactionId, validationId);
+    await confirmSslCommerzPayment(transactionId, validationId);
   } else if (status === "FAILED" || status === "CANCELLED") {
-    await failOnlinePayment(transactionId, status);
+    await failSslCommerzPayment(transactionId, status);
   }
   // Always answer "received", so SSLCommerz does not keep sending the same message.
   return Response.json({ received: true });

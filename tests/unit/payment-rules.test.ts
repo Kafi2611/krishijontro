@@ -3,6 +3,7 @@
 // the provider's balance (with a refund or fine after a payout carried forward).
 import { describe, expect, it } from "vitest";
 import {
+  canConfirmPayment,
   canPayBooking,
   getBookingMoney,
   getProviderBalance,
@@ -37,6 +38,24 @@ describe("canPayBooking", () => {
   it("waits while a complaint is open, and allows paying once the admin has decided", () => {
     expect(canPayBooking("DISPUTED", true)).toBe(false);
     expect(canPayBooking("DISPUTED", false)).toBe(true);
+  });
+});
+
+describe("canConfirmPayment", () => {
+  it("confirms a pending try of any gateway", () => {
+    expect(canConfirmPayment("PENDING", "SSLCOMMERZ")).toBe(true);
+    expect(canConfirmPayment("PENDING", "MOCK")).toBe(true);
+  });
+
+  it("still saves an SSLCommerz payment that SSLCommerz confirms after a 'fail' address was visited", () => {
+    expect(canConfirmPayment("FAILED", "SSLCOMMERZ")).toBe(true);
+    expect(canConfirmPayment("CANCELLED", "SSLCOMMERZ")).toBe(true);
+  });
+
+  it("never confirms a failed pretend payment, or a payment that is already confirmed", () => {
+    expect(canConfirmPayment("FAILED", "MOCK")).toBe(false);
+    expect(canConfirmPayment("CANCELLED", "MOCK")).toBe(false);
+    expect(canConfirmPayment("SUCCESS", "SSLCOMMERZ")).toBe(false);
   });
 });
 

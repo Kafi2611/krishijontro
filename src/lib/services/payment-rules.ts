@@ -46,6 +46,22 @@ export function canPayBooking(status: BookingStatus, hasOpenDispute: boolean): b
   return status === "DISPUTED" && !hasOpenDispute;
 }
 
+/**
+ * True if a payment try may still be marked paid ("confirmed"):
+ * - a PENDING try: yes, once its gateway confirms it
+ * - a FAILED or CANCELLED try: only an SSLCommerz one. SSLCommerz's own check is the final word:
+ *   if it says the money was taken, we save it, even if the browser was sent to the "fail"
+ *   address before (anybody can send a browser there; the check with SSLCommerz cannot be faked).
+ *   A test-gateway (MOCK) try that failed stays failed: the farmer simply starts a new one.
+ * - a SUCCESS try is already confirmed (nothing to do).
+ */
+export function canConfirmPayment(status: PaymentStatus, method: PaymentMethod): boolean {
+  if (status === "PENDING") {
+    return true;
+  }
+  return method === "SSLCOMMERZ" && (status === "FAILED" || status === "CANCELLED");
+}
+
 /** Bookings whose money has come in (the farmer paid). Only these count for payouts. */
 export const PAID_BOOKING_STATUSES: BookingStatus[] = ["PAID", "REVIEWED"];
 

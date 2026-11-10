@@ -7,7 +7,10 @@
  *   1. Online: startOnlinePayment() saves a PENDING Payment and sends the farmer to the gateway
  *      (payment-gateway.ts). When the gateway says "paid", confirmOnlinePayment() asks the
  *      gateway again to be sure, then marks the payment SUCCESS and the booking PAID.
- *      failOnlinePayment() marks a failed or cancelled try; the farmer can simply try again.
+ *      A failed or cancelled try is marked as such; the farmer can simply try again.
+ *      SSLCommerz reaches us through addresses that need no login, so they only ever touch
+ *      SSLCommerz payments (confirmSslCommerzPayment / failSslCommerzPayment); a pretend (MOCK)
+ *      payment can only be finished by its own farmer on the pretend bank page (finishMockPayment).
  *   2. Cash on completion: the farmer gives the cash to the operator, and the operator (or the
  *      provider) presses "Cash received" -> recordCashPayment().
  * When a booking becomes PAID (both ways, inside ONE transaction, see markBookingPaid):
@@ -22,9 +25,9 @@ import { db } from "@/lib/db";
 import { BookingProblem, changeBookingStatus, messageInfo, runBookingStep } from "@/lib/services/booking";
 import { getProviderShare } from "@/lib/services/booking-rules";
 import { createNotification, notifyAllAdmins } from "@/lib/services/notification";
-import { getGateway, getOnlineGateway } from "@/lib/services/payment-gateway";
+import { getGateway, getOnlineGateway, type OnlineMethod } from "@/lib/services/payment-gateway";
 import { bookingPaidMessage, paidTwiceMessage, paymentReceivedMessage } from "@/lib/services/payment-messages";
-import { canPayBooking, getRefundableAmount, makeTransactionId, sumAmounts } from "@/lib/services/payment-rules";
+import { canConfirmPayment, canPayBooking, getRefundableAmount, makeTransactionId, sumAmounts } from "@/lib/services/payment-rules";
 import { spendSubsidy } from "@/lib/services/subsidy";
 import type { ActionResult, ValidationKey } from "@/lib/validators/types";
 
@@ -137,21 +140,24 @@ export async function startOnlinePayment(
 }
 
 /**
- * The gateway says a payment worked (the success address, or the IPN message).
- * 1. We ask the SAME gateway to confirm it (checkPayment) — never trust only the browser.
+ * A gateway says a payment worked. `method` is the gateway that is speaking: the SSLCommerz
+ * addresses pass "SSLCOMMERZ", the pretend bank page passes "MOCK". A payment of another gateway
+ * is "not found", so the SSLCommerz addresses (which need no login) can never confirm a pretend
+ * payment, whose check always says "yes".
+ * 1. We ask the payment's gateway to confirm it (checkPayment) — never trust only the browser.
  * 2. In one transaction: the payment becomes SUCCESS and the booking PAID (markBookingPaid).
  * Safe to call twice for the same payment (the success page and the IPN often both arrive):
  * the second call finds it already SUCCESS and changes nothing.
  */
-export async function confirmOnlinePayment(transactionId: string, validationId: string): Promise<ActionResult> {
+async function confirmOnlinePayment(transactionId: string, validationId: string, method: OnlineMethod): Promise<ActionResult> {
   const payment = await db.payment.findUnique({ where: { transactionId } });
-  if (!payment || payment.method === "CASH") {
+  if (!payment || payment.method !== method) {
     return { ok: false, error: "notFound" };
   }
   if (payment.status === "SUCCESS") {
     return { ok: true };
   }
-  if (payment.status !== "PENDING") {
+  if (!canConfirmPayment(payment.status, payment.method)) {
     return { ok: false, error: "paymentNotConfirmed" };
   }
 
@@ -162,17 +168,17 @@ export async function confirmOnlinePayment(transactionId: string, validationId: 
   });
   if (!checked.valid) {
     if (checked.tryAgain) {
-      return { ok: false, error: "paymentCheckFailed" }; // stays PENDING; the IPN may still confirm it
+      return { ok: false, error: "paymentCheckFailed" }; // stays as it is; the IPN may still confirm it
     }
-    await failOnlinePayment(transactionId, "FAILED");
+    await failPayment(transactionId, "FAILED", payment.method);
     return { ok: false, error: "paymentNotConfirmed" };
   }
 
   return runBookingStep(async (tx) => {
     await lockBooking(tx, payment.bookingId);
-    // Only a payment that is STILL pending is changed (count 0 = it was confirmed a moment ago).
+    // Only a payment that is STILL not confirmed is changed (count 0 = it was confirmed a moment ago).
     const { count } = await tx.payment.updateMany({
-      where: { id: payment.id, status: "PENDING" },
+      where: { id: payment.id, status: { in: ["PENDING", "FAILED", "CANCELLED"] } },
       data: { status: "SUCCESS", gatewayRef: checked.gatewayRef, paidAt: new Date() },
     });
     if (count === 0) {
@@ -191,14 +197,34 @@ export async function confirmOnlinePayment(transactionId: string, validationId: 
 }
 
 /**
- * A payment try failed or the farmer cancelled it at the gateway.
- * Only a PENDING online payment is changed, so a late "fail" can never undo a success.
+ * A payment try of the given gateway failed or was cancelled. Only a PENDING try of THAT gateway
+ * is changed, so a late "fail" can never undo a success, and the SSLCommerz "fail" address can
+ * never touch a pretend payment.
  */
-export async function failOnlinePayment(transactionId: string, status: "FAILED" | "CANCELLED"): Promise<void> {
+async function failPayment(transactionId: string, status: "FAILED" | "CANCELLED", method: OnlineMethod): Promise<void> {
   await db.payment.updateMany({
-    where: { transactionId, status: "PENDING", method: { not: "CASH" } },
+    where: { transactionId, status: "PENDING", method },
     data: { status },
   });
+}
+
+// ─────────────────────────── The SSLCommerz addresses ───────────────────────────
+// SSLCommerz sends the farmer's browser to /api/payment/sslcommerz/success|fail|cancel, and
+// its own server to /api/payment/sslcommerz/ipn. These addresses need no login (the browser
+// comes from another website), so they may only touch SSLCommerz payments.
+
+/** SSLCommerz says a payment worked: confirm it with SSLCommerz itself (confirmOnlinePayment). */
+export async function confirmSslCommerzPayment(transactionId: string, validationId: string): Promise<ActionResult> {
+  return confirmOnlinePayment(transactionId, validationId, "SSLCOMMERZ");
+}
+
+/**
+ * SSLCommerz says a payment failed or was cancelled. Nothing is checked here (anybody can send
+ * a browser to the "fail" address), so it only marks a PENDING SSLCommerz try; if SSLCommerz
+ * later confirms that the money was taken, confirmOnlinePayment still saves it (canConfirmPayment).
+ */
+export async function failSslCommerzPayment(transactionId: string, status: "FAILED" | "CANCELLED"): Promise<void> {
+  await failPayment(transactionId, status, "SSLCOMMERZ");
 }
 
 /** What the farmer chose on the pretend bank page. */
@@ -215,9 +241,9 @@ export async function finishMockPayment(transactionId: string, farmerId: string,
     return { ok: false, error: "notFound" };
   }
   if (outcome === "pay") {
-    return confirmOnlinePayment(transactionId, `MOCK-${transactionId}`);
+    return confirmOnlinePayment(transactionId, `MOCK-${transactionId}`, "MOCK");
   }
-  await failOnlinePayment(transactionId, outcome === "fail" ? "FAILED" : "CANCELLED");
+  await failPayment(transactionId, outcome === "fail" ? "FAILED" : "CANCELLED", "MOCK");
   return { ok: true };
 }
 

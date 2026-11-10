@@ -2,13 +2,14 @@
 //   POST /api/payment/sslcommerz/success | fail | cancel
 // with form fields tran_id (our id), val_id (SSLCommerz's proof) and value_a (the language).
 // This is a route, not a page, because SSLCommerz sends a POST and a page can only answer a GET.
-// We never trust the word "success" in the address: confirmOnlinePayment() asks SSLCommerz
+// We never trust the word "success" in the address: confirmSslCommerzPayment() asks SSLCommerz
 // itself whether val_id is really paid. Then we send the browser on to our result page.
 // (The browser comes from another website, so the login cookie is not sent here; that is
-// fine, because the payment is found by its transaction id and checked with SSLCommerz.)
+// fine, because the payment is found by its transaction id and checked with SSLCommerz.
+// Only SSLCommerz payments are touched here: a pretend payment is never confirmed by this address.)
 import { NextResponse } from "next/server";
 import { routing } from "@/lib/i18n";
-import { confirmOnlinePayment, failOnlinePayment } from "@/lib/services/payment";
+import { confirmSslCommerzPayment, failSslCommerzPayment } from "@/lib/services/payment";
 
 /** The language SSLCommerz sent back in value_a, or the default if it looks wrong. */
 function pickLocale(value: FormDataEntryValue | null): string {
@@ -25,10 +26,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ res
 
   let paid = false;
   if (result === "success") {
-    const outcome = await confirmOnlinePayment(transactionId, validationId);
+    const outcome = await confirmSslCommerzPayment(transactionId, validationId);
     paid = outcome.ok;
   } else if (result === "fail" || result === "cancel") {
-    await failOnlinePayment(transactionId, result === "fail" ? "FAILED" : "CANCELLED");
+    await failSslCommerzPayment(transactionId, result === "fail" ? "FAILED" : "CANCELLED");
   } else {
     return Response.json({ error: "notFound" }, { status: 404 });
   }
