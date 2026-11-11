@@ -78,8 +78,8 @@ docs/screenshots/               the pictures above
    ```bash
    npm install
    ```
-3. Make a free PostgreSQL database on [Neon](https://neon.tech) (a separate **development branch** is best,
-   because the demo data empties every table). Copy `.env.example` to `.env` and fill it in (see the table below).
+3. Make a free PostgreSQL database on [Neon](https://neon.tech) (the live site uses this same database, see
+   [Deploy on Vercel + Neon](#deploy-on-vercel--neon)). Copy `.env.example` to `.env` and fill it in (see the table below).
 4. Create the tables and add the demo data:
    ```bash
    npx prisma migrate deploy
@@ -198,11 +198,13 @@ database. Everything needed is already in the code:
 - Photos are saved in **Vercel Blob** when `BLOB_READ_WRITE_TOKEN` is set (Vercel adds it when a Blob store is connected).
 - No secret is in Git: every key and password is set in Vercel's **Environment Variables**.
 
-### 1. Neon: a database for the live site
+### 1. Neon: the database
 
-1. In the Neon console, open the project and use its main branch for the live site
-   (keep your development branch for your own computer: the demo data empties every table).
-2. Press **Connect**, choose the branch and the database, and copy two connection strings:
+1. The live site uses the **same Neon database as development** (the one in your `.env`). This is simple for a
+   class project and a demo: your computer and the live site always show the same data, and one seed prepares both.
+   For real users, a separate Neon branch for production is safer, so work on your computer can never change real data.
+2. The live site needs the same two connection strings as your `.env`. To copy them again, press **Connect** in the
+   Neon console, choose the branch and the database, and copy:
    - **with "Connection pooling" switched on** → this is `DATABASE_URL` (the host contains `-pooler`)
    - **with it switched off** → this is `DIRECT_URL` (the same host without `-pooler`)
 3. At the end of both strings, make sure it says `?sslmode=verify-full` (replace `sslmode=require` and remove
@@ -231,16 +233,12 @@ database. Everything needed is already in the code:
    `APP_URL` with it (SSLCommerz sends farmers back there), then **Deployments → … → Redeploy** so the new
    variables are used.
 
-### 3. Demo data on the live database (once)
+### 3. Demo data
 
-The live database is empty after the first deploy. To add the demo accounts and bookings, run the seed **once**
-from your own computer, pointing at the live database (it empties every table first):
-
-```powershell
-$env:DATABASE_URL="<the pooled live string>"; $env:DIRECT_URL="<the direct live string>"; npm run db:seed
-```
-
-Then close that terminal window (so the next commands use your `.env` again). The demo logins in the table
+The live site and your computer share one database, so the demo data from `npm run db:seed` (run on your computer,
+as in [Run it on your computer](#run-it-on-your-computer)) is the live site's data too. Run it again before a demo
+to start clean: it empties every table first, so new bookings are removed and everyone, also on the live site, is
+logged out. The browser tests (`npm run test:e2e`) write to this database as well. The demo logins in the table
 above work on the live site too; the login page does not list them there (only in development).
 
 ### 4. Check the live site
