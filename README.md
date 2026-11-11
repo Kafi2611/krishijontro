@@ -130,7 +130,8 @@ npm run test:e2e    # browser tests (Playwright)
 The browser tests build the site, start it on port 3100 and use it like a person would: the **main flow**
 (register a farmer → book → the provider accepts and sends an operator → start code → finish code → pay → review),
 a big phone photo being made smaller before upload, the group booking form, every role's pages on a 360 px wide phone
-in both languages, a keyboard-only login, the login lock after 5 wrong passwords, the payment addresses refusing a stranger,
+in both languages, a keyboard-only login, the login lock after 5 wrong passwords, an old login whose account no longer
+exists (after a new seed) being logged out without the "suspended" message, the payment addresses refusing a stranger,
 and the safety headers. They use the demo data, so run `npm run db:seed` first. On Windows they use the installed Microsoft Edge;
 on other computers run `npx playwright install chromium` once.
 
