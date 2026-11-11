@@ -13,6 +13,7 @@ import { verifyPassword } from "@/lib/password";
 import { getHomePathForRole } from "@/lib/roles";
 import { clearFailedLogins, isLoginAllowed, recordFailedLogin } from "@/lib/services/login-guard";
 import { readClientIp } from "@/lib/services/login-rules";
+import { getLoginPagePath, getLoginState, type LoginState } from "@/lib/services/login-state";
 import { loginSchema } from "@/lib/validators/auth";
 
 /** Thrown when the password is right but an admin has suspended the account. */
@@ -91,13 +92,14 @@ export type SessionUser = {
 
 /**
  * Who the login cookie says is logged in, and whether that account may still be used.
- * The cookie was made at login, and the admin may have suspended the account since then,
- * so we also read the account's status from the database. That way a suspended user is
- * stopped at once, not only at their next login.
+ * The cookie was made at login. Since then the admin may have suspended the account, or the
+ * account may be gone (`npm run db:seed` makes all accounts again), so we also read the
+ * account from the database. That way such a user is stopped at once, not only at their
+ * next login. `state` is ACTIVE, SUSPENDED or ACCOUNT_GONE (lib/services/login-state.ts).
  * React's cache() runs this only once per page request, even when the layout, the page and
  * the navbar all ask who is logged in.
  */
-const readLogin = cache(async (): Promise<{ user: SessionUser; isSuspended: boolean } | null> => {
+const readLogin = cache(async (): Promise<{ user: SessionUser; state: LoginState } | null> => {
   const session = await auth();
   if (!session?.user?.id) {
     return null;
@@ -110,14 +112,14 @@ const readLogin = cache(async (): Promise<{ user: SessionUser; isSuspended: bool
       phone: session.user.phone,
       role: session.user.role,
     },
-    isSuspended: account?.status !== "ACTIVE", // also true if the account no longer exists
+    state: getLoginState(account), // account is null when no account has this id any more
   };
 });
 
-/** Returns the logged-in user, or null if nobody is logged in (or their account is suspended). */
+/** Returns the logged-in user, or null if nobody is logged in (or their account is suspended or gone). */
 export async function getCurrentUser(): Promise<SessionUser | null> {
   const login = await readLogin();
-  if (!login || login.isSuspended) {
+  if (!login || login.state !== "ACTIVE") {
     return null;
   }
   return login.user;
@@ -125,17 +127,32 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 
 /**
  * Makes sure someone is logged in and returns them.
- * If nobody is logged in, it sends the visitor to the login page instead.
- * A suspended user goes to the login page too, which then says the account is suspended.
+ * Anyone else is sent away (getLoginPagePath in lib/services/login-state.ts):
+ *   - nobody logged in -> the login page
+ *   - a suspended user -> the login page, which then says the account is suspended
+ *   - an account that no longer exists -> /login/clear, which removes the old login and
+ *     opens the normal login page (as for anyone who is logged out)
  */
 export async function requireUser(): Promise<SessionUser> {
   const login = await readLogin();
-  if (!login || login.isSuspended) {
-    const locale = await getLocale();
-    const href = login ? "/login?suspended=1" : "/login";
-    return redirect({ href, locale });
+  if (login && login.state === "ACTIVE") {
+    return login.user;
   }
-  return login.user;
+  const locale = await getLocale();
+  return redirect({ href: getLoginPagePath(login ? login.state : null), locale });
+}
+
+/**
+ * Removes the login cookie, but ONLY when its account no longer exists.
+ * Used by the /login/clear route. Because of this check, a link to that route can never
+ * log out a user whose account is fine (or hide the "suspended" message from a suspended one).
+ */
+export async function clearLoginIfAccountGone(): Promise<void> {
+  const login = await readLogin();
+  if (login && login.state === "ACCOUNT_GONE") {
+    // redirect: false = only remove the cookie here; the route decides where to go next.
+    await signOut({ redirect: false });
+  }
 }
 
 /**
